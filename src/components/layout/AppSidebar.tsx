@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, Settings, Bell, Search, Command, Workflow, CreditCard, ListTodo } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, Settings, Bell, Search, Command, Workflow, CreditCard, ListTodo, LogOut as KeyIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
@@ -54,14 +54,26 @@ export function AppSidebar() {
       </div>
 
       <div className="absolute bottom-0 left-0 w-full p-6 border-t border-border">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center text-sm font-medium">
-            JD
+        <div className="flex items-center gap-3 justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center text-sm font-medium">
+              AD
+            </div>
+            <div className="text-sm">
+              <p className="font-medium">Admin</p>
+              <p className="text-xs text-muted-foreground">Super User</p>
+            </div>
           </div>
-          <div className="text-sm">
-            <p className="font-medium">John Doe</p>
-            <p className="text-xs text-muted-foreground">Admin</p>
-          </div>
+          <button
+            onClick={async () => {
+              const { logout } = await import('@/app/login/actions');
+              await logout();
+            }}
+            className="p-2 hover:bg-destructive/10 hover:text-destructive rounded-md transition-colors"
+            title="Cerrar Sesión"
+          >
+            <KeyIcon className="h-5 w-5" />
+          </button>
         </div>
       </div>
     </aside>

@@ -1,3 +1,6 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { Header } from "@/components/layout/Header";
 
@@ -6,6 +9,13 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children }: MainLayoutProps) {
+    const pathname = usePathname();
+    const isLoginPage = pathname === "/login";
+
+    if (isLoginPage) {
+        return <>{children}</>;
+    }
+
     return (
         <div className="min-h-screen bg-background text-foreground flex">
             <AppSidebar />
