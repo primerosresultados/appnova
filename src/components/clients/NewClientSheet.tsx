@@ -86,6 +86,11 @@ export function NewClientSheet() {
                     </div>
 
                     <div className="grid gap-2">
+                        <Label htmlFor="taxId">RUT de Facturación</Label>
+                        <Input id="taxId" name="taxId" placeholder="12.345.678-9" />
+                    </div>
+
+                    <div className="grid gap-2">
                         <Label htmlFor="status">Estado</Label>
                         <Select name="status" defaultValue="ACTIVE">
                             <SelectTrigger>

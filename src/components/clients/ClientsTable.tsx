@@ -3,8 +3,9 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { FileText, ChevronRight } from "lucide-react";
+import { FileText, ChevronRight, Copy } from "lucide-react";
 import { ClientActions } from "@/components/clients/ClientActions";
+import { CopyRutButton } from "@/components/clients/CopyRutButton";
 
 async function getClients() {
     try {
@@ -63,7 +64,13 @@ export async function ClientsTable() {
                                             <Link href={`/clients/${client.id}`} className="font-semibold hover:underline decoration-primary underline-offset-4">
                                                 {client.name}
                                             </Link>
-                                            <div className="text-xs text-muted-foreground truncate max-w-[200px]">{client.website || 'No website'}</div>
+                                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                {client.taxId ? (
+                                                    <CopyRutButton rut={client.taxId} />
+                                                ) : (
+                                                    <span className="opacity-50">Sin RUT</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </TableCell>

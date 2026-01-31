@@ -24,6 +24,7 @@ export async function createClient(prevState: any, formData: FormData) {
         company: formData.get("company") || undefined,
         website: formData.get("website") || undefined,
         industry: formData.get("industry") || undefined,
+        taxId: formData.get("taxId") || undefined,
         status: formData.get("status") || "ACTIVE",
     });
 
@@ -35,7 +36,7 @@ export async function createClient(prevState: any, formData: FormData) {
         };
     }
 
-    const { name, company, website, industry, status } = validatedFields.data;
+    const { name, company, website, industry, taxId, status } = validatedFields.data;
 
     try {
         await db.client.create({
@@ -44,6 +45,7 @@ export async function createClient(prevState: any, formData: FormData) {
                 company,
                 website,
                 industry,
+                taxId,
                 status: status as any,
             },
         });
