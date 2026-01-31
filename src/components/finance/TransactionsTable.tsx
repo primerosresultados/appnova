@@ -21,6 +21,16 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Transaction {
     id: string;
@@ -43,16 +53,19 @@ export function TransactionsTable({ initialTransactions }: TransactionsTableProp
     const [searchTerm, setSearchTerm] = useState("");
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
-    const handleDelete = async (id: string) => {
-        if (!confirm("¿Estás seguro de eliminar esta transacción? Esto revertirá el saldo de la cuenta.")) return;
+    const [deleteId, setDeleteId] = useState<string | null>(null);
 
-        const result = await deleteTransaction(id);
+    const confirmDelete = async () => {
+        if (!deleteId) return;
+
+        const result = await deleteTransaction(deleteId);
         if (result.success) {
             toast.success("Transacción eliminada");
-            setTransactions(prev => prev.filter(t => t.id !== id));
+            setTransactions(prev => prev.filter(t => t.id !== deleteId));
         } else {
             toast.error(result.message || "Error al eliminar");
         }
+        setDeleteId(null);
     };
 
     const filteredTransactions = transactions.filter(t => {
@@ -67,8 +80,6 @@ export function TransactionsTable({ initialTransactions }: TransactionsTableProp
             if (dateRange.to) {
                 matchesDate = transactionDate >= dateRange.from && transactionDate <= dateRange.to;
             } else {
-                // If only start date selected, strict match or just start filter? 
-                // Usually range picker implies from-to. Let's assume inclusive start.
                 matchesDate = transactionDate >= dateRange.from;
             }
         }
@@ -179,7 +190,7 @@ export function TransactionsTable({ initialTransactions }: TransactionsTableProp
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            onClick={() => handleDelete(t.id)}
+                                            onClick={() => setDeleteId(t.id)}
                                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
                                         >
                                             <Trash2 className="h-4 w-4" />
@@ -191,6 +202,23 @@ export function TransactionsTable({ initialTransactions }: TransactionsTableProp
                     </TableBody>
                 </Table>
             </div>
+
+            <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción eliminará la transacción permanentemente y revertirá el saldo de la cuenta asociada.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">
+                            Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
