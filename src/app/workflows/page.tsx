@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { WorkflowList } from "@/components/workflows/WorkflowList";
 
 export default async function WorkflowsPage() {
-    let workflows = [];
+    let workflows: any[] = [];
     let dbError = null;
 
     try {

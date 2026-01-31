@@ -94,7 +94,7 @@ function ProjectDetailsSkeleton() {
 
 async function ProjectDetailsContent({ id }: { id: string }) {
     let project = null;
-    let allWorkflows = [];
+    let allWorkflows: any[] = [];
     let error = null;
 
     try {

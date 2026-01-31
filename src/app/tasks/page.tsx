@@ -24,7 +24,7 @@ const priorityMap: Record<string, { label: string; color: string }> = {
 };
 
 export default async function TasksPage() {
-    let tasks = [];
+    let tasks: any[] = [];
     let dbError = null;
 
     try {

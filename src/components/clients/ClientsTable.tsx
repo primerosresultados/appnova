@@ -7,23 +7,19 @@ import { FileText } from "lucide-react";
 import { ClientActions } from "@/components/clients/ClientActions";
 
 async function getClients() {
-    // Artificial delay to test Suspense if needed
-    // await new Promise(resolve => setTimeout(resolve, 2000));
-    async function getClients() {
-        try {
-            const clients = await db.client.findMany({
-                orderBy: { createdAt: "desc" },
-                include: {
-                    _count: {
-                        select: { projects: true }
-                    }
+    try {
+        const clients = await db.client.findMany({
+            orderBy: { createdAt: "desc" },
+            include: {
+                _count: {
+                    select: { projects: true }
                 }
-            });
-            return clients;
-        } catch (error) {
-            console.error("Error fetching clients:", error);
-            return [];
-        }
+            }
+        });
+        return clients;
+    } catch (error) {
+        console.error("Error fetching clients:", error);
+        return [];
     }
 }
 
