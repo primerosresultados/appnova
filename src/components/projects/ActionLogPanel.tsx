@@ -51,6 +51,14 @@ const typeLabels: Record<string, string> = {
     WARNING: "Advertencia",
 };
 
+const typeColors: Record<string, string> = {
+    NOTE: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    TASK: "bg-green-500/20 text-green-400 border-green-500/30",
+    MEETING: "bg-purple-500/20 text-purple-400 border-purple-500/30",
+    EMAIL: "bg-cyan-500/20 text-cyan-400 border-cyan-500/30",
+    WARNING: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+};
+
 export function ActionLogPanel({ projectId, logs }: ActionLogPanelProps) {
     const [state, formAction] = useActionState(addActionLog, initialState);
     const formRef = useRef<HTMLFormElement>(null);
@@ -92,21 +100,24 @@ export function ActionLogPanel({ projectId, logs }: ActionLogPanelProps) {
                     ) : (
                         logs.map((log) => {
                             const Icon = typeIcons[log.type] || FileText;
+                            const colorClass = typeColors[log.type] || "bg-accent/50 text-muted-foreground border-border/30";
                             return (
                                 <div key={log.id} className="flex flex-col gap-1">
-                                    <div className="bg-accent/50 p-3 rounded-lg rounded-tl-none border border-border/30 text-sm">
-                                        <div className="flex items-center gap-2 mb-1 text-xs text-muted-foreground uppercase font-semibold">
-                                            <Icon className="h-3 w-3" />
-                                            {typeLabels[log.type] || log.type}
+                                    <div className={`p-3 rounded-lg rounded-tl-none border text-sm ${colorClass}`}>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className="flex items-center gap-1 text-xs uppercase font-semibold">
+                                                <Icon className="h-3 w-3" />
+                                                {log.user?.name || "Usuario"}
+                                            </span>
+                                            <span className="text-[10px] opacity-70 uppercase">
+                                                {typeLabels[log.type] || log.type}
+                                            </span>
                                         </div>
-                                        {log.content}
+                                        <p className="text-foreground">{log.content}</p>
                                     </div>
-                                    <div className="flex items-center justify-between ml-1">
+                                    <div className="flex items-center ml-1">
                                         <span className="text-[10px] text-muted-foreground">
-                                            {format(new Date(log.createdAt), 'MMM d, HH:mm')}
-                                        </span>
-                                        <span className="text-[10px] font-medium text-primary/80">
-                                            {log.user?.name || "Admin"}
+                                            {format(new Date(log.createdAt), 'd MMM, HH:mm')}
                                         </span>
                                     </div>
                                 </div>
