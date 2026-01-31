@@ -4,7 +4,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
-import TextStyle from '@tiptap/extension-text-style';
+import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import { Button } from '@/components/ui/button';
 import { Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon, List, ListOrdered, Undo, Redo, Eraser } from 'lucide-react';
@@ -49,7 +49,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
 
     const setLink = () => {
         const previousUrl = editor.getAttributes('link').href;
-        consturl = window.prompt('URL', previousUrl);
+        const url = window.prompt('URL', previousUrl);
 
         // cancelled
         if (url === null) {
