@@ -24,15 +24,23 @@ const priorityMap: Record<string, { label: string; color: string }> = {
 };
 
 export default async function TasksPage() {
-    const tasks = await db.task.findMany({
-        orderBy: { createdAt: 'desc' },
-        include: {
-            project: {
-                include: { client: true }
-            },
-            assignee: true
-        }
-    });
+    let tasks = [];
+    let dbError = null;
+
+    try {
+        tasks = await db.task.findMany({
+            orderBy: { createdAt: 'desc' },
+            include: {
+                project: {
+                    include: { client: true }
+                },
+                assignee: true
+            }
+        });
+    } catch (error: any) {
+        console.error("Error fetching tasks:", error);
+        dbError = error.message;
+    }
 
     return (
         <div className="space-y-8 animate-in fade-in-50 duration-500 pb-10">
@@ -45,6 +53,15 @@ export default async function TasksPage() {
                     <p className="text-muted-foreground mt-2">Gestión y seguimiento de todas las actividades asignadas.</p>
                 </div>
             </div>
+
+            {/* Error Alert */}
+            {dbError && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg mb-4 text-sm">
+                    <strong>Error de Conexión:</strong> {dbError}
+                    <br />
+                    Verifica la variable <code>DATABASE_URL</code> en Vercel.
+                </div>
+            )}
 
             {/* Task List */}
             <div className="grid gap-4">
