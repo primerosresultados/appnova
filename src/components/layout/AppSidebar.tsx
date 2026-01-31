@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, FolderKanban, Settings, Command, Workflow, CreditCard, ListTodo, LogOut as KeyIcon, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 import { getUserSession } from "@/app/actions/auth-actions";
 
@@ -31,11 +30,6 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
   useEffect(() => {
     getUserSession().then(setUser);
   }, []);
-
-  // Close sidebar on route change (mobile)
-  useEffect(() => {
-    if (onClose) onClose();
-  }, [pathname]);
 
   return (
     <>
@@ -74,19 +68,19 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
             const Icon = item.icon;
             const isActive = pathname === item.href;
             return (
-              <Link key={item.href} href={item.href} passHref>
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    "w-full justify-start gap-3 h-12 transition-colors duration-200",
-                    isActive
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                  )}
-                >
-                  <Icon className={cn("h-5 w-5", isActive ? "text-primary" : "text-muted-foreground/70 group-hover:text-foreground")} />
-                  {item.label}
-                </Button>
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => onClose?.()}
+                className={cn(
+                  "flex items-center w-full gap-3 h-12 px-3 rounded-md transition-colors duration-200",
+                  isActive
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50 active:bg-accent"
+                )}
+              >
+                <Icon className={cn("h-5 w-5", isActive ? "text-primary" : "text-muted-foreground/70")} />
+                {item.label}
               </Link>
             );
           })}

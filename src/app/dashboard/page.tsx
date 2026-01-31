@@ -64,13 +64,14 @@ function getActionColor(type: string) {
 }
 
 interface SearchParamsProps {
-  searchParams?: {
+  searchParams: Promise<{
     period?: string;
-  };
+  }>;
 }
 
 export default async function Dashboard({ searchParams }: SearchParamsProps) {
-  const period = searchParams?.period || '30d';
+  const params = await searchParams;
+  const period = params?.period || '30d';
   const stats = await getDashboardStats(period);
   const attentionItems = await getAttentionItems();
   const recentActivity = await getRecentActivity();
