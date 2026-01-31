@@ -107,12 +107,15 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
         }
     };
 
+    const [logType, setLogType] = useState("NOTE");
+
     const handleSendLog = () => {
         if (!logContent.trim()) return;
 
         startTransition(async () => {
-            await createTaskLog(task.id, logContent, "NOTE");
+            await createTaskLog(task.id, logContent, logType);
             setLogContent("");
+            setLogType("NOTE");
         });
     };
 
@@ -396,10 +399,13 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                                                         </div>
                                                     </div>
                                                     <div className="flex-1 space-y-1.5">
-                                                        <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-2">
                                                             <span className="font-semibold text-xs text-primary/90">{log.user?.name || "Sistema"}</span>
-                                                            <span className="text-[10px] text-muted-foreground">{format(new Date(log.createdAt), 'dd MMM, HH:mm', { locale: es })}</span>
+                                                            {log.type && log.type !== 'NOTE' && (
+                                                                <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">{log.type}</Badge>
+                                                            )}
                                                         </div>
+                                                        <span className="text-[10px] text-muted-foreground">{format(new Date(log.createdAt), 'dd MMM, HH:mm', { locale: es })}</span>
                                                         <div className="p-3 rounded-lg rounded-tl-none bg-muted/40 text-foreground/90 leading-relaxed border border-border/30 text-xs">
                                                             {log.content}
                                                         </div>
@@ -413,7 +419,7 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                                     <div className="relative">
                                         <Textarea
                                             placeholder="Registrar avance o inconveniente..."
-                                            className="min-h-[80px] resize-none text-sm pr-10 bg-background/50 focus:bg-background transition-colors"
+                                            className="min-h-[80px] resize-none text-sm bg-background/50 focus:bg-background transition-colors mb-2"
                                             value={logContent}
                                             onChange={(e) => setLogContent(e.target.value)}
                                             onKeyDown={(e) => {
@@ -423,14 +429,30 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                                                 }
                                             }}
                                         />
-                                        <Button
-                                            size="icon"
-                                            onClick={handleSendLog}
-                                            disabled={isPending || !logContent.trim()}
-                                            className="absolute bottom-2 right-2 h-7 w-7"
-                                        >
-                                            <Send className="h-3 w-3" />
-                                        </Button>
+                                        <div className="flex gap-2">
+                                            <Select value={logType} onValueChange={setLogType}>
+                                                <SelectTrigger className="w-[130px] h-7 text-xs bg-background/50">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="NOTE">Nota</SelectItem>
+                                                    <SelectItem value="CALL">Llamada</SelectItem>
+                                                    <SelectItem value="MEETING">Reunión</SelectItem>
+                                                    <SelectItem value="WHATSAPP">WhatsApp</SelectItem>
+                                                    <SelectItem value="WARNING">Advertencia</SelectItem>
+                                                    <SelectItem value="ISSUE">Problema</SelectItem>
+                                                    <SelectItem value="REQUIREMENT">Requisito</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <Button
+                                                size="icon"
+                                                onClick={handleSendLog}
+                                                disabled={isPending || !logContent.trim()}
+                                                className="h-7 w-7"
+                                            >
+                                                <Send className="h-3 w-3" />
+                                            </Button>
+                                        </div>
                                     </div>
                                     <p className="text-[10px] text-muted-foreground mt-2 text-right">Enter para enviar</p>
                                 </div>
