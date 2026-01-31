@@ -162,11 +162,18 @@ export function MasterCalendar({ events, users }: MasterCalendarProps) {
                                 root: "w-full",
                                 months: "w-full",
                                 month: "w-full space-y-4",
+                                caption: "hidden", // Hide default navigation
                                 table: "w-full border-collapse",
-                                head_row: "flex w-full",
+                                head_row: "flex w-full mb-2",
+                                head_cell: "text-muted-foreground rounded-md w-full font-normal text-[0.8rem]",
                                 row: "flex w-full mt-2",
-                                cell: "h-12 w-full text-center text-sm p-0 relative flex-1 [&:has([aria-selected])]:bg-primary/10 rounded-md",
-                                day: "h-12 w-full p-0 font-normal aria-selected:opacity-100 hover:bg-accent rounded-md flex items-center justify-center cursor-pointer"
+                                cell: "h-10 w-full text-center text-sm p-0 relative flex-1 [&:has([aria-selected])]:bg-transparent focus-within:relative focus-within:z-20",
+                                day: "h-10 w-full p-0 font-normal aria-selected:opacity-100 hover:bg-accent/50 hover:text-accent-foreground rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 mx-auto",
+                                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground shadow-md scale-105",
+                                day_today: "bg-accent/40 text-accent-foreground font-bold border border-primary/20",
+                                day_outside: "text-muted-foreground/30 opacity-50",
+                                day_disabled: "text-muted-foreground opacity-50",
+                                day_hidden: "invisible",
                             }}
                             modifiers={{
                                 hasEvents: (day) => hasEventsOnDay(day)
