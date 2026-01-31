@@ -26,7 +26,7 @@ export async function uploadFile(formData: FormData) {
         if (error) {
             console.error("Supabase storage error:", error);
             // Fallback information if needed
-            return { success: false, error: "Upload failed: " + error.message };
+            return { success: false, error: "Upload failed: " + error.message + " (Check if 'uploads' bucket exists)" };
         }
 
         const { data: { publicUrl } } = supabase.storage

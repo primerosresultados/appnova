@@ -56,12 +56,12 @@ export function AppSidebar() {
       <div className="absolute bottom-0 left-0 w-full p-6 border-t border-border">
         <div className="flex items-center gap-3 justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center text-sm font-medium">
+            <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center text-sm font-medium border border-border">
               AD
             </div>
-            <div className="text-sm">
-              <p className="font-medium">Admin</p>
-              <p className="text-xs text-muted-foreground">Super User</p>
+            <div className="flex flex-col text-left">
+              <span className="font-semibold text-sm leading-none">Admin</span>
+              <span className="text-[10px] text-muted-foreground mt-1">Super User</span>
             </div>
           </div>
           <button

@@ -196,7 +196,7 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                                     <Paperclip className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-30" />
                                     <h3 className="text-lg font-medium mb-1">Zona de Archivos</h3>
                                     <p className="text-muted-foreground mb-6 text-sm max-w-md mx-auto">Sube documentos, diseños o cualquier entregable relacionado con esta tarea.</p>
-                                    <Button variant="outline" onClick={() => setIsUploadOpen(true)}>Subir Archivo (Simulado)</Button>
+                                    <Button variant="outline" onClick={() => setIsUploadOpen(true)}>Subir Archivo</Button>
                                 </div>
                                 <div className="mt-6 space-y-2">
                                     <Label className="text-xs text-muted-foreground uppercase font-semibold mb-2 block">Archivos Adjuntos</Label>
