@@ -54,3 +54,46 @@ export async function uploadTaskAttachment(taskId: string, attachmentData: strin
         return { success: false };
     }
 }
+
+export async function deleteTask(taskId: string) {
+    try {
+        const task = await db.task.findUnique({ where: { id: taskId } });
+        if (!task) return { success: false, message: "Task not found" };
+
+        const projectId = task.projectId;
+
+        await db.task.delete({
+            where: { id: taskId },
+        });
+
+        revalidatePath(`/projects/${projectId}`);
+        revalidatePath(`/projects`);
+        revalidatePath(`/tasks`);
+        return { success: true, message: "Task deleted successfully" };
+    } catch (error) {
+        console.error("Failed to delete task", error);
+        return { success: false, message: "Failed to delete task" };
+    }
+}
+
+export async function archiveTask(taskId: string) {
+    try {
+        const task = await db.task.findUnique({ where: { id: taskId } });
+        if (!task) return { success: false, message: "Task not found" };
+
+        const projectId = task.projectId;
+
+        await db.task.update({
+            where: { id: taskId },
+            data: { status: "DONE" },
+        });
+
+        revalidatePath(`/projects/${projectId}`);
+        revalidatePath(`/projects`);
+        revalidatePath(`/tasks`);
+        return { success: true, message: "Task archived successfully" };
+    } catch (error) {
+        console.error("Failed to archive task", error);
+        return { success: false, message: "Failed to archive task" };
+    }
+}
