@@ -8,12 +8,19 @@ import { getDashboardNotifications } from "@/app/actions/notification-actions";
 export function NotificationCarousel() {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [error, setError] = useState(false);
 
     useEffect(() => {
         const fetchNotifications = async () => {
-            const result = await getDashboardNotifications();
-            if (result.success) {
-                setNotifications(result.notifications);
+            try {
+                const result = await getDashboardNotifications();
+                if (result.success) {
+                    setNotifications(result.notifications);
+                    setError(false);
+                }
+            } catch (e) {
+                console.error("Error loading notifications:", e);
+                setError(true);
             }
         };
         fetchNotifications();
@@ -32,7 +39,7 @@ export function NotificationCarousel() {
         }
     }, [notifications.length]);
 
-    if (notifications.length === 0) return null;
+    if (error || notifications.length === 0) return null;
 
     const current = notifications[currentIndex];
 
