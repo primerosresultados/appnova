@@ -80,9 +80,9 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
   }).format(stats.totalIncome);
 
   return (
-    <div className="space-y-6 animate-in fade-in-50 duration-500">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
+    <div className="space-y-4 md:space-y-6 animate-in fade-in-50 duration-500">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
           Centro de Comando
         </h1>
         <Suspense>
@@ -90,44 +90,44 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
         </Suspense>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
         {[
-          { title: "Ingresos Totales", value: formattedTotalIncome, change: "+0% desde el mes pasado", icon: DollarSign, color: "text-emerald-500" },
-          { title: "Proyectos Activos", value: stats.totalProjects.toString(), change: "Proyectos en curso", icon: FolderKanban, color: "text-blue-500" },
-          { title: "Satisfacción del Cliente", value: "98.2%", change: "+4% desde el mes pasado", icon: TrendingUp, color: "text-amber-500" },
-          { title: "Clientes Activos", value: stats.activeClients.toString(), change: "Empresas activas", icon: Users, color: "text-purple-500" }
+          { title: "Ingresos", value: formattedTotalIncome, change: "+0% mes", icon: DollarSign, color: "text-emerald-500" },
+          { title: "Proyectos", value: stats.totalProjects.toString(), change: "En curso", icon: FolderKanban, color: "text-blue-500" },
+          { title: "Satisfacción", value: "98.2%", change: "+4% mes", icon: TrendingUp, color: "text-amber-500" },
+          { title: "Clientes", value: stats.activeClients.toString(), change: "Activos", icon: Users, color: "text-purple-500" }
         ].map((item, i) => (
-          <Card key={i} className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 transition-all duration-300 group">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+          <Card key={i} className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 active:bg-card transition-all duration-300 group">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
+              <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
                 {item.title}
               </CardTitle>
-              <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              <item.icon className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground group-hover:text-primary transition-colors" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold tracking-tight">{item.value}</div>
-              <p className="text-xs text-muted-foreground mt-1">
-                <span className="text-emerald-500 font-medium">{item.change.split(' ')[0]}</span> {item.change.split(' ').slice(1).join(' ')}
+            <CardContent className="p-3 md:p-6 pt-0">
+              <div className="text-lg md:text-2xl font-bold tracking-tight">{item.value}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
+                <span className="text-emerald-500 font-medium">{item.change}</span>
               </p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4 bg-card/50 backdrop-blur-sm border-border/50">
-          <CardHeader>
-            <CardTitle>Resumen de Ingresos</CardTitle>
-            <CardDescription>Rendimiento mensual de ingresos para el trimestre actual.</CardDescription>
+      <div className="grid gap-4 lg:grid-cols-7">
+        <Card className="lg:col-span-4 bg-card/50 backdrop-blur-sm border-border/50">
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="text-base md:text-lg">Resumen de Ingresos</CardTitle>
+            <CardDescription className="text-xs md:text-sm">Rendimiento mensual del trimestre.</CardDescription>
           </CardHeader>
-          <CardContent className="pl-2">
-            <div className="h-[300px] w-full">
+          <CardContent className="p-2 md:pl-2">
+            <div className="h-[200px] md:h-[300px] w-full">
               <OverviewChart data={stats.chartData || []} />
             </div>
           </CardContent>
         </Card>
 
-        <div className="col-span-3 space-y-4">
+        <div className="lg:col-span-3 space-y-4">
           <AttentionCenter
             overdueTasks={attentionItems.overdueTasks}
             pendingInvoices={attentionItems.pendingInvoices}
