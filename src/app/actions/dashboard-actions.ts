@@ -163,3 +163,120 @@ export async function getAttentionItems() {
         };
     }
 }
+
+export async function getCalendarEvents() {
+    try {
+        const [tasks, projects, contracts, contents, milestones, users] = await Promise.all([
+            // Tasks with due dates
+            db.task.findMany({
+                where: { dueDate: { not: null } },
+                select: {
+                    id: true,
+                    title: true,
+                    dueDate: true,
+                    status: true,
+                    assignee: { select: { id: true, name: true } },
+                    project: { select: { name: true } }
+                }
+            }),
+            // Projects with due dates
+            db.project.findMany({
+                where: { dueDate: { not: null } },
+                select: {
+                    id: true,
+                    name: true,
+                    dueDate: true,
+                    status: true,
+                    client: { select: { name: true } }
+                }
+            }),
+            // Contracts/Agreements
+            db.contract.findMany({
+                select: {
+                    id: true,
+                    title: true,
+                    startDate: true,
+                    endDate: true,
+                    status: true,
+                    client: { select: { name: true } }
+                }
+            }),
+            // Content with publish dates
+            db.content.findMany({
+                where: { publishDate: { not: null } },
+                select: {
+                    id: true,
+                    title: true,
+                    publishDate: true,
+                    status: true,
+                    type: true,
+                    project: { select: { name: true } }
+                }
+            }),
+            // Milestones
+            db.milestone.findMany({
+                select: {
+                    id: true,
+                    title: true,
+                    date: true,
+                    type: true,
+                    project: { select: { name: true } }
+                }
+            }),
+            // Users for filter
+            db.user.findMany({
+                select: { id: true, name: true }
+            })
+        ]);
+
+        // Transform to unified event format
+        const events = [
+            ...tasks.map(t => ({
+                id: t.id,
+                title: t.title,
+                date: t.dueDate!,
+                type: 'TASK' as const,
+                status: t.status,
+                assignee: t.assignee,
+                project: t.project
+            })),
+            ...projects.map(p => ({
+                id: p.id,
+                title: p.name,
+                date: p.dueDate!,
+                type: 'PROJECT' as const,
+                status: p.status,
+                client: p.client
+            })),
+            ...contracts.map(c => ({
+                id: c.id,
+                title: c.title,
+                date: c.startDate,
+                type: 'CONTRACT' as const,
+                status: c.status,
+                client: c.client
+            })),
+            ...contents.map(c => ({
+                id: c.id,
+                title: c.title,
+                date: c.publishDate!,
+                type: 'CONTENT' as const,
+                status: c.status,
+                project: c.project
+            })),
+            ...milestones.map(m => ({
+                id: m.id,
+                title: m.title,
+                date: m.date,
+                type: 'MILESTONE' as const,
+                project: m.project
+            }))
+        ];
+
+        return { events, users };
+    } catch (error) {
+        console.error("Calendar Events Error:", error);
+        return { events: [], users: [] };
+    }
+}
+

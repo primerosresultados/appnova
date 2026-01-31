@@ -12,7 +12,8 @@ import { getDashboardStats } from "@/app/actions/dashboard-actions";
 import { DashboardToolbar } from "@/components/dashboard/DashboardToolbar";
 import { Suspense } from "react";
 import { AttentionCenter } from "@/components/dashboard/AttentionCenter";
-import { getAttentionItems } from "@/app/actions/dashboard-actions";
+import { getAttentionItems, getCalendarEvents } from "@/app/actions/dashboard-actions";
+import { MasterCalendar } from "@/components/dashboard/MasterCalendar";
 
 
 const data = [
@@ -74,6 +75,7 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
   const period = params?.period || '30d';
   const stats = await getDashboardStats(period);
   const attentionItems = await getAttentionItems();
+  const calendarData = await getCalendarEvents();
   const recentActivity = await getRecentActivity();
   const formattedTotalIncome = new Intl.NumberFormat('es-CL', {
     style: 'currency',
@@ -168,6 +170,9 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
           </Card>
         </div>
       </div>
+
+      {/* Master Calendar */}
+      <MasterCalendar events={calendarData.events} users={calendarData.users} />
     </div>
   );
 }
