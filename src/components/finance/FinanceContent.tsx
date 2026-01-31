@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, DollarSign, Wallet, FileText, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { TrendingUp, DollarSign, Wallet, FileText, ArrowUpRight, ArrowDownRight, Handshake, Building2, Calendar } from "lucide-react";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
 
@@ -18,7 +18,8 @@ const getCachedFinanceData = unstable_cache(
             accounts,
             recentTransactions,
             incomeThisMonth,
-            expensesThisMonth
+            expensesThisMonth,
+            contracts
         ] = await Promise.all([
             db.account.findMany({
                 select: { id: true, name: true, type: true, balance: true }
@@ -42,6 +43,10 @@ const getCachedFinanceData = unstable_cache(
             db.transaction.aggregate({
                 where: { type: 'EXPENSE' },
                 _sum: { amount: true }
+            }),
+            db.contract.findMany({
+                include: { client: true },
+                orderBy: { createdAt: 'desc' }
             })
         ]);
 
@@ -54,7 +59,8 @@ const getCachedFinanceData = unstable_cache(
             income: incomeThisMonth._sum.amount || 0,
             expenses: expensesThisMonth._sum.amount || 0,
             pendingTax: 0,
-            allFinancialRecords: []
+            allFinancialRecords: [],
+            contracts
         };
     },
     ['finance-data'],
@@ -73,7 +79,8 @@ async function getFinanceData() {
             income: 0,
             expenses: 0,
             pendingTax: 0,
-            allFinancialRecords: []
+            allFinancialRecords: [],
+            contracts: []
         };
     }
 }
@@ -100,6 +107,7 @@ export async function FinanceContent() {
                 <TabsList className="bg-secondary/30 p-1 rounded-xl h-12">
                     <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Resumen</TabsTrigger>
                     <TabsTrigger value="invoices" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Facturación</TabsTrigger>
+                    <TabsTrigger value="agreements" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Acuerdos Comerciales</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
@@ -270,6 +278,80 @@ export async function FinanceContent() {
                                             </div>
                                         ))}
                                     </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Acuerdos Comerciales Tab */}
+                <TabsContent value="agreements" className="animate-in slide-in-from-bottom-2 duration-500">
+                    <Card className="bg-card/30 backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
+                        <CardHeader className="flex flex-row items-center justify-between pb-6 border-b border-border/30 bg-secondary/5 px-8">
+                            <div>
+                                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80 flex items-center gap-3">
+                                    <Handshake className="h-5 w-5 text-primary" />
+                                    Acuerdos Comerciales
+                                </CardTitle>
+                                <CardDescription className="text-xs font-medium text-muted-foreground mt-1">
+                                    Contratos y acuerdos de servicio con clientes.
+                                </CardDescription>
+                            </div>
+                            <Button size="sm" className="h-10 rounded-xl px-6 bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
+                                <PlusIcon className="h-4 w-4 mr-2" /> Nuevo Acuerdo
+                            </Button>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            {data.contracts.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-20 text-center">
+                                    <div className="h-16 w-16 rounded-2xl bg-secondary/20 flex items-center justify-center mb-4 border border-border/20">
+                                        <Handshake className="h-8 w-8 text-muted-foreground/30" />
+                                    </div>
+                                    <h3 className="text-lg font-bold">Sin Acuerdos</h3>
+                                    <p className="text-xs text-muted-foreground/60 max-w-[220px] mt-2">
+                                        No hay acuerdos comerciales registrados todavía.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-border/20">
+                                    {data.contracts.map((contract: any) => (
+                                        <div key={contract.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/30 transition-colors">
+                                            <div className="space-y-1">
+                                                <h4 className="font-bold text-base flex items-center gap-2">
+                                                    {contract.title}
+                                                    <Badge variant="outline" className={`text-[9px] h-4 px-1.5 ${contract.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
+                                                            contract.status === 'EXPIRED' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
+                                                                'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                                        }`}>
+                                                        {contract.status}
+                                                    </Badge>
+                                                </h4>
+                                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                                    <span className="flex items-center gap-1">
+                                                        <Building2 className="h-3 w-3" />
+                                                        {contract.client?.name || "Sin cliente"}
+                                                    </span>
+                                                    <span className="flex items-center gap-1">
+                                                        <Calendar className="h-3 w-3" />
+                                                        {format(new Date(contract.startDate), 'dd MMM yyyy', { locale: es })}
+                                                        {contract.endDate && ` - ${format(new Date(contract.endDate), 'dd MMM yyyy', { locale: es })}`}
+                                                    </span>
+                                                    {contract.frequency && (
+                                                        <Badge variant="secondary" className="text-[9px] h-4">
+                                                            {contract.frequency}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-xl font-black tracking-tight">${contract.amount.toLocaleString()}</p>
+                                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                                    {contract.frequency === 'MONTHLY' ? 'Mensual' :
+                                                        contract.frequency === 'ANNUALLY' ? 'Anual' : 'Total'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </CardContent>
