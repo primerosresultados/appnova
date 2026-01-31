@@ -98,16 +98,24 @@ export function ProjectCalendar({ projectId, milestones, contents }: ProjectCale
                             table: "w-full border-collapse space-y-1",
                             head_row: "flex w-full justify-between",
                             row: "flex w-full mt-2 justify-between",
-                            cell: "h-auto w-full text-center text-sm p-0 flex-1 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                            day: "h-14 w-full p-0 font-normal aria-selected:opacity-100 aspect-auto text-lg" // specific height, aspect-auto
+                            cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-transparent focus-within:relative focus-within:z-20 mx-auto",
+                            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent/50 hover:text-accent-foreground rounded-full flex items-center justify-center cursor-pointer transition-all duration-200"
                         }}
                         modifiers={{
                             hasMilestone: (d) => milestones.some(m => isSameDay(new Date(m.date), d)),
                             hasContent: (d) => contents.some(c => c.publishDate && isSameDay(new Date(c.publishDate), d))
                         }}
                         modifiersStyles={{
-                            hasMilestone: { fontWeight: 'bold', textDecoration: 'underline decoration-primary' },
-                            hasContent: { border: '1px solid currentColor', borderRadius: '50%' }
+                            hasMilestone: {
+                                fontWeight: 'bold',
+                                textDecoration: 'underline',
+                                textDecorationColor: 'hsl(var(--primary))',
+                                textUnderlineOffset: '3px'
+                            },
+                            hasContent: {
+                                border: '1px solid currentColor',
+                                borderRadius: '50%'
+                            }
                         }}
                     />
                 </CardContent>
@@ -172,6 +180,7 @@ export function ProjectCalendar({ projectId, milestones, contents }: ProjectCale
                                         <form action={formAction} className="space-y-4">
                                             <input type="hidden" name="projectId" value={projectId} />
                                             <input type="hidden" name="date" value={date.toISOString()} />
+                                            <input type="hidden" name="type" value="MILESTONE" />
 
                                             <div className="space-y-2">
                                                 <Label>Título</Label>
