@@ -58,11 +58,28 @@ const getCachedFinanceData = unstable_cache(
 
         const totalBalance = accounts.reduce((acc, curr) => acc + curr.balance, 0);
 
+        // Calculate active contract income
+        const now = new Date();
+        const activeContracts = contracts.filter(c =>
+            c.status === 'ACTIVE' &&
+            new Date(c.startDate) <= now &&
+            (!c.endDate || new Date(c.endDate) >= now)
+        );
+
+        const monthlyContractIncome = activeContracts.reduce((sum, contract) => {
+            if (contract.frequency === 'MONTHLY') {
+                return sum + contract.amount;
+            } else if (contract.frequency === 'ANNUALLY') {
+                return sum + (contract.amount / 12);
+            }
+            return sum;
+        }, 0);
+
         return {
             accounts,
             recentTransactions,
             totalBalance,
-            income: incomeThisMonth._sum.amount || 0,
+            income: (incomeThisMonth._sum.amount || 0) + monthlyContractIncome,
             expenses: expensesThisMonth._sum.amount || 0,
             clients,
             pendingTax: 0,

@@ -8,6 +8,7 @@ export async function createContent(projectId: string, formData: FormData) {
     const type = formData.get("type") as string;
     const description = formData.get("description") as string;
     const mediaUrl = formData.get("mediaUrl") as string;
+    const fileUrl = formData.get("fileUrl") as string;
     const links = formData.get("links") as string;
     const publishDate = formData.get("publishDate") as string;
 
@@ -18,6 +19,7 @@ export async function createContent(projectId: string, formData: FormData) {
                 type,
                 description,
                 mediaUrl,
+                fileUrl,
                 links,
                 publishDate: publishDate ? new Date(publishDate) : null,
                 projectId,

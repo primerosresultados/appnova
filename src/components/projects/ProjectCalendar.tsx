@@ -56,13 +56,19 @@ export function ProjectCalendar({ projectId, milestones, contents }: ProjectCale
     const isContent = (item: any): item is Content => 'publishDate' in item;
 
     // Update selected milestones when date changes
+    // Sync selected events when date or data changes
+    useEffect(() => {
+        if (date) {
+            const ms = milestones.filter(m => isSameDay(new Date(m.date), date)).map(m => ({ ...m, _kind: 'MILESTONE' }));
+            const cs = contents.filter(c => c.publishDate && isSameDay(new Date(c.publishDate), date)).map(c => ({ ...c, _kind: 'CONTENT', date: c.publishDate }));
+            setSelectedEvents([...ms, ...cs]);
+        } else {
+            setSelectedEvents([]);
+        }
+    }, [date, milestones, contents]);
+
     const handleSelectDate = (newDate: Date | undefined) => {
         setDate(newDate);
-        if (newDate) {
-            const ms = milestones.filter(m => isSameDay(new Date(m.date), newDate)).map(m => ({ ...m, _kind: 'MILESTONE' }));
-            const cs = contents.filter(c => c.publishDate && isSameDay(new Date(c.publishDate), newDate)).map(c => ({ ...c, _kind: 'CONTENT', date: c.publishDate }));
-            setSelectedEvents([...ms, ...cs]);
-        }
     };
 
     const [state, formAction, isPending] = useActionState(createMilestone, initialState);
@@ -97,9 +103,9 @@ export function ProjectCalendar({ projectId, milestones, contents }: ProjectCale
                             month: "w-full space-y-4",
                             table: "w-full border-collapse space-y-1",
                             head_row: "flex w-full justify-between",
-                            row: "flex w-full mt-2 justify-between",
-                            cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-transparent focus-within:relative focus-within:z-20 mx-auto",
-                            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent/50 hover:text-accent-foreground rounded-full flex items-center justify-center cursor-pointer transition-all duration-200"
+                            row: "flex w-full mt-2",
+                            cell: "h-9 w-full text-center text-sm p-0 relative flex-1 [&:has([aria-selected])]:bg-transparent focus-within:relative focus-within:z-20",
+                            day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-accent/50 hover:text-accent-foreground rounded-full flex items-center justify-center cursor-pointer transition-all duration-200 mx-auto"
                         }}
                         modifiers={{
                             hasMilestone: (d) => milestones.some(m => isSameDay(new Date(m.date), d)),
@@ -153,10 +159,22 @@ export function ProjectCalendar({ projectId, milestones, contents }: ProjectCale
                                     {/* Render description */}
                                     {item.description && <p className="text-xs text-muted-foreground whitespace-pre-wrap line-clamp-2">{item.description}</p>}
 
-                                    {item._kind === 'MILESTONE' && item.filePath && (
+                                    {item._kind === 'MILESTONE' && item.mediaUrl && (
                                         <div className="mt-2">
+                                            {item.mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                                <img src={item.mediaUrl} alt="Adjunto" className="w-full h-32 object-cover rounded-md border border-border/50" />
+                                            ) : (
+                                                <a href={item.mediaUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-400 flex items-center gap-1 hover:underline break-all">
+                                                    <Flag className="h-3 w-3" /> {item.mediaUrl}
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {item._kind === 'MILESTONE' && item.filePath && (
+                                        <div className="mt-2" key="filepath">
                                             <a href={item.filePath} target="_blank" className="text-xs text-blue-400 flex items-center gap-1 hover:underline">
-                                                <FileIcon className="h-3 w-3" /> Ver Archivo
+                                                <FileIcon className="h-3 w-3" /> Ver Archivo Adjunto
                                             </a>
                                         </div>
                                     )}
