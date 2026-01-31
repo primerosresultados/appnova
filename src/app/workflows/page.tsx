@@ -8,7 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { WorkflowList } from "@/components/workflows/WorkflowList";
 
 export default async function WorkflowsPage() {
-    const workflows = await getWorkflows();
+    let workflows = [];
+    let dbError = null;
+
+    try {
+        workflows = await getWorkflows();
+    } catch (error: any) {
+        console.error("Error fetching workflows:", error);
+        dbError = error.message;
+    }
 
     return (
         <div className="space-y-6 animate-in fade-in-50 duration-500">
@@ -19,6 +27,13 @@ export default async function WorkflowsPage() {
                 </div>
                 <NewWorkflowDialog />
             </div>
+
+            {/* Error Alert */}
+            {dbError && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg mb-4 text-sm">
+                    <strong>Error de Conexión:</strong> {dbError}
+                </div>
+            )}
 
             {workflows.length === 0 ? (
                 <div className="text-center py-20 border border-dashed rounded-lg bg-card/30">

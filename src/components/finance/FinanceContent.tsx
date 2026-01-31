@@ -11,50 +11,63 @@ import { TrendingUp, DollarSign, Wallet, FileText, ArrowUpRight, ArrowDownRight 
 import Link from "next/link";
 
 async function getFinanceData() {
-    // Parallelize queries for better performance
-    const [
-        accounts,
-        recentTransactions,
-        incomeThisMonth,
-        expensesThisMonth,
-        taxPayload,
-        allFinancialRecords
-    ] = await Promise.all([
-        db.account.findMany(),
-        db.transaction.findMany({
-            take: 10,
-            orderBy: { date: 'desc' },
-            include: { account: true }
-        }),
-        db.transaction.aggregate({
-            where: { type: 'INCOME' },
-            _sum: { amount: true }
-        }),
-        db.transaction.aggregate({
-            where: { type: 'EXPENSE' },
-            _sum: { amount: true }
-        }),
-        db.transaction.aggregate({
-            where: { isTaxable: true, type: 'INCOME' },
-            _sum: { taxAmount: true }
-        }),
-        db.financialRecord.findMany({
-            orderBy: { date: 'desc' },
-            include: { client: true }
-        })
-    ]);
+    try {
+        // Parallelize queries for better performance
+        const [
+            accounts,
+            recentTransactions,
+            incomeThisMonth,
+            expensesThisMonth,
+            taxPayload,
+            allFinancialRecords
+        ] = await Promise.all([
+            db.account.findMany(),
+            db.transaction.findMany({
+                take: 10,
+                orderBy: { date: 'desc' },
+                include: { account: true }
+            }),
+            db.transaction.aggregate({
+                where: { type: 'INCOME' },
+                _sum: { amount: true }
+            }),
+            db.transaction.aggregate({
+                where: { type: 'EXPENSE' },
+                _sum: { amount: true }
+            }),
+            db.transaction.aggregate({
+                where: { isTaxable: true, type: 'INCOME' },
+                _sum: { taxAmount: true }
+            }),
+            db.financialRecord.findMany({
+                orderBy: { date: 'desc' },
+                include: { client: true }
+            })
+        ]);
 
-    const totalBalance = accounts.reduce((acc, curr) => acc + curr.balance, 0);
+        const totalBalance = accounts.reduce((acc, curr) => acc + curr.balance, 0);
 
-    return {
-        accounts,
-        recentTransactions,
-        totalBalance,
-        income: incomeThisMonth._sum.amount || 0,
-        expenses: expensesThisMonth._sum.amount || 0,
-        pendingTax: taxPayload._sum.taxAmount || 0,
-        allFinancialRecords
-    };
+        return {
+            accounts,
+            recentTransactions,
+            totalBalance,
+            income: incomeThisMonth._sum.amount || 0,
+            expenses: expensesThisMonth._sum.amount || 0,
+            pendingTax: taxPayload._sum.taxAmount || 0,
+            allFinancialRecords
+        };
+    } catch (error) {
+        console.error("Error fetching finance data:", error);
+        return {
+            accounts: [],
+            recentTransactions: [],
+            totalBalance: 0,
+            income: 0,
+            expenses: 0,
+            pendingTax: 0,
+            allFinancialRecords: []
+        };
+    }
 }
 
 export async function FinanceContent() {

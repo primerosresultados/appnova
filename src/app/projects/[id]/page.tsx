@@ -93,11 +93,32 @@ function ProjectDetailsSkeleton() {
 }
 
 async function ProjectDetailsContent({ id }: { id: string }) {
-    // Parallelize the heavy lifting
-    const [project, allWorkflows] = await Promise.all([
-        getProject(id),
-        getWorkflows()
-    ]);
+    let project = null;
+    let allWorkflows = [];
+    let error = null;
+
+    try {
+        // Parallelize the heavy lifting
+        [project, allWorkflows] = await Promise.all([
+            getProject(id),
+            getWorkflows()
+        ]);
+    } catch (e: any) {
+        console.error("Error fetching project details:", e);
+        error = e.message;
+    }
+
+    if (error) {
+        return (
+            <div className="p-8">
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-6 rounded-lg">
+                    <h3 className="text-lg font-bold mb-2">Error de Conexión</h3>
+                    <p>No se pudo cargar el proyecto. Verifica la conexión a la base de datos.</p>
+                    <code className="block mt-4 text-xs bg-black/20 p-2 rounded">{error}</code>
+                </div>
+            </div>
+        );
+    }
 
     if (!project) {
         notFound();
