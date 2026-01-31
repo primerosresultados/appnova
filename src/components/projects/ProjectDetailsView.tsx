@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar as CalendarIcon, CheckCircle2, Circle, ListTodo, Workflow, FileText, LayoutDashboard, Database, User, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, CheckCircle2, Circle, ListTodo, Workflow, FileText, LayoutDashboard, Database, User, Link as LinkIcon, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { ActionLogPanel } from "@/components/projects/ActionLogPanel";
 import { ProjectCalendar } from "@/components/projects/ProjectCalendar";
@@ -43,6 +43,42 @@ const taskStatusMap: Record<string, string> = {
     REVIEW: "Revisión",
     DONE: "Completado",
 };
+
+// Helper function to strip HTML tags
+function stripHtml(html: string | null): string {
+    if (!html) return "";
+    return html.replace(/<[^>]*>/g, '').trim();
+}
+
+// Expandable description component
+function TaskDescriptionBox({ description }: { description: string | null }) {
+    const [expanded, setExpanded] = useState(false);
+    const cleanText = stripHtml(description);
+
+    if (!cleanText) return null;
+
+    const isLong = cleanText.length > 100;
+
+    return (
+        <div className="ml-11 mt-2 p-3 bg-accent/20 rounded-md text-sm border border-border/30">
+            <p className={`text-muted-foreground text-xs ${!expanded && isLong ? 'line-clamp-2' : ''}`}>
+                {cleanText}
+            </p>
+            {isLong && (
+                <button
+                    onClick={(e) => { e.preventDefault(); setExpanded(!expanded); }}
+                    className="text-xs text-primary hover:underline mt-1 flex items-center gap-1"
+                >
+                    {expanded ? (
+                        <>Ver menos <ChevronUp className="h-3 w-3" /></>
+                    ) : (
+                        <>Ver más <ChevronDown className="h-3 w-3" /></>
+                    )}
+                </button>
+            )}
+        </div>
+    );
+}
 
 export function ProjectDetailsView({ project, allWorkflows = [] }: ProjectDetailsViewProps) {
 
@@ -143,9 +179,7 @@ export function ProjectDetailsView({ project, allWorkflows = [] }: ProjectDetail
                                                 </div>
 
                                                 {(task.description || task.links) && (
-                                                    <div className="ml-11 mt-2 p-3 bg-accent/20 rounded-md text-sm border border-border/30">
-                                                        {task.description && <p className="mb-2 text-muted-foreground text-xs line-clamp-1">{task.description}</p>}
-                                                    </div>
+                                                    <TaskDescriptionBox description={task.description} />
                                                 )}
                                             </div>
                                         </Link>

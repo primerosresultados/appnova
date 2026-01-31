@@ -24,8 +24,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Link as LinkIcon } from "lucide-react";
+import { Plus, Link as LinkIcon, CalendarIcon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 type ActionState = {
     message: string;
@@ -61,10 +66,11 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
     const [open, setOpen] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
     const [description, setDescription] = useState("");
+    const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
 
     // Reset description when sheet closes or success
     useEffect(() => {
-        if (!open) setDescription("");
+        if (!open) { setDescription(""); setDueDate(undefined); }
     }, [open]);
 
     useEffect(() => {
@@ -146,8 +152,30 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label htmlFor="dueDate">Fecha de Vencimiento</Label>
-                        <Input id="dueDate" name="dueDate" type="date" />
+                        <Label>Fecha de Vencimiento</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !dueDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dueDate ? format(dueDate, "PPP", { locale: es }) : "Seleccionar fecha"}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={dueDate}
+                                    onSelect={setDueDate}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        <input type="hidden" name="dueDate" value={dueDate ? dueDate.toISOString() : ""} />
                     </div>
 
                     <div className="grid gap-2">
