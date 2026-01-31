@@ -88,6 +88,13 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
           Centro de Comando
         </h1>
+      </div>
+
+      {/* Master Calendar */}
+      <MasterCalendar events={calendarData.events} users={calendarData.users} />
+
+      <div className="flex flex-col md:flex-row items-end md:items-center justify-between gap-4 mt-8">
+        <h2 className="text-lg font-bold text-muted-foreground uppercase tracking-wider">Métricas Clave</h2>
         <Suspense>
           <DashboardToolbar />
         </Suspense>
@@ -170,9 +177,6 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
           </Card>
         </div>
       </div>
-
-      {/* Master Calendar */}
-      <MasterCalendar events={calendarData.events} users={calendarData.users} />
     </div>
   );
 }
