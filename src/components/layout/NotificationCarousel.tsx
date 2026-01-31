@@ -45,7 +45,7 @@ export function NotificationCarousel() {
     };
 
     return (
-        <div className="hidden lg:flex items-center gap-3 px-4 py-1.5 bg-accent/30 rounded-full border border-border/50 w-[350px] overflow-hidden">
+        <div className="hidden lg:flex items-center gap-3 px-4 py-1.5 bg-accent/30 rounded-full border border-border/50 flex-1 max-w-md overflow-hidden">
             <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-background border border-border/50 shadow-sm">
                 <AnimatePresence mode="wait">
                     <motion.div

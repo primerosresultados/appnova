@@ -66,16 +66,16 @@ export function Header() {
     };
 
     return (
-        <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-background/50 px-6 backdrop-blur-xl transition-all">
-            <div className="flex items-center gap-6">
-                <div className="relative w-80 hidden md:block" ref={searchRef}>
+        <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-background/50 px-6 backdrop-blur-xl transition-all gap-4">
+            <div className="flex-1 flex items-center gap-4">
+                <div className="relative flex-1 max-w-xl hidden md:block" ref={searchRef}>
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                     {isSearching && (
                         <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin z-10" />
                     )}
                     <Input
                         placeholder="Buscar clientes, proyectos, tareas..."
-                        className="pl-9 pr-9 bg-accent/30 border-transparent focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary/20"
+                        className="pl-9 pr-9 bg-accent/30 border-transparent focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary/20 w-full"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onFocus={() => results.length > 0 && setIsOpen(true)}
