@@ -78,9 +78,15 @@ export function EditClientDialog({ client, open, onOpenChange }: EditClientDialo
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="email">Correo de Contacto</Label>
-                        <Input id="email" name="email" type="email" defaultValue={client.email || ""} />
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="taxId">RUT</Label>
+                            <Input id="taxId" name="taxId" defaultValue={client.taxId || ""} placeholder="XX.XXX.XXX-X" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="email">Correo de Contacto</Label>
+                            <Input id="email" name="email" type="email" defaultValue={client.email || ""} />
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
