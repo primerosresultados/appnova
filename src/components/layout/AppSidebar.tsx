@@ -20,7 +20,7 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-sidebar/50 backdrop-blur-xl border-border transition-transform hidden md:block">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-sidebar/80 backdrop-blur-md border-border transition-transform hidden md:block">
       <div className="flex h-16 items-center px-6 border-b border-border">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -39,9 +39,9 @@ export function AppSidebar() {
               <Button
                 variant="ghost"
                 className={cn(
-                  "w-full justify-start gap-3 h-11 transition-all duration-200",
+                  "w-full justify-start gap-3 h-11 transition-colors duration-200",
                   isActive
-                    ? "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary font-medium"
+                    ? "bg-primary/10 text-primary font-medium"
                     : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                 )}
               >
@@ -76,6 +76,6 @@ export function AppSidebar() {
           </button>
         </div>
       </div>
-    </aside>
+    </aside >
   );
 }

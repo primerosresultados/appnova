@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit2 } from "lucide-react";
 import { useEffect } from "react";
+import { DeadlineProgress } from "./DeadlineProgress";
 
 interface TaskDetailViewProps {
     task: any;
@@ -145,6 +146,11 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Main Content */}
                     <div className="lg:col-span-2 space-y-6">
+                        <DeadlineProgress
+                            createdAt={task.createdAt}
+                            dueDate={task.dueDate}
+                            status={task.status}
+                        />
                         <Card className="bg-card/50 backdrop-blur-sm border-border/50">
                             <CardContent className="p-6 space-y-6">
                                 <div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { createUser } from "@/app/actions/user-actions";
+import { createUser, deleteUser } from "@/app/actions/user-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { EditUserDialog } from "@/components/settings/EditUserDialog";
 
 interface User {
     id: string;
@@ -69,15 +70,20 @@ export function MembersTab({ users }: MembersTabProps) {
                                 <Input name="email" type="email" required placeholder="ana@novaap.com" />
                             </div>
                             <div className="space-y-2">
+                                <Label>Contraseña</Label>
+                                <Input name="password" type="text" required minLength={6} placeholder="Contraseña inicial" />
+                            </div>
+                            <div className="space-y-2">
                                 <Label>Rol</Label>
-                                <Select name="role" defaultValue="MEMBER">
+                                <Select name="role" defaultValue="COLABORADOR">
                                     <SelectTrigger>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="ADMIN">Administrador</SelectItem>
-                                        <SelectItem value="MEMBER">Miembro</SelectItem>
-                                        <SelectItem value="VIEWER">Visualizador</SelectItem>
+                                        <SelectItem value="SUPERADMIN">Super Admin (Control Total)</SelectItem>
+                                        <SelectItem value="PROJECT_MANAGER">Project Manager (Gestiona Proyectos)</SelectItem>
+                                        <SelectItem value="COLABORADOR">Colaborador (Tareas)</SelectItem>
+                                        <SelectItem value="CLIENTE">Cliente (Solo Vista)</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -105,10 +111,28 @@ export function MembersTab({ users }: MembersTabProps) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                    <Badge variant="outline" className={user.role === 'ADMIN' ? 'bg-primary/10 text-primary border-primary/20' : ''}>
+                                    <Badge variant="outline" className={
+                                        user.role === 'SUPERADMIN' ? 'bg-purple-500/10 text-purple-500 border-purple-500/20' :
+                                            user.role === 'PROJECT_MANAGER' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
+                                                user.role === 'CLIENTE' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
+                                                    ''
+                                    }>
                                         {user.role}
                                     </Badge>
-                                    <Button variant="ghost" size="sm">Editar</Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                        onClick={async () => {
+                                            if (confirm(`¿Eliminar a ${user.name}?`)) {
+                                                await deleteUser(user.email);
+                                            }
+                                        }}
+                                    >
+                                        Eliminar
+                                    </Button>
+                                    <div className="w-px h-4 bg-border/50 mx-1" />
+                                    <EditUserDialog user={user} />
                                 </div>
                             </div>
                         ))}

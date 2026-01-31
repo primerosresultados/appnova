@@ -56,3 +56,17 @@ export async function createProject(prevState: any, formData: FormData) {
     revalidatePath("/clients");
     return { message: "Project created successfully", success: true };
 }
+
+export async function deleteProject(id: string) {
+    try {
+        await db.project.delete({
+            where: { id },
+        });
+        revalidatePath("/projects");
+        revalidatePath("/clients");
+        return { message: "Project deleted successfully", success: true };
+    } catch (error) {
+        console.error("Database Error:", error);
+        return { message: "Failed to delete project", success: false };
+    }
+}

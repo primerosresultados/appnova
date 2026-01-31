@@ -1,4 +1,5 @@
 
+export const dynamic = 'force-dynamic';
 import { db } from "@/lib/db";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";

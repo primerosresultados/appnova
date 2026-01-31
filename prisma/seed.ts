@@ -11,7 +11,7 @@ async function main() {
         create: {
             name: 'John Doe',
             email: 'john@nova-partners.com',
-            role: 'SUPER_ADMIN',
+            role: 'SUPERADMIN',
         },
     });
 
@@ -111,7 +111,8 @@ async function main() {
         }
     });
 
-    // 7. Add some Transactions for Dashboard
+    // 7. Add some Transactions for Dashboard - REMOVED per user request for real data entry
+    /*
     const account = await prisma.account.create({
         data: {
             name: 'Banco Nova',
@@ -141,6 +142,7 @@ async function main() {
             }
         ]
     });
+    */
 
     console.log('Seed completed successfully.');
 }

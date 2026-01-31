@@ -116,10 +116,12 @@ export async function updateWorkflow(id: string, data: {
 }
 
 export async function deleteWorkflow(id: string) {
+    console.log("Attempting to delete workflow:", id);
     try {
         await db.workflow.delete({
             where: { id }
         });
+        console.log("Workflow deleted successfully");
         revalidatePath("/workflows");
         return { success: true };
     } catch (error) {

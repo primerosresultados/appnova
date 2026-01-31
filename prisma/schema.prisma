@@ -35,6 +35,8 @@ model Client {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  
+  users       User[]
 }
 
 model Project {
@@ -149,17 +151,27 @@ model ProjectWorkflow {
   @@unique([projectId, workflowId])
 }
 
+enum Role {
+  SUPERADMIN
+  PROJECT_MANAGER
+  COLABORADOR
+  CLIENTE
+}
+
 model User {
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
   avatar    String?
-  role      String   @default("MEMBER") // SUPER_ADMIN, ADMIN, MEMBER, CLIENT
+  role      Role     @default(COLABORADOR)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   actionLogs ActionLog[]
   tasks     Task[]
   createdContents Content[] @relation("ContentCreator")
+  
+  clientId  String?
+  client    Client?   @relation(fields: [clientId], references: [id])
 }
 
 model Milestone {
