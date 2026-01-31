@@ -16,8 +16,16 @@ const menuItems = [
   { href: "/settings", label: "Configuración", icon: Settings },
 ];
 
+import { useEffect, useState } from "react";
+import { getUserSession } from "@/app/actions/auth-actions";
+
 export function AppSidebar() {
   const pathname = usePathname();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    getUserSession().then(setUser);
+  }, []);
 
   return (
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-sidebar/80 backdrop-blur-md border-border transition-transform hidden md:block">
@@ -56,12 +64,16 @@ export function AppSidebar() {
       <div className="absolute bottom-0 left-0 w-full p-6 border-t border-border">
         <div className="flex items-center gap-3 justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center text-sm font-medium border border-border">
-              AD
+            <div className="h-10 w-10 rounded-full bg-accent flex items-center justify-center text-sm font-medium border border-border overflow-hidden">
+              {user?.avatar ? (
+                <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
+              ) : (
+                user?.name?.substring(0, 2).toUpperCase() || "..."
+              )}
             </div>
             <div className="flex flex-col text-left">
-              <span className="font-semibold text-sm leading-none">Admin</span>
-              <span className="text-[10px] text-muted-foreground mt-1">Super User</span>
+              <span className="font-semibold text-sm leading-none">{user?.name || "Cargando..."}</span>
+              <span className="text-[10px] text-muted-foreground mt-1">{user?.role || "..."}</span>
             </div>
           </div>
           <button
