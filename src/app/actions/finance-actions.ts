@@ -119,3 +119,42 @@ export async function deleteTransaction(id: string) {
 }
 
 
+export async function createContract(prevState: any, formData: FormData) {
+    const title = formData.get("title") as string;
+    const clientId = formData.get("clientId") as string;
+    const amountStr = formData.get("amount") as string;
+    const frequency = formData.get("frequency") as string; // MONTHLY, ANNUALLY, ONE_OFF
+    const startDateStr = formData.get("startDate") as string; // ISO
+    const endDateStr = formData.get("endDate") as string; // ISO or empty
+    const description = formData.get("description") as string;
+
+    if (!title || !clientId || !amountStr || !startDateStr) {
+        return { success: false, message: "Título, cliente, monto y fecha de inicio son requeridos" };
+    }
+
+    try {
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount)) return { success: false, message: "Monto inválido" };
+
+        await db.contract.create({
+            data: {
+                title,
+                clientId,
+                amount,
+                frequency: frequency || null,
+                startDate: new Date(startDateStr),
+                endDate: endDateStr ? new Date(endDateStr) : null,
+                description: description || null,
+                status: "ACTIVE"
+            }
+        });
+
+        revalidatePath("/finance");
+        return { success: true, message: "Acuerdo comercial creado correctamente" };
+    } catch (error) {
+        console.error("Error creating contract:", error);
+        return { success: false, message: "Error al crear el acuerdo" };
+    }
+}
+
+

@@ -1,5 +1,6 @@
 import { NewTransactionDialog } from "@/components/finance/NewTransactionDialog";
 import { NewAccountDialog } from "@/components/finance/NewAccountDialog";
+import { NewAgreementDialog } from "@/components/finance/NewAgreementDialog";
 import { db } from "@/lib/db";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -19,7 +20,8 @@ const getCachedFinanceData = unstable_cache(
             recentTransactions,
             incomeThisMonth,
             expensesThisMonth,
-            contracts
+            contracts,
+            clients
         ] = await Promise.all([
             db.account.findMany({
                 select: { id: true, name: true, type: true, balance: true }
@@ -47,6 +49,10 @@ const getCachedFinanceData = unstable_cache(
             db.contract.findMany({
                 include: { client: true },
                 orderBy: { createdAt: 'desc' }
+            }),
+            db.client.findMany({
+                select: { id: true, name: true },
+                orderBy: { name: 'asc' }
             })
         ]);
 
@@ -58,6 +64,7 @@ const getCachedFinanceData = unstable_cache(
             totalBalance,
             income: incomeThisMonth._sum.amount || 0,
             expenses: expensesThisMonth._sum.amount || 0,
+            clients,
             pendingTax: 0,
             allFinancialRecords: [],
             contracts
@@ -80,7 +87,8 @@ async function getFinanceData() {
             expenses: 0,
             pendingTax: 0,
             allFinancialRecords: [],
-            contracts: []
+            contracts: [],
+            clients: []
         };
     }
 }
@@ -297,9 +305,7 @@ export async function FinanceContent() {
                                     Contratos y acuerdos de servicio con clientes.
                                 </CardDescription>
                             </div>
-                            <Button size="sm" className="h-10 rounded-xl px-6 bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
-                                <PlusIcon className="h-4 w-4 mr-2" /> Nuevo Acuerdo
-                            </Button>
+                            <NewAgreementDialog clients={data.clients} />
                         </CardHeader>
                         <CardContent className="p-0">
                             {data.contracts.length === 0 ? (
@@ -320,8 +326,8 @@ export async function FinanceContent() {
                                                 <h4 className="font-bold text-base flex items-center gap-2">
                                                     {contract.title}
                                                     <Badge variant="outline" className={`text-[9px] h-4 px-1.5 ${contract.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                                            contract.status === 'EXPIRED' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
-                                                                'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                                        contract.status === 'EXPIRED' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
+                                                            'bg-amber-500/10 text-amber-500 border-amber-500/20'
                                                         }`}>
                                                         {contract.status}
                                                     </Badge>
