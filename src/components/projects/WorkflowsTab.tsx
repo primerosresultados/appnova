@@ -74,7 +74,9 @@ export function WorkflowsTab({ projectId, projectWorkflows, availableWorkflows =
                                                 {stage.tasks.map((task: any) => (
                                                     <div key={task.id} className="flex items-center justify-between p-3 px-6 hover:bg-primary/5 transition-colors group">
                                                         <div className="flex items-center gap-3">
-                                                            <Circle className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                            <div className="h-4 w-4 rounded-sm border border-primary/30 group-hover:border-primary flex items-center justify-center transition-colors">
+                                                                {/* Example checkmark if completed, for now empty as checklist item */}
+                                                            </div>
                                                             <div>
                                                                 <p className="text-sm font-medium">{task.title}</p>
                                                                 {task.description && (
