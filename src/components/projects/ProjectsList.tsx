@@ -16,16 +16,21 @@ const statusMap: Record<string, { label: string; color: string; icon: any }> = {
 };
 
 async function getProjects() {
-    const projects = await db.project.findMany({
-        orderBy: { updatedAt: "desc" },
-        include: {
-            client: true,
-            _count: {
-                select: { tasks: true }
+    try {
+        const projects = await db.project.findMany({
+            orderBy: { updatedAt: "desc" },
+            include: {
+                client: true,
+                _count: {
+                    select: { tasks: true }
+                }
             }
-        }
-    });
-    return projects;
+        });
+        return projects;
+    } catch (error) {
+        console.error("Error fetching projects:", error);
+        return [];
+    }
 }
 
 export async function ProjectsList() {
