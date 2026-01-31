@@ -39,9 +39,11 @@ async function getFinanceData() {
                 where: { isTaxable: true, type: 'INCOME' },
                 _sum: { taxAmount: true }
             }),
+            // OPTIMIZATION: Limit to last 50 records instead of all
             db.financialRecord.findMany({
+                take: 50,
                 orderBy: { date: 'desc' },
-                include: { client: true }
+                include: { client: { select: { name: true } } }
             })
         ]);
 
@@ -97,8 +99,7 @@ export async function FinanceContent() {
                 <TabsContent value="overview" className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
                     {/* KPI Cards */}
                     <div className="grid gap-6 md:grid-cols-4">
-                        <Card className="bg-card/30 backdrop-blur-md border border-border/40 shadow-xl overflow-hidden relative group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                        <Card className="bg-card/50 border border-border/40 shadow-lg overflow-hidden relative group hover:border-emerald-500/30 transition-colors">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Saldo Total</CardTitle>
                                 <Wallet className="h-4 w-4 text-emerald-500" />
@@ -111,7 +112,7 @@ export async function FinanceContent() {
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-card/30 backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
+                        <Card className="bg-card/50 border border-border/40 shadow-lg overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Ingresos (Mes)</CardTitle>
                                 <ArrowUpRight className="h-4 w-4 text-emerald-500" />
@@ -122,7 +123,7 @@ export async function FinanceContent() {
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-card/30 backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
+                        <Card className="bg-card/50 border border-border/40 shadow-lg overflow-hidden">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Egresos (Mes)</CardTitle>
                                 <ArrowDownRight className="h-4 w-4 text-rose-500" />
@@ -133,7 +134,7 @@ export async function FinanceContent() {
                             </CardContent>
                         </Card>
 
-                        <Card className="bg-card/30 backdrop-blur-md border border-border/40 shadow-xl overflow-hidden relative">
+                        <Card className="bg-card/50 border border-border/40 shadow-lg overflow-hidden relative">
                             <div className="absolute top-0 right-0 p-4 opacity-5">
                                 <FileText className="h-12 w-12" />
                             </div>
@@ -150,7 +151,7 @@ export async function FinanceContent() {
 
                     <div className="grid gap-6 md:grid-cols-12">
                         {/* Accounts List */}
-                        <Card className="md:col-span-4 bg-card/30 backdrop-blur-md border border-border/40 shadow-xl">
+                        <Card className="md:col-span-4 bg-card/50 border border-border/40 shadow-lg">
                             <CardHeader>
                                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Cuentas</CardTitle>
                                 <CardDescription>Saldos disponibles por cuenta.</CardDescription>
@@ -179,7 +180,7 @@ export async function FinanceContent() {
                         </Card>
 
                         {/* Recent Transactions */}
-                        <Card className="md:col-span-8 bg-card/30 backdrop-blur-md border border-border/40 shadow-xl">
+                        <Card className="md:col-span-8 bg-card/50 border border-border/40 shadow-lg">
                             <CardHeader className="flex flex-row items-center justify-between">
                                 <div>
                                     <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Ultimos Movimientos</CardTitle>
@@ -225,7 +226,7 @@ export async function FinanceContent() {
                 </TabsContent>
 
                 <TabsContent value="invoices" className="animate-in slide-in-from-bottom-2 duration-500">
-                    <Card className="bg-card/30 backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
+                    <Card className="bg-card/50 border border-border/40 shadow-lg overflow-hidden">
                         <CardHeader className="pb-4">
                             <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Control de Facturación</CardTitle>
                             <CardDescription>Historial completo de facturas y estados de pago.</CardDescription>
