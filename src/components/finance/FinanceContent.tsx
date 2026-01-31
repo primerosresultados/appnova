@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, DollarSign, Wallet, FileText, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import Link from "next/link";
+import { unstable_cache } from "next/cache";
 
-async function getFinanceData() {
-    try {
-        // Parallelize queries for better performance
+// Cache finance data for 30 seconds
+const getCachedFinanceData = unstable_cache(
+    async () => {
         const [
             accounts,
             recentTransactions,
@@ -55,6 +56,14 @@ async function getFinanceData() {
             pendingTax: 0,
             allFinancialRecords: []
         };
+    },
+    ['finance-data'],
+    { revalidate: 30 }
+);
+
+async function getFinanceData() {
+    try {
+        return await getCachedFinanceData();
     } catch (error) {
         console.error("Error fetching finance data:", error);
         return {

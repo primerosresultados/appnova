@@ -2,6 +2,7 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { unstable_cache } from "next/cache";
 
 export async function createWorkflow(data: {
     name: string;
@@ -130,8 +131,9 @@ export async function deleteWorkflow(id: string) {
     }
 }
 
-export async function getWorkflows() {
-    try {
+// Cached version for reading
+const getCachedWorkflows = unstable_cache(
+    async () => {
         const workflows = await db.workflow.findMany({
             include: {
                 stages: {
@@ -148,6 +150,14 @@ export async function getWorkflows() {
             }
         });
         return workflows;
+    },
+    ['workflows-list'],
+    { revalidate: 60 }
+);
+
+export async function getWorkflows() {
+    try {
+        return await getCachedWorkflows();
     } catch (error) {
         console.error("Failed to fetch workflows:", error);
         return [];
