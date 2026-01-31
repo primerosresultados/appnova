@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Trash2, Pencil } from "lucide-react";
+import { MoreHorizontal, Trash2, Pencil, Archive } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,7 +19,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { deleteProject } from "@/app/projects/actions";
+import { deleteProject, archiveProject } from "@/app/projects/actions";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 
@@ -31,6 +31,24 @@ export function ProjectActions({ projectId }: ProjectActionsProps) {
     const [open, setOpen] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [isArchiving, setIsArchiving] = useState(false);
+
+    const handleArchive = async () => {
+        setIsArchiving(true);
+        try {
+            const result = await archiveProject(projectId);
+            if (result.success) {
+                toast.success("Proyecto archivado.");
+                setOpen(false);
+            } else {
+                toast.error("Error al archivar el proyecto.");
+            }
+        } catch (error) {
+            toast.error("Error inesperado.");
+        } finally {
+            setIsArchiving(false);
+        }
+    };
 
     const handleDelete = async () => {
         setIsDeleting(true);
@@ -65,7 +83,15 @@ export function ProjectActions({ projectId }: ProjectActionsProps) {
                         // TODO: Implement Edit
                         toast.error("Edición próximamente");
                     }}>
+                        <Pencil className="h-4 w-4 mr-2" />
                         Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        onClick={handleArchive}
+                        disabled={isArchiving}
+                    >
+                        <Archive className="h-4 w-4 mr-2" />
+                        {isArchiving ? "Archivando..." : "Archivar"}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
@@ -75,6 +101,7 @@ export function ProjectActions({ projectId }: ProjectActionsProps) {
                             setOpen(false);
                         }}
                     >
+                        <Trash2 className="h-4 w-4 mr-2" />
                         Eliminar
                     </DropdownMenuItem>
                 </DropdownMenuContent>

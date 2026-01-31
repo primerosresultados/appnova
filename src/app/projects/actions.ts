@@ -70,3 +70,18 @@ export async function deleteProject(id: string) {
         return { message: "Failed to delete project", success: false };
     }
 }
+
+export async function archiveProject(id: string) {
+    try {
+        await db.project.update({
+            where: { id },
+            data: { status: "ON_HOLD" },
+        });
+        revalidatePath("/projects");
+        revalidatePath("/clients");
+        return { message: "Project archived successfully", success: true };
+    } catch (error) {
+        console.error("Database Error:", error);
+        return { message: "Failed to archive project", success: false };
+    }
+}
