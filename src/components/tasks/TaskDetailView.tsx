@@ -25,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Edit2 } from "lucide-react";
 import { useEffect } from "react";
 import { DeadlineProgress } from "./DeadlineProgress";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 interface TaskDetailViewProps {
     task: any;
@@ -43,6 +44,14 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
             getUsers().then(setUsers);
         }
     }, [isEditOpen]);
+
+    const [editDescription, setEditDescription] = useState(task.description || "");
+
+    useEffect(() => {
+        if (isEditOpen) {
+            setEditDescription(task.description || "");
+        }
+    }, [isEditOpen, task.description]);
 
     // Form Action for Edit
     const [editState, editAction] = useActionState(async (prevState: any, formData: FormData) => {
@@ -155,9 +164,10 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                             <CardContent className="p-6 space-y-6">
                                 <div>
                                     <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Descripción</h3>
-                                    <div className="prose prose-sm dark:prose-invert max-w-none text-foreground/90 leading-relaxed bg-secondary/10 p-4 rounded-lg border border-border/20">
-                                        {task.description || "Sin descripción detallada."}
-                                    </div>
+                                    <div
+                                        className="prose prose-sm dark:prose-invert max-w-none text-foreground/90 leading-relaxed bg-secondary/10 p-4 rounded-lg border border-border/20"
+                                        dangerouslySetInnerHTML={{ __html: task.description || "Sin descripción detallada." }}
+                                    />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-6">
@@ -296,7 +306,12 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
 
                                             <div className="grid gap-2">
                                                 <Label htmlFor="description">Descripción</Label>
-                                                <Textarea id="description" name="description" defaultValue={task.description || ""} className="min-h-[100px]" />
+                                                <RichTextEditor
+                                                    value={editDescription}
+                                                    onChange={setEditDescription}
+                                                    className="min-h-[150px]"
+                                                />
+                                                <input type="hidden" name="description" value={editDescription} />
                                             </div>
 
                                             <div className="grid gap-2">

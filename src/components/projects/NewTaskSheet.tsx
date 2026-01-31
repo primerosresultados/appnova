@@ -52,10 +52,20 @@ interface User {
     name: string;
 }
 
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
+
+// ... existing imports
+
 export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
     const [state, formAction] = useActionState(createTask, initialState);
     const [open, setOpen] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
+    const [description, setDescription] = useState("");
+
+    // Reset description when sheet closes or success
+    useEffect(() => {
+        if (!open) setDescription("");
+    }, [open]);
 
     useEffect(() => {
         if (state?.success) {
@@ -142,12 +152,13 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
 
                     <div className="grid gap-2">
                         <Label htmlFor="description">Descripción / Detalles</Label>
-                        <Textarea
-                            id="description"
-                            name="description"
+                        <RichTextEditor
+                            value={description}
+                            onChange={setDescription}
                             placeholder="Detalles adicionales, instrucciones..."
-                            className="min-h-[100px]"
+                            className="min-h-[150px]"
                         />
+                        <input type="hidden" name="description" value={description} />
                     </div>
 
                     <div className="grid gap-2">
