@@ -17,15 +17,22 @@ async function getFinanceData() {
             accounts,
             recentTransactions,
             incomeThisMonth,
-            expensesThisMonth,
-            taxPayload,
-            allFinancialRecords
+            expensesThisMonth
         ] = await Promise.all([
-            db.account.findMany(),
+            db.account.findMany({
+                select: { id: true, name: true, type: true, balance: true }
+            }),
             db.transaction.findMany({
-                take: 10,
+                take: 8,
                 orderBy: { date: 'desc' },
-                include: { account: true }
+                select: {
+                    id: true,
+                    type: true,
+                    amount: true,
+                    description: true,
+                    category: true,
+                    date: true
+                }
             }),
             db.transaction.aggregate({
                 where: { type: 'INCOME' },
@@ -34,16 +41,6 @@ async function getFinanceData() {
             db.transaction.aggregate({
                 where: { type: 'EXPENSE' },
                 _sum: { amount: true }
-            }),
-            db.transaction.aggregate({
-                where: { isTaxable: true, type: 'INCOME' },
-                _sum: { taxAmount: true }
-            }),
-            // OPTIMIZATION: Limit to last 50 records instead of all
-            db.financialRecord.findMany({
-                take: 50,
-                orderBy: { date: 'desc' },
-                include: { client: { select: { name: true } } }
             })
         ]);
 
@@ -55,8 +52,8 @@ async function getFinanceData() {
             totalBalance,
             income: incomeThisMonth._sum.amount || 0,
             expenses: expensesThisMonth._sum.amount || 0,
-            pendingTax: taxPayload._sum.taxAmount || 0,
-            allFinancialRecords
+            pendingTax: 0,
+            allFinancialRecords: []
         };
     } catch (error) {
         console.error("Error fetching finance data:", error);
