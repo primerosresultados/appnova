@@ -26,6 +26,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { uploadFile } from "@/app/actions/upload-actions";
 import { Upload, X, FileIcon, ImageIcon } from "lucide-react";
 
+import { MediaPreview } from "./MediaPreview";
+
 interface NewContentDialogProps {
     projectId: string;
 }
@@ -38,22 +40,15 @@ export function NewContentDialog({ projectId }: NewContentDialogProps) {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const url = e.target.value;
-        if (url && (url.match(/\.(jpeg|jpg|gif|png|webp)$/i) || url.includes('drive.google.com'))) {
-            setPreviewUrl(url);
-        } else {
-            setPreviewUrl(null);
-        }
+        setPreviewUrl(e.target.value);
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setSelectedFile(e.target.files[0]);
-            // Create object URL for preview if it's an image
-            if (e.target.files[0].type.startsWith('image/')) {
-                setPreviewUrl(URL.createObjectURL(e.target.files[0]));
-            } else {
-                setPreviewUrl(null);
+            const file = e.target.files[0];
+            setSelectedFile(file);
+            if (file.type.startsWith('image/')) {
+                setPreviewUrl(URL.createObjectURL(file));
             }
         }
     };
@@ -75,7 +70,6 @@ export function NewContentDialog({ projectId }: NewContentDialogProps) {
 
             if (uploadResult.success && uploadResult.url) {
                 formData.set("fileUrl", uploadResult.url);
-                // If it's an image and no mediaUrl provided, use it as mediaUrl too
                 if (selectedFile.type.startsWith('image/') && !formData.get("mediaUrl")) {
                     formData.set("mediaUrl", uploadResult.url);
                 }
@@ -137,7 +131,7 @@ export function NewContentDialog({ projectId }: NewContentDialogProps) {
                         </Select>
                     </div>
                     <div className="grid gap-2">
-                        <Label>Fecha de Publicación (Calendario)</Label>
+                        <Label>Fecha de Publicación</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
@@ -167,66 +161,50 @@ export function NewContentDialog({ projectId }: NewContentDialogProps) {
                     </div>
 
                     <div className="grid gap-2">
-                        <Label>Multimedia / Archivos</Label>
+                        <Label>URL de Previsualización (Drive, YouTube, Imagen)</Label>
+                        <Input id="mediaUrl" name="mediaUrl" placeholder="https://..." onChange={handleUrlChange} />
 
-                        <div className="flex gap-2 mb-2">
-                            <div className="flex-1">
-                                <Label htmlFor="mediaUrl" className="text-xs text-muted-foreground mb-1 block">URL Externa (Drive, Link)</Label>
-                                <Input id="mediaUrl" name="mediaUrl" placeholder="https://..." onChange={handleUrlChange} />
-                            </div>
+                        <div className="aspect-video w-full mt-2 rounded-lg border border-border/50 overflow-hidden relative">
+                            <MediaPreview url={previewUrl} />
 
-                        </div>
-
-                        <div className="border border-dashed border-border rounded-md p-4 flex flex-col items-center justify-center gap-2 hover:bg-muted/50 transition-colors relative">
-                            {previewUrl ? (
-                                <div className="relative w-full h-32 rounded-md overflow-hidden">
-                                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" onError={(e) => e.currentTarget.style.display = 'none'} />
-                                    <Button
-                                        type="button"
-                                        size="icon"
-                                        variant="destructive"
-                                        className="absolute top-1 right-1 h-6 w-6"
-                                        onClick={() => {
-                                            setPreviewUrl(null);
-                                            setSelectedFile(null);
-                                        }}
-                                    >
-                                        <X className="h-3 w-3" />
-                                    </Button>
-                                </div>
-                            ) : selectedFile ? (
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <FileIcon className="h-8 w-8 text-primary" />
-                                    <span>{selectedFile.name}</span>
-                                    <Button
-                                        type="button"
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-6 w-6"
-                                        onClick={() => {
-                                            setSelectedFile(null);
-                                        }}
-                                    >
-                                        <X className="h-3 w-3" />
-                                    </Button>
-                                </div>
-                            ) : (
-                                <>
-                                    <Upload className="h-8 w-8 text-muted-foreground/50" />
-                                    <div className="text-center">
-                                        <p className="text-sm text-muted-foreground">Arrastra un archivo o haz clic para subir</p>
-                                        <p className="text-xs text-muted-foreground/60">(Máx 5MB)</p>
-                                    </div>
-                                    <Input
-                                        type="file"
-                                        name="file"
-                                        className="absolute inset-0 opacity-0 cursor-pointer"
-                                        onChange={handleFileChange}
-                                    />
-                                </>
+                            {selectedFile && (
+                                <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="destructive"
+                                    className="absolute top-2 right-2 h-6 w-6"
+                                    onClick={() => {
+                                        setSelectedFile(null);
+                                        setPreviewUrl(null);
+                                    }}
+                                >
+                                    <X className="h-3 w-3" />
+                                </Button>
                             )}
                         </div>
 
+                        {!selectedFile && (
+                            <div className="flex items-center justify-center w-full">
+                                <label className="flex flex-col items-center justify-center w-full h-10 border border-border border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                                    <div className="flex items-center gap-2">
+                                        <Upload className="w-4 h-4 text-muted-foreground" />
+                                        <p className="text-xs text-muted-foreground">O sube un archivo local</p>
+                                    </div>
+                                    <input type="file" className="hidden" onChange={handleFileChange} />
+                                </label>
+                            </div>
+                        )}
+                        {selectedFile && !selectedFile.type.startsWith('image/') && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 bg-secondary/20 rounded">
+                                <FileIcon className="h-4 w-4" />
+                                <span className="truncate flex-1">{selectedFile.name}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label htmlFor="links">Link Final (Opcional)</Label>
+                        <Input id="links" name="links" placeholder="https://..." />
                     </div>
 
                     <DialogFooter>

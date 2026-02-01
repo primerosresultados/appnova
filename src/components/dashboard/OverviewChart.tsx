@@ -1,12 +1,23 @@
 "use client";
 
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useState, useEffect } from 'react';
 
 interface OverviewChartProps {
     data: any[];
 }
 
 export function OverviewChart({ data }: OverviewChartProps) {
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
+    if (!isMounted) {
+        return <div className="h-full w-full bg-muted/10 animate-pulse rounded-md" />;
+    }
+
     return (
         <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data}>

@@ -165,7 +165,7 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
                         <p className="text-sm font-medium leading-none">
                           <span className="text-foreground">{log.user?.name || 'Sistema'}</span> <span className="text-muted-foreground font-normal">{getActionText(log.type)}</span> <span className="text-foreground font-medium">{log.project?.name || 'un proyecto'}</span>
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground" suppressHydrationWarning>
                           {formatDistanceToNow(new Date(log.createdAt), { addSuffix: true, locale: es })}
                         </p>
                       </div>

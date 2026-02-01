@@ -48,7 +48,7 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        if (state?.success) {
+        if (state?.success && open) {
             toast.success("Usuario actualizado correctamente");
             setOpen(false);
             setLoading(false);
@@ -57,7 +57,7 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
             toast.error(state.message);
             setLoading(false);
         }
-    }, [state, router]);
+    }, [state, router, open]);
 
     const handleSubmit = (formData: FormData) => {
         setLoading(true);

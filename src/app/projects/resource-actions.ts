@@ -31,8 +31,8 @@ export async function createResource(prevState: any, formData: FormData) {
     const validatedFields = resourceSchema.safeParse({
         name: formData.get("name"),
         type: formData.get("type"),
-        url: url, // Use the uploaded path or the provided URL
-        content: formData.get("content"),
+        url: url || undefined,
+        content: formData.get("content") || undefined, // Fix: Convert null to undefined
         projectId: formData.get("projectId"),
     });
 

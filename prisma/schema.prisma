@@ -208,7 +208,12 @@ model FinancialRecord {
   type        String   // PAYMENT, COMMITMENT, REFUND
   description String
   date        DateTime
-  status      String   // PENDING, COMPLETED, OVERDUE
+  status      String   // PENDING, COMPLETED, OVERDUE, FACTURA_EMITIDA, FACTURA_PAGADA, etc.
+  
+  // Invoice Details
+  invoiceNumber String?
+  dueDate       DateTime?
+  paymentDate   DateTime?
   
   clientId    String
   client      Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -309,6 +314,22 @@ model Content {
   creatorId   String?
   creator     User?    @relation("ContentCreator", fields: [creatorId], references: [id])
 
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Employee {
+  id          String   @id @default(uuid())
+  name        String
+  position    String
+  salary      Float
+  frequency   String   @default("MONTHLY") // MONTHLY
+  status      String   @default("ACTIVE") // ACTIVE, INACTIVE, LEAVE
+  startDate   DateTime
+  endDate     DateTime?
+  email       String?
+  phone       String?
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }

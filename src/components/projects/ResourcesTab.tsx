@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useActionState } from "react";
 import { createResource, deleteResource } from "@/app/projects/resource-actions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Folder, Key, Link as LinkIcon, FileText, Plus, Trash2, ExternalLink, HardDrive, File as FileIcon } from "lucide-react";
+import { toast } from "react-hot-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface Resource {
     id: string;
@@ -35,9 +37,23 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
     const [state, formAction] = useActionState(createResource, initialState);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedType, setSelectedType] = useState("LINK");
+    const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
 
-    const handleDelete = async (id: string) => {
-        await deleteResource(id, projectId);
+    useEffect(() => {
+        if (state.success) {
+            toast.success("Recurso agregado correctamente");
+            setIsDialogOpen(false);
+        } else if (state.message) {
+            toast.error(state.message);
+        }
+    }, [state]);
+
+    const confirmDelete = async () => {
+        if (resourceToDelete) {
+            await deleteResource(resourceToDelete, projectId);
+            toast.success("Recurso eliminado");
+            setResourceToDelete(null);
+        }
     };
 
     const getIcon = (type: string) => {
@@ -138,7 +154,7 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
                                     <Folder className="h-4 w-4 text-blue-400" />
                                     <span className="text-sm font-medium">{r.name}</span>
                                 </a>
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(r.id)}>
+                                <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => setResourceToDelete(r.id)}>
                                     <Trash2 className="h-3 w-3" />
                                 </Button>
                             </div>
@@ -167,7 +183,7 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
                                                 <ExternalLink className="h-3 w-3" />
                                             </a>
                                         )}
-                                        <Button size="icon" variant="ghost" className="h-5 w-5 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(r.id)}>
+                                        <Button size="icon" variant="ghost" className="h-5 w-5 text-muted-foreground hover:text-destructive" onClick={() => setResourceToDelete(r.id)}>
                                             <Trash2 className="h-3 w-3" />
                                         </Button>
                                     </div>
@@ -197,7 +213,7 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
                                     <FileText className="h-4 w-4 text-emerald-400" />
                                     <span className="text-sm font-medium">{r.name}</span>
                                 </a>
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(r.id)}>
+                                <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => setResourceToDelete(r.id)}>
                                     <Trash2 className="h-3 w-3" />
                                 </Button>
                             </div>
@@ -220,7 +236,7 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
                                     <ExternalLink className="h-4 w-4 text-purple-400" />
                                     <span className="text-sm font-medium">{r.name}</span>
                                 </a>
-                                <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => handleDelete(r.id)}>
+                                <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground hover:text-destructive" onClick={() => setResourceToDelete(r.id)}>
                                     <Trash2 className="h-3 w-3" />
                                 </Button>
                             </div>
@@ -228,6 +244,23 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
                     </CardContent>
                 </Card>
             </div>
+
+            <AlertDialog open={!!resourceToDelete} onOpenChange={() => setResourceToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción no se puede deshacer. El recurso será eliminado permanentemente.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

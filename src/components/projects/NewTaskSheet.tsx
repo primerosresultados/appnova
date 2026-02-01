@@ -24,7 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Link as LinkIcon, CalendarIcon } from "lucide-react";
+import { Plus, Link as LinkIcon, CalendarIcon, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -62,7 +62,7 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 // ... existing imports
 
 export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
-    const [state, formAction] = useActionState(createTask, initialState);
+    const [state, formAction, isPending] = useActionState(createTask, initialState);
     const [open, setOpen] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
     const [description, setDescription] = useState("");
@@ -201,7 +201,16 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
                         <SheetClose asChild>
                             <Button variant="outline" type="button">Cancelar</Button>
                         </SheetClose>
-                        <Button type="submit">Crear Tarea</Button>
+                        <Button type="submit" disabled={isPending}>
+                            {isPending ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Creando...
+                                </>
+                            ) : (
+                                "Crear Tarea"
+                            )}
+                        </Button>
                     </SheetFooter>
                 </form>
             </SheetContent>

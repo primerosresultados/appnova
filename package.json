@@ -4,8 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3200",
+    "dev:turbo": "next dev --turbo -p 3200",
     "build": "next build",
     "start": "next start -p 3200",
+    "clean": "rm -rf .next node_modules/.cache",
     "lint": "eslint",
     "postinstall": "prisma generate"
   },

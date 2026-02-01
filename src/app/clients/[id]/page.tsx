@@ -97,12 +97,12 @@ export default async function ClientPage(props: { params: Params }) {
                             <CardContent className="space-y-7 pt-6 relative">
                                 <div className="space-y-2">
                                     <label className="text-[10px] uppercase font-black text-muted-foreground/50 tracking-[0.2em]">Teléfono</label>
-                                    <p className="text-base font-semibold flex items-center gap-3">
+                                    <div className="text-base font-semibold flex items-center gap-3">
                                         <div className="h-8 w-8 rounded-lg bg-secondary/50 flex items-center justify-center text-primary border border-primary/10">
                                             <Phone className="h-4 w-4" />
                                         </div>
                                         {client.phone || "No registrado"}
-                                    </p>
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] uppercase font-black text-muted-foreground/50 tracking-[0.2em]">Sitio Web</label>

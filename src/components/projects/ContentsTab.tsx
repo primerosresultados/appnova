@@ -19,6 +19,18 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { NewContentDialog } from "./NewContentDialog";
+import { EditContentDialog } from "./EditContentDialog";
+import { MediaPreview } from "./MediaPreview";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { deleteContent } from "@/app/projects/content-actions";
+import { toast } from "react-hot-toast";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 interface ContentsTabProps {
     projectId: string;
@@ -43,6 +55,20 @@ const statusMap: Record<string, { label: string; color: string }> = {
 };
 
 export function ContentsTab({ projectId, contents }: ContentsTabProps) {
+    const [editingItem, setEditingItem] = useState<any>(null);
+    const [itemToDelete, setItemToDelete] = useState<any>(null);
+
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
+        const result = await deleteContent(itemToDelete.id, projectId);
+        if (result.success) {
+            toast.success("Contenido eliminado");
+        } else {
+            toast.error("Error al eliminar");
+        }
+        setItemToDelete(null);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -70,17 +96,7 @@ export function ContentsTab({ projectId, contents }: ContentsTabProps) {
                         return (
                             <Card key={item.id} className="group overflow-hidden bg-card/40 border-border/50 hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/5">
                                 <div className="aspect-video relative overflow-hidden bg-muted">
-                                    {item.mediaUrl ? (
-                                        <img
-                                            src={item.mediaUrl}
-                                            alt={item.title}
-                                            className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-500"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full flex items-center justify-center opacity-20">
-                                            <Icon className="h-12 w-12" />
-                                        </div>
-                                    )}
+                                    <MediaPreview url={item.mediaUrl} type={item.type} />
                                     <div className="absolute top-2 left-2 flex gap-2">
                                         <Badge className={`${config.color} border-none backdrop-blur-md`}>
                                             <Icon className="h-3 w-3 mr-1" />
@@ -98,9 +114,22 @@ export function ContentsTab({ projectId, contents }: ContentsTabProps) {
                                         <h4 className="font-semibold text-sm line-clamp-2 min-h-[40px] leading-tight">
                                             {item.title}
                                         </h4>
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => setEditingItem(item)}>
+                                                    Editar
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem className="text-destructive" onClick={() => setItemToDelete(item)}>
+                                                    Eliminar
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </div>
 
                                     <p className="text-xs text-muted-foreground line-clamp-2 italic">
@@ -127,6 +156,33 @@ export function ContentsTab({ projectId, contents }: ContentsTabProps) {
                     })}
                 </div>
             )}
+
+            {/* Dialogs */}
+            {editingItem && (
+                <EditContentDialog
+                    content={editingItem}
+                    projectId={projectId}
+                    open={!!editingItem}
+                    onOpenChange={(open) => !open && setEditingItem(null)}
+                />
+            )}
+
+            <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción eliminará permanentemente la pieza de contenido "{itemToDelete?.title}".
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

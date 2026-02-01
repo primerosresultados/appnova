@@ -1,3 +1,8 @@
+import { NewEmployeeDialog } from "@/components/finance/NewEmployeeDialog";
+import { EmployeeActions } from "@/components/finance/EmployeeActions";
+import { ProcessPayrollDialog } from "@/components/finance/ProcessPayrollDialog";
+import { Users, User } from "lucide-react";
+
 import { NewTransactionDialog } from "@/components/finance/NewTransactionDialog";
 import { NewAccountDialog } from "@/components/finance/NewAccountDialog";
 import { NewAgreementDialog } from "@/components/finance/NewAgreementDialog";
@@ -11,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, DollarSign, Wallet, FileText, ArrowUpRight, ArrowDownRight, Handshake, Building2, Calendar } from "lucide-react";
 import Link from "next/link";
 import { unstable_cache } from "next/cache";
+import { InvoicingTab } from "@/components/finance/InvoicingTab";
 
 // Cache finance data for 30 seconds
 const getCachedFinanceData = unstable_cache(
@@ -21,8 +27,11 @@ const getCachedFinanceData = unstable_cache(
             incomeThisMonth,
             expensesThisMonth,
             contracts,
-            clients
+            clients,
+            employees,
+            allFinancialRecords
         ] = await Promise.all([
+
             db.account.findMany({
                 select: { id: true, name: true, type: true, balance: true }
             }),
@@ -53,6 +62,15 @@ const getCachedFinanceData = unstable_cache(
             db.client.findMany({
                 select: { id: true, name: true },
                 orderBy: { name: 'asc' }
+            }),
+            db.employee.findMany({
+                orderBy: { createdAt: 'desc' },
+                where: { status: 'ACTIVE' }
+            }),
+            db.financialRecord.findMany({
+                orderBy: { date: 'desc' },
+                where: { type: 'INVOICE' },
+                include: { client: true }
             })
         ]);
 
@@ -75,19 +93,24 @@ const getCachedFinanceData = unstable_cache(
             return sum;
         }, 0);
 
+        // Calculate Monthly Salaries
+        const monthlySalaries = employees.reduce((sum, emp) => sum + emp.salary, 0);
+
         return {
             accounts,
             recentTransactions,
             totalBalance,
             income: (incomeThisMonth._sum.amount || 0) + monthlyContractIncome,
-            expenses: expensesThisMonth._sum.amount || 0,
+            expenses: (expensesThisMonth._sum.amount || 0) + monthlySalaries,
             clients,
             pendingTax: 0,
-            allFinancialRecords: [],
-            contracts
+            allFinancialRecords: allFinancialRecords,
+            contracts,
+            employees,
+            monthlySalaries
         };
     },
-    ['finance-data'],
+    ['finance-data-v2'], // Bump cache key
     { revalidate: 30 }
 );
 
@@ -105,7 +128,9 @@ async function getFinanceData() {
             pendingTax: 0,
             allFinancialRecords: [],
             contracts: [],
-            clients: []
+            clients: [],
+            employees: [],
+            monthlySalaries: 0
         };
     }
 }
@@ -133,11 +158,13 @@ export async function FinanceContent() {
                     <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Resumen</TabsTrigger>
                     <TabsTrigger value="invoices" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Facturación</TabsTrigger>
                     <TabsTrigger value="agreements" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Acuerdos Comerciales</TabsTrigger>
+                    <TabsTrigger value="hr" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Recursos Humanos</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
                     {/* KPI Cards */}
                     <div className="grid gap-6 md:grid-cols-4">
+                        {/* ... Existing KPI Cards ... */}
                         <Card className="bg-card/50 border border-border/40 shadow-lg overflow-hidden relative group hover:border-emerald-500/30 transition-colors">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Saldo Total</CardTitle>
@@ -169,7 +196,7 @@ export async function FinanceContent() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">${data.expenses.toLocaleString()}</div>
-                                <p className="text-xs text-muted-foreground mt-1">Gastos operativos y costos</p>
+                                <p className="text-xs text-muted-foreground mt-1">Gastos e incluyendo nómina ({data.monthlySalaries > 0 ? `$${data.monthlySalaries.toLocaleString()}` : '$0'})</p>
                             </CardContent>
                         </Card>
 
@@ -189,6 +216,7 @@ export async function FinanceContent() {
                     </div>
 
                     <div className="grid gap-6 md:grid-cols-12">
+                        {/* ... Accounts and Transactions ... */}
                         {/* Accounts List */}
                         <Card className="md:col-span-4 bg-card/50 border border-border/40 shadow-lg">
                             <CardHeader>
@@ -265,48 +293,7 @@ export async function FinanceContent() {
                 </TabsContent>
 
                 <TabsContent value="invoices" className="animate-in slide-in-from-bottom-2 duration-500">
-                    <Card className="bg-card/50 border border-border/40 shadow-lg overflow-hidden">
-                        <CardHeader className="pb-4">
-                            <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Control de Facturación</CardTitle>
-                            <CardDescription>Historial completo de facturas y estados de pago.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {data.allFinancialRecords.length === 0 ? (
-                                <div className="text-center py-20 text-muted-foreground">
-                                    <FileText className="h-12 w-12 mx-auto mb-4 opacity-20" />
-                                    <h3 className="text-lg font-medium">No hay registros de facturación</h3>
-                                    <p className="max-w-xs mx-auto mt-2">Registra facturas y pagos desde la ficha de cada cliente.</p>
-                                </div>
-                            ) : (
-                                <div className="rounded-md border border-border/40">
-                                    <div className="grid grid-cols-12 gap-4 p-4 text-xs font-bold text-muted-foreground uppercase tracking-widest bg-secondary/20 border-b border-border/40">
-                                        <div className="col-span-3">Cliente</div>
-                                        <div className="col-span-4">Descripción</div>
-                                        <div className="col-span-2">Fecha</div>
-                                        <div className="col-span-3 text-right">Monto / Estado</div>
-                                    </div>
-                                    <div className="divide-y divide-border/20">
-                                        {data.allFinancialRecords.map((record: any) => (
-                                            <div key={record.id} className="grid grid-cols-12 gap-4 p-4 items-center hover:bg-muted/30 transition-colors">
-                                                <div className="col-span-3 font-medium text-sm truncate">{record.client?.name || "Sin cliente"}</div>
-                                                <div className="col-span-4 text-sm text-muted-foreground truncate">{record.description}</div>
-                                                <div className="col-span-2 text-xs text-muted-foreground">{format(new Date(record.date), 'dd MMM yyyy', { locale: es })}</div>
-                                                <div className="col-span-3 text-right space-y-1">
-                                                    <div className="font-bold">${record.amount.toLocaleString()}</div>
-                                                    <Badge variant="outline" className={`text-[9px] h-4 py-0 ${record.status === 'FACTURA_PAGADA' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                                        record.status.includes('FACTURA') ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
-                                                            'bg-amber-500/10 text-amber-500 border-amber-500/20'
-                                                        }`}>
-                                                        {record.status.replace(/_/g, ' ')}
-                                                    </Badge>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <InvoicingTab invoices={data.allFinancialRecords} />
                 </TabsContent>
 
                 {/* Acuerdos Comerciales Tab */}
@@ -375,6 +362,83 @@ export async function FinanceContent() {
                                             </div>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* Recursos Humanos Tab */}
+                <TabsContent value="hr" className="animate-in slide-in-from-bottom-2 duration-500">
+                    <Card className="bg-card/30 backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
+                        <CardHeader className="flex flex-row items-center justify-between pb-6 border-b border-border/30 bg-secondary/5 px-8">
+                            <div>
+                                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80 flex items-center gap-3">
+                                    <Users className="h-5 w-5 text-primary" />
+                                    Recursos Humanos (Nómina)
+                                </CardTitle>
+                                <CardDescription className="text-xs font-medium text-muted-foreground mt-1">
+                                    Gestión de colaboradores y sueldos mensuales.
+                                </CardDescription>
+                            </div>
+                            <div className="flex gap-2">
+                                <ProcessPayrollDialog
+                                    accounts={data.accounts}
+                                    totalMonthlySalary={data.monthlySalaries}
+                                    activeEmployeeCount={data.employees.length}
+                                />
+                                <NewEmployeeDialog />
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            {data.employees.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-20 text-center">
+                                    <div className="h-16 w-16 rounded-2xl bg-secondary/20 flex items-center justify-center mb-4 border border-border/20">
+                                        <Users className="h-8 w-8 text-muted-foreground/30" />
+                                    </div>
+                                    <h3 className="text-lg font-bold">Sin Colaboradores</h3>
+                                    <p className="text-xs text-muted-foreground/60 max-w-[220px] mt-2">
+                                        No hay colaboradores registrados en la nómina.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="divide-y divide-border/20">
+                                    {data.employees.map((employee: any) => (
+                                        <div key={employee.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/30 transition-colors">
+                                            <div className="space-y-1">
+                                                <h4 className="font-bold text-base flex items-center gap-2">
+                                                    {employee.name}
+                                                    <Badge variant="outline" className="text-[9px] h-4 px-1.5 bg-secondary/30">
+                                                        {employee.position}
+                                                    </Badge>
+                                                </h4>
+                                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                                    <span className="flex items-center gap-1">
+                                                        <Calendar className="h-3 w-3" />
+                                                        Inicio: {format(new Date(employee.startDate), 'dd MMM yyyy', { locale: es })}
+                                                    </span>
+                                                    {employee.email && (
+                                                        <span>{employee.email}</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="text-right">
+                                                    <p className="text-xl font-black tracking-tight">${employee.salary.toLocaleString()}</p>
+                                                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                                        Sueldo Mensual
+                                                    </p>
+                                                </div>
+                                                <EmployeeActions employee={employee} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                    <div className="p-4 bg-muted/20 flex justify-end items-center border-t border-border/20">
+                                        <div className="text-right">
+                                            <span className="text-xs font-medium text-muted-foreground uppercase mr-2">Total Nómina:</span>
+                                            <span className="text-lg font-bold">${data.monthlySalaries.toLocaleString()}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             )}
                         </CardContent>

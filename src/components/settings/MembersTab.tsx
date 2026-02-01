@@ -1,18 +1,20 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import { createUser, deleteUser } from "@/app/actions/user-actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { EditUserDialog } from "@/components/settings/EditUserDialog";
+import toast from "react-hot-toast";
 
 interface User {
     id: string;
@@ -34,13 +36,36 @@ const initialState = {
 export function MembersTab({ users }: MembersTabProps) {
     const router = useRouter();
     const [open, setOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const [state, formAction] = useActionState(createUser, initialState);
 
     // Close dialog on success
-    if (state?.success && open) {
-        setOpen(false);
-        router.refresh(); // Refresh to show new user
-    }
+    useEffect(() => {
+        if (state?.success && open) {
+            setOpen(false);
+            toast.success(state.message || "Usuario invitado");
+            router.refresh();
+        } else if (state?.success === false && state?.message) {
+            toast.error(state.message);
+        }
+    }, [state, open, router]);
+
+    const handleDelete = async (user: User) => {
+        try {
+            setIsDeleting(user.id);
+            const result = await deleteUser(user.email);
+            if (result.success) {
+                toast.success("Usuario eliminado");
+                router.refresh();
+            } else {
+                toast.error(result.message || "Error al eliminar");
+            }
+        } catch (error) {
+            toast.error("Error de red al eliminar");
+        } finally {
+            setIsDeleting(null);
+        }
+    };
 
     return (
         <div className="space-y-4">
@@ -119,18 +144,37 @@ export function MembersTab({ users }: MembersTabProps) {
                                     }>
                                         {user.role}
                                     </Badge>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                        onClick={async () => {
-                                            if (confirm(`¿Eliminar a ${user.name}?`)) {
-                                                await deleteUser(user.email);
-                                            }
-                                        }}
-                                    >
-                                        Eliminar
-                                    </Button>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                disabled={isDeleting === user.id}
+                                            >
+                                                <Trash2 className="h-4 w-4 mr-2" />
+                                                Eliminar
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Esta acción eliminará a <strong>{user.name}</strong> ({user.email}) de la plataforma.
+                                                    También se eliminará su acceso de Supabase Auth.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                <AlertDialogAction
+                                                    onClick={() => handleDelete(user)}
+                                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                                >
+                                                    Eliminar Miembro
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                     <div className="w-px h-4 bg-border/50 mx-1" />
                                     <EditUserDialog user={user} />
                                 </div>

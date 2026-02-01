@@ -68,15 +68,15 @@ export async function updateClient(prevState: any, formData: FormData) {
 
     const validatedFields = ClientSchema.safeParse({
         name: formData.get("name"),
-        company: formData.get("company"),
-        website: formData.get("website"),
-        industry: formData.get("industry"),
-        phone: formData.get("phone"),
-        email: formData.get("email"),
-        taxId: formData.get("taxId"),
-        billingAddress: formData.get("billingAddress"),
-        billingEmail: formData.get("billingEmail"),
-        status: formData.get("status"),
+        company: formData.get("company") || undefined,
+        website: formData.get("website") || undefined,
+        industry: formData.get("industry") || undefined,
+        phone: formData.get("phone") || undefined,
+        email: formData.get("email") || undefined,
+        taxId: formData.get("taxId") || undefined,
+        billingAddress: formData.get("billingAddress") || undefined,
+        billingEmail: formData.get("billingEmail") || undefined,
+        status: formData.get("status") || undefined,
     });
 
     if (!validatedFields.success) {
@@ -118,6 +118,9 @@ export async function createFinancialRecord(clientId: string, data: any) {
                 description: data.description,
                 date: new Date(data.date),
                 status: data.status,
+                invoiceNumber: data.invoiceNumber || undefined,
+                dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+                paymentDate: data.paymentDate ? new Date(data.paymentDate) : undefined,
             }
         });
         revalidatePath(`/clients/${clientId}`);
