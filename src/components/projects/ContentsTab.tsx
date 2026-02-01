@@ -13,7 +13,8 @@ import {
     Image as ImageIcon,
     Video,
     FileText,
-    Megaphone
+    Megaphone,
+    Calendar as CalendarIcon
 } from "lucide-react";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -135,6 +136,13 @@ export function ContentsTab({ projectId, contents }: ContentsTabProps) {
                                     <p className="text-xs text-muted-foreground line-clamp-2 italic">
                                         {item.description || "Sin descripción."}
                                     </p>
+
+                                    {item.publishDate && (
+                                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium pt-1">
+                                            <CalendarIcon className="h-3 w-3" />
+                                            <span>Publicación: {format(new Date(item.publishDate), "PPP", { locale: es })}</span>
+                                        </div>
+                                    )}
 
                                     <div className="flex items-center justify-between pt-2 border-t border-border/40">
                                         <Badge variant="secondary" className={`${status.color} border-none text-[10px] py-0 px-2 h-5`}>

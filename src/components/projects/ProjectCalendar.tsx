@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Flag, FileIcon, Plus, Trash2, Video, Megaphone, Instagram, FileText } from "lucide-react";
+import { Flag, FileIcon, Plus, Trash2, Video, Megaphone, Instagram, FileText, ListTodo } from "lucide-react";
 import { createMilestone, deleteMilestone } from "@/app/projects/milestone-actions";
 import { useActionState } from "react";
 
@@ -39,6 +39,7 @@ interface ProjectCalendarProps {
     projectId: string;
     milestones: Milestone[];
     contents: Content[];
+    tasks: any[];
 }
 
 const initialState = {
@@ -46,7 +47,7 @@ const initialState = {
     success: false
 };
 
-export function ProjectCalendar({ projectId, milestones, contents }: ProjectCalendarProps) {
+export function ProjectCalendar({ projectId, milestones, contents, tasks }: ProjectCalendarProps) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     // Unified events list
@@ -61,11 +62,12 @@ export function ProjectCalendar({ projectId, milestones, contents }: ProjectCale
         if (date) {
             const ms = milestones.filter(m => isSameDay(new Date(m.date), date)).map(m => ({ ...m, _kind: 'MILESTONE' }));
             const cs = contents.filter(c => c.publishDate && isSameDay(new Date(c.publishDate), date)).map(c => ({ ...c, _kind: 'CONTENT', date: c.publishDate }));
-            setSelectedEvents([...ms, ...cs]);
+            const ts = tasks.filter(t => t.dueDate && isSameDay(new Date(t.dueDate), date)).map(t => ({ ...t, _kind: 'TASK', date: t.dueDate }));
+            setSelectedEvents([...ms, ...cs, ...ts]);
         } else {
             setSelectedEvents([]);
         }
-    }, [date, milestones, contents]);
+    }, [date, milestones, contents, tasks]);
 
     const handleSelectDate = (newDate: Date | undefined) => {
         setDate(newDate);
@@ -109,18 +111,20 @@ export function ProjectCalendar({ projectId, milestones, contents }: ProjectCale
                         }}
                         modifiers={{
                             hasMilestone: (d) => milestones.some(m => isSameDay(new Date(m.date), d)),
-                            hasContent: (d) => contents.some(c => c.publishDate && isSameDay(new Date(c.publishDate), d))
+                            hasContent: (d) => contents.some(c => c.publishDate && isSameDay(new Date(c.publishDate), d)),
+                            hasTask: (d) => tasks.some(t => t.dueDate && isSameDay(new Date(t.dueDate), d))
                         }}
                         modifiersStyles={{
                             hasMilestone: {
                                 fontWeight: 'bold',
-                                textDecoration: 'underline',
-                                textDecorationColor: 'hsl(var(--primary))',
-                                textUnderlineOffset: '3px'
+                                color: 'hsl(var(--primary))'
                             },
                             hasContent: {
-                                border: '1px solid currentColor',
+                                border: '1px solid hsl(var(--purple-500))',
                                 borderRadius: '50%'
+                            },
+                            hasTask: {
+                                borderBottom: '2px solid hsl(var(--amber-500))'
                             }
                         }}
                     />
@@ -144,7 +148,13 @@ export function ProjectCalendar({ projectId, milestones, contents }: ProjectCale
                                 <div key={item.id} className={`p-3 border rounded-md space-y-2 ${item._kind === 'CONTENT' ? 'bg-primary/5 border-primary/20' : 'bg-accent/10'}`}>
                                     <div className="flex justify-between items-start">
                                         <h4 className="font-medium text-sm flex items-center gap-1">
-                                            {item._kind === 'CONTENT' ? <Megaphone className="h-3 w-3 text-purple-500" /> : <Flag className="h-3 w-3 text-primary" />}
+                                            {item._kind === 'CONTENT' ? (
+                                                <Megaphone className="h-3 w-3 text-purple-500" />
+                                            ) : item._kind === 'TASK' ? (
+                                                <ListTodo className="h-3 w-3 text-amber-500" />
+                                            ) : (
+                                                <Flag className="h-3 w-3 text-primary" />
+                                            )}
                                             {item.title}
                                         </h4>
                                         {item._kind === 'MILESTONE' && (
@@ -153,7 +163,10 @@ export function ProjectCalendar({ projectId, milestones, contents }: ProjectCale
                                             </Button>
                                         )}
                                         {item._kind === 'CONTENT' && (
-                                            <Badge variant="outline" className="text-[10px] h-5">{item.type}</Badge>
+                                            <Badge variant="outline" className="text-[10px] h-5 border-purple-500/20 text-purple-500">Post</Badge>
+                                        )}
+                                        {item._kind === 'TASK' && (
+                                            <Badge variant="outline" className="text-[10px] h-5 border-amber-500/20 text-amber-500">Tarea</Badge>
                                         )}
                                     </div>
                                     {/* Render description */}

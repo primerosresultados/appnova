@@ -61,15 +61,6 @@ export default async function TasksPage() {
 
     return (
         <div className="space-y-4 md:space-y-8 animate-in fade-in-50 duration-500 pb-10">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start gap-4">
-                <div>
-                    <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-                        Mis Tareas
-                    </h1>
-                    <p className="text-sm md:text-base text-muted-foreground mt-1 md:mt-2">Gestión y seguimiento de todas las actividades asignadas.</p>
-                </div>
-            </div>
 
             {/* Error Alert */}
             {dbError && (

@@ -191,7 +191,12 @@ export function ProjectDetailsView({ project, allWorkflows = [] }: ProjectDetail
 
                     <TabsContent value="planning" className="w-full h-full">
                         <div className="w-full h-full">
-                            <ProjectCalendar projectId={project.id} milestones={project.milestones} contents={project.contents || []} />
+                            <ProjectCalendar
+                                projectId={project.id}
+                                milestones={project.milestones}
+                                contents={project.contents || []}
+                                tasks={project.tasks || []}
+                            />
                         </div>
                     </TabsContent>
 

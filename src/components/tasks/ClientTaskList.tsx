@@ -5,10 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { Circle, Clock, CheckCircle2, User, ArrowUpRight, Filter } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 
 const statusMap: Record<string, { label: string; color: string; icon: any }> = {
     TODO: { label: "Pendiente", color: "bg-slate-500/10 text-slate-500", icon: Circle },
@@ -39,13 +40,20 @@ export function ClientTaskList({ initialTasks, users, userRole }: ClientTaskList
         : initialTasks;
 
     return (
-        <div className="space-y-6">
-            {canFilter && (
-                <div className="flex justify-end">
-                    <div className="w-[250px] space-y-2">
-                        <Label className="text-xs text-muted-foreground ml-1">Filtrar por usuario</Label>
+        <div className="space-y-6 md:space-y-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 className="text-2xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                        Mis Tareas
+                    </h1>
+                    <p className="text-sm md:text-base text-muted-foreground mt-1">Gestión y seguimiento de todas las actividades asignadas.</p>
+                </div>
+
+                {canFilter && (
+                    <div className="w-full md:w-[250px] space-y-1.5">
+                        <Label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground ml-1">Filtrar por usuario</Label>
                         <Select value={filterUserId} onValueChange={setFilterUserId}>
-                            <SelectTrigger className="bg-card/50 backdrop-blur-sm">
+                            <SelectTrigger className="bg-card/40 border-border/40 backdrop-blur-md h-9 text-sm">
                                 <SelectValue placeholder="Todos los usuarios" />
                             </SelectTrigger>
                             <SelectContent>
@@ -58,8 +66,8 @@ export function ClientTaskList({ initialTasks, users, userRole }: ClientTaskList
                             </SelectContent>
                         </Select>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
 
             <div className="grid gap-4">
                 {filteredTasks.length === 0 ? (
@@ -95,6 +103,49 @@ export function ClientTaskList({ initialTasks, users, userRole }: ClientTaskList
                                         <h3 className="text-base md:text-lg font-semibold group-hover:text-primary transition-colors mb-2 line-clamp-2">
                                             {task.title}
                                         </h3>
+
+                                        {/* Time Progress Tracking */}
+                                        <div className="space-y-2 mb-4 bg-background/30 p-3 rounded-lg border border-border/20">
+                                            <div className="flex justify-between text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Clock className="h-3 w-3" />
+                                                    <span>Creado hace {differenceInDays(new Date(), new Date(task.createdAt))} días</span>
+                                                </div>
+                                                {task.dueDate && (
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span>Vence: {format(new Date(task.dueDate), 'dd MMM', { locale: es })}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {task.dueDate && (
+                                                <div className="space-y-1">
+                                                    <Progress
+                                                        value={(() => {
+                                                            const start = new Date(task.createdAt).getTime();
+                                                            const end = new Date(task.dueDate).getTime();
+                                                            const now = new Date().getTime();
+                                                            if (now >= end) return 100;
+                                                            const total = end - start;
+                                                            if (total <= 0) return 100;
+                                                            const elapsed = now - start;
+                                                            return Math.min(100, Math.max(0, (elapsed / total) * 100));
+                                                        })()}
+                                                        className="h-1.5"
+                                                    />
+                                                    <div className="flex justify-end">
+                                                        <span className="text-[10px] font-medium text-primary/70">
+                                                            {(() => {
+                                                                const diff = differenceInDays(new Date(task.dueDate), new Date());
+                                                                if (diff < 0) return "Vencido";
+                                                                if (diff === 0) return "Vence hoy";
+                                                                return `Quedan ${diff} días`;
+                                                            })()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
 
                                         <div className="flex items-center flex-wrap gap-2 text-xs md:text-sm text-muted-foreground">
                                             <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-background/50 border border-border/20">
