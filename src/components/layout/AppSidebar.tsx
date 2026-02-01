@@ -76,8 +76,8 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                     <Command className="h-6 w-6 text-primary-foreground" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-black text-xl tracking-tight leading-none">NOVA</span>
-                    <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">Partners</span>
+                    <span className="font-black text-xl tracking-tight leading-none" style={{ color: 'var(--sidebar-muted-custom, inherit)' }}>NOVA</span>
+                    <span className="text-[10px] font-bold tracking-widest uppercase" style={{ color: 'var(--sidebar-muted-custom, var(--muted-foreground))' }}>Partners</span>
                   </div>
                 </>
               )}

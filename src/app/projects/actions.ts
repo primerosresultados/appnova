@@ -6,6 +6,7 @@ import { z } from "zod";
 
 const projectSchema = z.object({
     name: z.string().min(1, "Name is required"),
+    code: z.string().optional(), // Custom project code like MO239
     clientId: z.string().min(1, "Client is required"),
     description: z.string().optional(),
     status: z.enum(["PLANNING", "IN_PROGRESS", "REVIEW", "COMPLETED", "ON_HOLD"]),
@@ -16,6 +17,7 @@ const projectSchema = z.object({
 export async function createProject(prevState: any, formData: FormData) {
     const validatedFields = projectSchema.safeParse({
         name: formData.get("name"),
+        code: formData.get("code"),
         clientId: formData.get("clientId"),
         description: formData.get("description"),
         status: formData.get("status"),
@@ -31,12 +33,13 @@ export async function createProject(prevState: any, formData: FormData) {
         };
     }
 
-    const { name, clientId, description, status, dueDate, budget } = validatedFields.data;
+    const { name, code, clientId, description, status, dueDate, budget } = validatedFields.data;
 
     try {
         await db.project.create({
             data: {
                 name,
+                code,
                 clientId,
                 description,
                 status,

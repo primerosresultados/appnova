@@ -44,6 +44,7 @@ model Client {
 model Project {
   id        String   @id @default(uuid())
   name      String
+  code      String?  // Custom project code/identifier (e.g., MO239)
   description String?
   clientId  String
   client    Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)

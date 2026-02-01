@@ -78,10 +78,16 @@ export function NewProjectSheet() {
                     </SheetDescription>
                 </SheetHeader>
                 <form action={formAction} className="grid gap-6 py-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="name">Nombre del Proyecto</Label>
-                        <Input id="name" name="name" placeholder="Ej: Rediseño Web Q1" required />
-                        {state?.errors?.name && <p className="text-red-500 text-sm">{state.errors.name}</p>}
+                    <div className="grid grid-cols-3 gap-4">
+                        <div className="col-span-2 grid gap-2">
+                            <Label htmlFor="name">Nombre del Proyecto *</Label>
+                            <Input id="name" name="name" placeholder="Ej: Campaña Verano 2024" required />
+                            {state?.errors?.name && <p className="text-red-500 text-sm">{state.errors.name}</p>}
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="code">Código</Label>
+                            <Input id="code" name="code" placeholder="Ej: MO239" />
+                        </div>
                     </div>
 
                     <div className="grid gap-2">
