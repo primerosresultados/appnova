@@ -26,7 +26,7 @@ export function WorkflowList({ workflows }: WorkflowListProps) {
                     <Card
                         key={wf.id}
                         onClick={() => handleEdit(wf)}
-                        className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 transition-all duration-300 group cursor-pointer overflow-hidden"
+                        className="bg-card backdrop-blur-sm border-border/50 hover:bg-accent/50 transition-all duration-300 group cursor-pointer overflow-hidden"
                     >
                         <CardHeader className="pb-2">
                             <div className="flex items-center justify-between">

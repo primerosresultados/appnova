@@ -61,7 +61,7 @@ export function MediaPreview({ url, type, className = "w-full h-full object-cove
             />
             {isYouTube && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white">
+                    <div className="h-12 w-12 rounded-full bg-background/20 backdrop-blur-sm flex items-center justify-center text-foreground">
                         <Video className="h-6 w-6" />
                     </div>
                 </div>

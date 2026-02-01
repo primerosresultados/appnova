@@ -8,12 +8,16 @@ import { NotificationCarousel } from "./NotificationCarousel";
 import { globalSearch, SearchResult } from "@/app/actions/search-actions";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { ModeToggle } from "@/components/mode-toggle";
+import { ClientProjectSelector } from "@/components/clients/ClientProjectSelector";
+import { getUserSession } from "@/app/actions/auth-actions";
 
-interface HeaderProps {
+export interface HeaderProps {
     onMenuClick?: () => void;
+    isClient?: boolean;
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+export function Header({ onMenuClick, isClient = false }: HeaderProps) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<SearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -127,31 +131,39 @@ export function Header({ onMenuClick }: HeaderProps) {
     return (
         <>
             <header className="sticky top-0 z-30 flex h-14 md:h-16 w-full items-center justify-between border-b border-border bg-background/50 px-4 md:px-6 backdrop-blur-xl transition-all gap-3">
-                {/* Mobile Menu Button */}
-                <button
-                    className="md:hidden p-2 -ml-2 hover:bg-accent rounded-md"
-                    onClick={onMenuClick}
-                >
-                    <Menu className="h-5 w-5" />
-                </button>
+                {/* Mobile Menu Button - Hide for Clients */}
+                {!isClient && (
+                    <button
+                        className="md:hidden p-2 -ml-2 hover:bg-accent rounded-md"
+                        onClick={onMenuClick}
+                    >
+                        <Menu className="h-5 w-5" />
+                    </button>
+                )}
 
-                {/* Desktop Search & Notifications */}
-                <div className="flex-1 hidden md:flex items-center gap-4">
-                    <div className="relative flex-1 max-w-xl" ref={searchRef}>
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-                        {isSearching && (
-                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin z-10" />
-                        )}
-                        <Input
-                            placeholder="Buscar clientes, proyectos, tareas..."
-                            className="pl-9 pr-9 bg-accent/30 border-transparent focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary/20 w-full"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            onFocus={() => results.length > 0 && setIsOpen(true)}
-                        />
-                        <SearchResults />
-                    </div>
-                    <NotificationCarousel />
+                {/* Desktop Search & Notifications - Customize/Hide for Clients */}
+                <div className={`flex-1 hidden md:flex items-center gap-4 ${isClient ? 'justify-start' : ''}`}>
+                    {!isClient ? (
+                        <>
+                            <div className="relative flex-1 max-w-xl" ref={searchRef}>
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+                                {isSearching && (
+                                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin z-10" />
+                                )}
+                                <Input
+                                    placeholder="Buscar clientes, proyectos, tareas..."
+                                    className="pl-9 pr-9 bg-accent/30 border-transparent focus-visible:bg-background focus-visible:ring-1 focus-visible:ring-primary/20 w-full"
+                                    value={query}
+                                    onChange={(e) => setQuery(e.target.value)}
+                                    onFocus={() => results.length > 0 && setIsOpen(true)}
+                                />
+                                <SearchResults />
+                            </div>
+                            <NotificationCarousel />
+                        </>
+                    ) : (
+                        <ClientProjectSelector />
+                    )}
                 </div>
 
                 {/* Mobile: Logo/Title */}
@@ -161,25 +173,28 @@ export function Header({ onMenuClick }: HeaderProps) {
 
                 {/* Right side actions */}
                 <div className="flex items-center gap-2">
-                    {/* Mobile Search Button */}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="md:hidden text-muted-foreground hover:text-foreground"
-                        onClick={() => setMobileSearchOpen(true)}
-                    >
-                        <Search className="h-5 w-5" />
-                    </Button>
+                    {/* Mobile Search Button - Hide for Clients */}
+                    {!isClient && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="md:hidden text-muted-foreground hover:text-foreground"
+                            onClick={() => setMobileSearchOpen(true)}
+                        >
+                            <Search className="h-5 w-5" />
+                        </Button>
+                    )}
 
                     <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
                         <Bell className="h-5 w-5" />
                         <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
                     </Button>
+                    <ModeToggle />
                 </div>
             </header>
 
             {/* Mobile Search Overlay */}
-            {mobileSearchOpen && (
+            {mobileSearchOpen && !isClient && (
                 <div className="fixed inset-0 z-50 bg-background md:hidden">
                     <div className="flex flex-col h-full">
                         <div className="flex items-center gap-3 p-4 border-b border-border">

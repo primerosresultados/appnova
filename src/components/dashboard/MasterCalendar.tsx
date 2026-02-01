@@ -78,7 +78,7 @@ export function MasterCalendar({ events, users }: MasterCalendarProps) {
     };
 
     return (
-        <Card className="bg-card/30 backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
+        <Card className="bg-card backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
             <CardHeader className="pb-4 border-b border-border/30">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">

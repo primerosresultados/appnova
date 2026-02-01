@@ -21,7 +21,9 @@ import { format } from "date-fns";
 interface ProjectDetailsViewProps {
     project: any;
     allWorkflows?: any[];
+    currentUser?: any;
 }
+
 
 const statusMap: Record<string, { label: string; color: string; icon: any }> = {
     PLANNING: { label: "Planificación", color: "bg-blue-500/10 text-blue-500 border-blue-500/20", icon: Circle },
@@ -80,71 +82,79 @@ function TaskDescriptionBox({ description }: { description: string | null }) {
     );
 }
 
-export function ProjectDetailsView({ project, allWorkflows = [] }: ProjectDetailsViewProps) {
+export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: ProjectDetailsViewProps) {
 
     const status = statusMap[project.status] || statusMap.PLANNING;
     const StatusIcon = status.icon;
+    const isClient = currentUser?.role === 'CLIENTE';
 
     return (
         <div className="flex h-[calc(100vh-4rem)] -m-6 md:-m-8">
             <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
                 <div className="flex items-center gap-4">
-                    <Link href="/projects">
+                    <Link href={isClient ? "/dashboard" : "/projects"}>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
                     </Link>
-                    <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                            <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
-                            <Badge variant="outline" className={status.color}>
-                                <StatusIcon className="mr-1 h-3 w-3" />
-                                {status.label}
-                            </Badge>
+                    {!isClient && (
+                        <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
+                                <Badge variant="outline" className={status.color}>
+                                    <StatusIcon className="mr-1 h-3 w-3" />
+                                    {status.label}
+                                </Badge>
+                            </div>
+                            <p className="text-muted-foreground text-sm flex items-center gap-2 mt-1">
+                                <User className="h-3 w-3" /> {project.client.name}
+                            </p>
                         </div>
-                        <p className="text-muted-foreground text-sm flex items-center gap-2 mt-1">
-                            <User className="h-3 w-3" /> {project.client.name}
-                        </p>
-                    </div>
-                    <Button variant="outline">Editar Proyecto</Button>
+                    )}
+                    {isClient && <div className="flex-1" />} {/* Spacer for layout balance if needed */}
+                    {!isClient && <Button variant="outline">Editar Proyecto</Button>}
                 </div>
 
                 <Tabs defaultValue="tasks" className="w-full">
-                    <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 mb-6 flex-wrap">
-                        <TabsTrigger value="tasks" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 gap-2">
+                    <TabsList className="w-full justify-start bg-muted border-b-0 rounded-xl h-auto p-1 mb-6 gap-1 flex-wrap">
+                        <TabsTrigger value="tasks" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                             <ListTodo className="h-4 w-4" /> Tareas Pendientes
                         </TabsTrigger>
-                        <TabsTrigger value="planning" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 gap-2">
+                        <TabsTrigger value="planning" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                             <CalendarIcon className="h-4 w-4" /> Planificación
                         </TabsTrigger>
-                        <TabsTrigger value="resources" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 gap-2">
-                            <Database className="h-4 w-4" /> Recursos
-                        </TabsTrigger>
-                        <TabsTrigger value="content" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 gap-2">
+                        {!isClient && (
+                            <TabsTrigger value="resources" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                                <Database className="h-4 w-4" /> Recursos
+                            </TabsTrigger>
+                        )}
+                        <TabsTrigger value="content" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                             <FileText className="h-4 w-4" /> Contenido
                         </TabsTrigger>
-                        <TabsTrigger value="workflows" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 gap-2">
+                        <TabsTrigger value="workflows" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                             <Workflow className="h-4 w-4" /> Flujos de Trabajo
                         </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="tasks" className="space-y-4">
                         {project.tasks.length === 0 ? (
-                            <div className="text-center py-12 border border-dashed rounded-lg bg-card/30">
+                            <div className="text-center py-12 border border-dashed rounded-lg bg-card">
                                 <ListTodo className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-50" />
                                 <h3 className="text-lg font-medium">No hay tareas pendientes</h3>
                                 <p className="text-muted-foreground mb-4">Todas las tareas están al día.</p>
-                                <NewTaskSheet projectId={project.id} />
+                                {!isClient && <NewTaskSheet projectId={project.id} />}
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                <div className="flex justify-end">
-                                    <NewTaskSheet projectId={project.id} />
-                                </div>
+                                {!isClient && (
+                                    <div className="flex justify-end">
+                                        <NewTaskSheet projectId={project.id} />
+                                    </div>
+                                )}
                                 <div className="grid gap-2">
                                     {project.tasks.map((task: any) => (
                                         <Link key={task.id} href={`/tasks/${task.id}`}>
-                                            <div className="flex flex-col gap-2 p-4 rounded-lg border border-border/50 bg-card/50 hover:bg-card transition-colors cursor-pointer group">
+                                            <div className="flex flex-col gap-2 p-4 rounded-lg border border-border/50 bg-card hover:bg-card transition-colors cursor-pointer group">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center gap-3">
                                                         <div className={`p-2 rounded-full ${task.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/10 text-primary'}`}>
@@ -196,6 +206,7 @@ export function ProjectDetailsView({ project, allWorkflows = [] }: ProjectDetail
                                 milestones={project.milestones}
                                 contents={project.contents || []}
                                 tasks={project.tasks || []}
+                                isClient={isClient}
                             />
                         </div>
                     </TabsContent>
@@ -205,17 +216,17 @@ export function ProjectDetailsView({ project, allWorkflows = [] }: ProjectDetail
                     </TabsContent>
 
                     <TabsContent value="content" className="space-y-4">
-                        <ContentsTab projectId={project.id} contents={project.contents || []} />
+                        <ContentsTab projectId={project.id} contents={project.contents || []} isClient={isClient} />
                     </TabsContent>
 
                     <TabsContent value="workflows" className="space-y-4">
-                        <WorkflowsTab projectId={project.id} projectWorkflows={project.workflows || []} availableWorkflows={allWorkflows} />
+                        <WorkflowsTab projectId={project.id} projectWorkflows={project.workflows || []} availableWorkflows={allWorkflows} isClient={isClient} />
                     </TabsContent>
                 </Tabs>
             </div>
 
             <div className="w-[350px] shrink-0 border-l border-border h-full hidden xl:block">
-                <ActionLogPanel projectId={project.id} logs={project.actionLogs} />
+                <ActionLogPanel projectId={project.id} logs={project.actionLogs} currentUser={currentUser} />
             </div>
         </div>
     );

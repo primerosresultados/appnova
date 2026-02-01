@@ -140,7 +140,7 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
 
             <div className="grid gap-4 md:grid-cols-2">
                 {/* Google Drive & Storage */}
-                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <Card className="bg-card backdrop-blur-sm border-border/50">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                             <HardDrive className="h-4 w-4" /> Almacenamiento & Drive
@@ -163,7 +163,7 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
                 </Card>
 
                 {/* Credentials */}
-                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <Card className="bg-card backdrop-blur-sm border-border/50">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                             <Key className="h-4 w-4" /> Accesos & Credenciales
@@ -199,7 +199,7 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
                 </Card>
 
                 {/* Files */}
-                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <Card className="bg-card backdrop-blur-sm border-border/50">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                             <FileIcon className="h-4 w-4" /> Archivos & Presupuestos
@@ -222,7 +222,7 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
                 </Card>
 
                 {/* Links */}
-                <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                <Card className="bg-card backdrop-blur-sm border-border/50">
                     <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                             <LinkIcon className="h-4 w-4" /> Enlaces de Interés

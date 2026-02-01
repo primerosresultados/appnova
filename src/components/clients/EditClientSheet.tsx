@@ -82,7 +82,7 @@ export function EditClientSheet({ client }: EditClientSheetProps) {
                     Editar Cliente
                 </Button>
             </SheetTrigger>
-            <SheetContent className="sm:max-w-[600px] overflow-y-auto">
+            <SheetContent className="sm:max-w-[700px] overflow-y-auto p-10">
                 <SheetHeader>
                     <SheetTitle>Editar Cliente</SheetTitle>
                     <SheetDescription>

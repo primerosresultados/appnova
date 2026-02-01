@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, Clock, DollarSign } from "lucide-react";
 import { getDashboardNotifications } from "@/app/actions/notification-actions";
+import Link from "next/link";
 
 export function NotificationCarousel() {
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -51,7 +52,7 @@ export function NotificationCarousel() {
     };
 
     return (
-        <div className="hidden lg:flex items-center gap-3 px-4 py-1.5 bg-accent/30 rounded-full border border-border/50 flex-1 max-w-md overflow-hidden">
+        <Link href={current.href || '#'} className="hidden lg:flex items-center gap-3 px-4 py-1.5 bg-accent/30 rounded-full border border-border/50 flex-1 max-w-md overflow-hidden hover:bg-accent/50 transition-colors">
             <div className="shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-background border border-border/50 shadow-sm">
                 {getIcon(current.type)}
             </div>
@@ -75,6 +76,6 @@ export function NotificationCarousel() {
                     />
                 ))}
             </div>
-        </div>
+        </Link>
     );
 }

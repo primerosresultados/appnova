@@ -162,7 +162,7 @@ export function NewWorkflowDialog() {
                         </div>
 
                         {stages.map((stage, sIndex) => (
-                            <div key={sIndex} className="p-4 border rounded-lg bg-card/50 space-y-4">
+                            <div key={sIndex} className="p-4 border rounded-lg bg-card space-y-4">
                                 <div className="flex items-center gap-4">
                                     <div className="h-6 w-6 rounded-full bg-primary/20 text-primary flex items-center justify-center text-xs font-bold shrink-0">
                                         {sIndex + 1}

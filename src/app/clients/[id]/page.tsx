@@ -89,7 +89,7 @@ export default async function ClientPage(props: { params: Params }) {
                 <TabsContent value="overview" className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
                     <div className="grid gap-8 md:grid-cols-12">
                         {/* Contact Info Card */}
-                        <Card className="md:col-span-4 bg-card/30 backdrop-blur-md border border-border/40 shadow-xl overflow-hidden group">
+                        <Card className="md:col-span-4 bg-card backdrop-blur-md border border-border/40 shadow-xl overflow-hidden group">
                             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                             <CardHeader className="pb-6 relative border-b border-border/30">
                                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Información de Contacto</CardTitle>
@@ -130,7 +130,7 @@ export default async function ClientPage(props: { params: Params }) {
                         </Card>
 
                         {/* Projects Card */}
-                        <Card className="md:col-span-8 bg-card/30 backdrop-blur-md border border-border/40 shadow-xl relative overflow-hidden group">
+                        <Card className="md:col-span-8 bg-card backdrop-blur-md border border-border/40 shadow-xl relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-1000 group-hover:scale-125" />
                             <CardHeader className="pb-6 border-b border-border/30">
                                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Proyectos Activos</CardTitle>
@@ -175,7 +175,7 @@ export default async function ClientPage(props: { params: Params }) {
                 </TabsContent>
 
                 <TabsContent value="billing" className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
-                    <Card className="bg-card/30 backdrop-blur-md border border-border/40 shadow-xl overflow-hidden relative">
+                    <Card className="bg-card backdrop-blur-md border border-border/40 shadow-xl overflow-hidden relative">
                         <div className="absolute top-0 right-0 p-8 opacity-10">
                             <CreditCard className="h-16 w-16" />
                         </div>
@@ -202,7 +202,7 @@ export default async function ClientPage(props: { params: Params }) {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-card/30 backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
+                    <Card className="bg-card backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
                         <CardHeader className="flex flex-row items-center justify-between pb-8 border-b border-border/30 bg-secondary/5 px-8">
                             <div>
                                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Historial Financiero</CardTitle>
@@ -247,7 +247,7 @@ export default async function ClientPage(props: { params: Params }) {
                 </TabsContent>
 
                 <TabsContent value="records" className="animate-in slide-in-from-bottom-2 duration-500">
-                    <Card className="bg-card/30 backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
+                    <Card className="bg-card backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
                         <CardHeader className="flex flex-row items-center justify-between pb-8 bg-secondary/5 border-b border-border/30 px-8">
                             <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80 flex items-center gap-3">
                                 <AlertCircle className="h-5 w-5 text-primary" /> Bitácora de Cliente

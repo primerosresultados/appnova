@@ -18,9 +18,10 @@ interface WorkflowsTabProps {
     projectId: string;
     projectWorkflows: any[];
     availableWorkflows?: any[];
+    isClient?: boolean;
 }
 
-export function WorkflowsTab({ projectId, projectWorkflows, availableWorkflows = [] }: WorkflowsTabProps) {
+export function WorkflowsTab({ projectId, projectWorkflows, availableWorkflows = [], isClient = false }: WorkflowsTabProps) {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -28,15 +29,15 @@ export function WorkflowsTab({ projectId, projectWorkflows, availableWorkflows =
                     <h2 className="text-lg font-semibold text-balanced">Flujos de Trabajo del Proyecto</h2>
                     <p className="text-sm text-muted-foreground text-balanced">Plantillas de trabajo aplicadas con sus respectivas etapas y tareas.</p>
                 </div>
-                <ApplyWorkflowDialog projectId={projectId} availableWorkflows={availableWorkflows} />
+                {!isClient && <ApplyWorkflowDialog projectId={projectId} availableWorkflows={availableWorkflows} />}
             </div>
 
             {projectWorkflows.length === 0 ? (
-                <div className="text-center py-20 border border-dashed rounded-xl bg-card/30">
+                <div className="text-center py-20 border border-dashed rounded-xl bg-card">
                     <Workflow className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-50" />
                     <h3 className="text-lg font-medium">No hay flujos de trabajo aplicados</h3>
                     <p className="text-muted-foreground mb-6">Añade una estructura de trabajo predefinida para este proyecto.</p>
-                    <ApplyWorkflowDialog projectId={projectId} availableWorkflows={availableWorkflows} />
+                    {!isClient && <ApplyWorkflowDialog projectId={projectId} availableWorkflows={availableWorkflows} />}
                 </div>
             ) : (
                 <div className="space-y-8">
@@ -57,7 +58,7 @@ export function WorkflowsTab({ projectId, projectWorkflows, availableWorkflows =
 
                             <div className="grid gap-6">
                                 {pw.workflow.stages.map((stage: any, sIdx: number) => (
-                                    <Card key={stage.id} className="bg-card/40 border-border/50 overflow-hidden">
+                                    <Card key={stage.id} className="bg-card border-border/50 overflow-hidden">
                                         <CardHeader className="bg-muted/50 py-3 flex flex-row items-center justify-between">
                                             <div className="flex items-center gap-2">
                                                 <Badge variant="secondary" className="h-6 w-6 rounded-full p-0 flex items-center justify-center bg-primary/20 text-primary">

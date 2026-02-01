@@ -8,13 +8,16 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Bell, Key, Plug, Shield, User, Users, Webhook } from "lucide-react";
+import { Bell, Key, Plug, Shield, User, Users, Webhook, Palette } from "lucide-react";
 
 import { getUsers } from "@/app/actions/user-actions";
+import { getOrganizationSettings } from "@/app/actions/organization-actions";
 import { MembersTab } from "@/components/settings/MembersTab";
+import { BrandTab } from "@/components/settings/BrandTab";
 
 export default async function SettingsPage() {
     const users = await getUsers();
+    const orgSettings = await getOrganizationSettings();
 
     return (
         <div className="space-y-6 animate-in fade-in-50 duration-500">
@@ -25,18 +28,20 @@ export default async function SettingsPage() {
             </div>
 
             <Tabs defaultValue="members" className="w-full space-y-6">
-                <TabsList className="bg-transparent border-b border-border w-full justify-start rounded-none h-auto p-0">
-                    {/* ... triggers ... */}
-                    <TabsTrigger value="members" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 gap-2">
+                <TabsList className="bg-muted w-full justify-start rounded-xl h-auto p-1 gap-1 flex-wrap">
+                    <TabsTrigger value="members" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                         <Users className="h-4 w-4" /> Miembros
                     </TabsTrigger>
-                    <TabsTrigger value="connections" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 gap-2">
+                    <TabsTrigger value="brand" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                        <Palette className="h-4 w-4" /> Marca
+                    </TabsTrigger>
+                    <TabsTrigger value="connections" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                         <Plug className="h-4 w-4" /> Conexiones
                     </TabsTrigger>
-                    <TabsTrigger value="notifications" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 gap-2">
+                    <TabsTrigger value="notifications" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                         <Bell className="h-4 w-4" /> Notificaciones
                     </TabsTrigger>
-                    <TabsTrigger value="api" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 gap-2">
+                    <TabsTrigger value="api" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                         <Webhook className="h-4 w-4" /> API & Keys
                     </TabsTrigger>
                 </TabsList>
@@ -46,10 +51,16 @@ export default async function SettingsPage() {
                     <MembersTab users={users} />
                 </TabsContent>
 
+                {/* --- BRAND TAB --- */}
+                <TabsContent value="brand" className="space-y-4">
+                    {/* @ts-ignore */}
+                    <BrandTab initialData={orgSettings.data} />
+                </TabsContent>
+
                 {/* --- CONNECTIONS TAB --- */}
                 <TabsContent value="connections" className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        <Card className="bg-card/50 border-border/50">
+                        <Card className="bg-card border-border/50">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Google Drive</CardTitle>
                                 <Plug className="h-4 w-4 text-muted-foreground" />
@@ -60,7 +71,7 @@ export default async function SettingsPage() {
                                 <Button variant="outline" size="sm" className="mt-4 w-full">Configurar</Button>
                             </CardContent>
                         </Card>
-                        <Card className="bg-card/50 border-border/50">
+                        <Card className="bg-card border-border/50">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Slack</CardTitle>
                                 <Plug className="h-4 w-4 text-muted-foreground" />
@@ -76,7 +87,7 @@ export default async function SettingsPage() {
 
                 {/* --- NOTIFICATIONS TAB --- */}
                 <TabsContent value="notifications" className="space-y-4">
-                    <Card className="bg-card/50 border-border/50">
+                    <Card className="bg-card border-border/50">
                         <CardHeader>
                             <CardTitle>Preferencias de Email</CardTitle>
                             <CardDescription>Elige qué correos quieres recibir.</CardDescription>
@@ -103,7 +114,7 @@ export default async function SettingsPage() {
 
                 {/* --- API TAB --- */}
                 <TabsContent value="api" className="space-y-4">
-                    <Card className="bg-card/50 border-border/50">
+                    <Card className="bg-card border-border/50">
                         <CardHeader>
                             <CardTitle>API Keys</CardTitle>
                             <CardDescription>Gestiona tus llaves de acceso para integraciones personalizadas.</CardDescription>

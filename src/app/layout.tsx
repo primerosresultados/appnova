@@ -14,6 +14,8 @@ const geistMono = Geist_Mono({
 
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "@/components/theme-provider";
+import { DynamicBrand } from "@/components/theme/DynamicBrand";
 
 export const metadata: Metadata = {
   title: "Nova Partners | Agency OS",
@@ -26,16 +28,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
         suppressHydrationWarning
       >
-        <MainLayout>
-          {children}
-        </MainLayout>
-        <Toaster position="bottom-right" />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <MainLayout>
+            <DynamicBrand />
+            {children}
+          </MainLayout>
+          <Toaster position="bottom-right" />
+        </ThemeProvider>
       </body>
-    </html>
+    </html >
   );
 }

@@ -19,7 +19,7 @@ function ProjectsListSkeleton() {
             </div>
             <div className="flex flex-col gap-4">
                 {[1, 2, 3].map((i) => (
-                    <Card key={i} className="bg-card/50 border-border/50">
+                    <Card key={i} className="bg-card border-border/50">
                         <CardContent className="p-4 flex flex-col md:flex-row items-center gap-4">
                             <Skeleton className="h-6 w-[140px]" />
                             <div className="flex-1 space-y-2 w-full">

@@ -36,6 +36,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 interface ContentsTabProps {
     projectId: string;
     contents: any[];
+    isClient?: boolean;
 }
 
 const typeConfig: Record<string, { icon: any; color: string; label: string }> = {
@@ -55,7 +56,7 @@ const statusMap: Record<string, { label: string; color: string }> = {
     PUBLISHED: { label: "Publicado", color: "bg-indigo-500/10 text-indigo-500" },
 };
 
-export function ContentsTab({ projectId, contents }: ContentsTabProps) {
+export function ContentsTab({ projectId, contents, isClient = false }: ContentsTabProps) {
     const [editingItem, setEditingItem] = useState<any>(null);
     const [itemToDelete, setItemToDelete] = useState<any>(null);
 
@@ -77,15 +78,15 @@ export function ContentsTab({ projectId, contents }: ContentsTabProps) {
                     <h2 className="text-lg font-semibold">Gestión de Contenidos</h2>
                     <p className="text-sm text-muted-foreground text-balanced">Planificación visual de publicaciones y campañas.</p>
                 </div>
-                <NewContentDialog projectId={projectId} />
+                {!isClient && <NewContentDialog projectId={projectId} />}
             </div>
 
             {contents.length === 0 ? (
-                <div className="text-center py-20 border-2 border-dashed border-border/40 rounded-xl bg-card/30">
+                <div className="text-center py-20 border-2 border-dashed border-border/40 rounded-xl bg-card">
                     <ImageIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
                     <h3 className="text-lg font-medium">Aún no hay contenido programado</h3>
                     <p className="text-muted-foreground mb-6">Comienza a crear posts, reels o campañas para este proyecto.</p>
-                    <NewContentDialog projectId={projectId} />
+                    {!isClient && <NewContentDialog projectId={projectId} />}
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -95,7 +96,7 @@ export function ContentsTab({ projectId, contents }: ContentsTabProps) {
                         const status = statusMap[item.status] || { label: item.status, color: "bg-secondary" };
 
                         return (
-                            <Card key={item.id} className="group overflow-hidden bg-card/40 border-border/50 hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/5">
+                            <Card key={item.id} className="group overflow-hidden bg-card border-border/50 hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/5">
                                 <div className="aspect-video relative overflow-hidden bg-muted">
                                     <MediaPreview url={item.mediaUrl} type={item.type} />
                                     <div className="absolute top-2 left-2 flex gap-2">
@@ -115,22 +116,24 @@ export function ContentsTab({ projectId, contents }: ContentsTabProps) {
                                         <h4 className="font-semibold text-sm line-clamp-2 min-h-[40px] leading-tight">
                                             {item.title}
                                         </h4>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => setEditingItem(item)}>
-                                                    Editar
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem className="text-destructive" onClick={() => setItemToDelete(item)}>
-                                                    Eliminar
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        {!isClient && (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => setEditingItem(item)}>
+                                                        Editar
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem className="text-destructive" onClick={() => setItemToDelete(item)}>
+                                                        Eliminar
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        )}
                                     </div>
 
                                     <p className="text-xs text-muted-foreground line-clamp-2 italic">

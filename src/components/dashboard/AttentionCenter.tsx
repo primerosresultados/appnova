@@ -20,7 +20,7 @@ export function AttentionCenter({ overdueTasks, pendingInvoices, urgentProjects 
 
     if (totalItems === 0) {
         return (
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+            <Card className="bg-card backdrop-blur-sm border-border/50">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                         <CheckCircle2 className="h-5 w-5 text-emerald-500" />
@@ -37,7 +37,7 @@ export function AttentionCenter({ overdueTasks, pendingInvoices, urgentProjects 
     };
 
     return (
-        <Card className="bg-card/50 backdrop-blur-sm border-border/50 border-l-4 border-l-amber-500/50">
+        <Card className="bg-card backdrop-blur-sm border-border/50 border-l-4 border-l-amber-500/50">
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <div>

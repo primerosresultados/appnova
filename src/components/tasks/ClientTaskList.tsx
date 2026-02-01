@@ -53,7 +53,7 @@ export function ClientTaskList({ initialTasks, users, userRole }: ClientTaskList
                     <div className="w-full md:w-[250px] space-y-1.5">
                         <Label className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground ml-1">Filtrar por usuario</Label>
                         <Select value={filterUserId} onValueChange={setFilterUserId}>
-                            <SelectTrigger className="bg-card/40 border-border/40 backdrop-blur-md h-9 text-sm">
+                            <SelectTrigger className="bg-card border-border/40 backdrop-blur-md h-9 text-sm">
                                 <SelectValue placeholder="Todos los usuarios" />
                             </SelectTrigger>
                             <SelectContent>
@@ -71,7 +71,7 @@ export function ClientTaskList({ initialTasks, users, userRole }: ClientTaskList
 
             <div className="grid gap-4">
                 {filteredTasks.length === 0 ? (
-                    <div className="text-center py-20 border border-dashed rounded-xl bg-card/30">
+                    <div className="text-center py-20 border border-dashed rounded-xl bg-card">
                         <CheckCircle2 className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                         <h3 className="text-lg font-medium">Todo al día</h3>
                         <p className="text-muted-foreground">No hay tareas pendientes con este filtro.</p>
@@ -83,7 +83,7 @@ export function ClientTaskList({ initialTasks, users, userRole }: ClientTaskList
 
                         return (
                             <Link key={task.id} href={`/tasks/${task.id}`}>
-                                <div className="group flex flex-col gap-3 p-4 md:p-5 rounded-xl border border-border/40 bg-card/40 hover:bg-card/60 hover:border-primary/20 transition-all duration-300 shadow-sm active:bg-card/80 cursor-pointer relative overflow-hidden">
+                                <div className="group flex flex-col gap-3 p-4 md:p-5 rounded-xl border border-border/40 bg-card hover:bg-accent/50 hover:border-primary/20 transition-all duration-300 shadow-sm active:bg-accent cursor-pointer relative overflow-hidden">
                                     <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
                                     <div className="flex-1 z-10">

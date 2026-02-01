@@ -43,14 +43,16 @@ export async function getDashboardNotifications() {
                 type: 'TASK',
                 title: `Tarea próxima: ${t.title}`,
                 description: `${t.project.name} - Vence ${formatDistanceToNow(new Date(t.dueDate!), { addSuffix: true, locale: es })}`,
-                priority: t.priority
+                priority: t.priority,
+                href: `/projects/${t.projectId}` // Navigate to project context
             })),
             ...recentPayments.map(p => ({
                 id: `payment-${p.id}`,
                 type: 'PAYMENT',
                 title: `Pago recibido: $${p.amount.toLocaleString('es-CL')}`,
                 description: p.description || 'Sin descripción',
-                priority: 'LOW'
+                priority: 'LOW',
+                href: '/finance'
             }))
         ];
 

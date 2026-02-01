@@ -98,7 +98,7 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
                         const StatusIcon = status.icon;
 
                         return (
-                            <Card key={project.id} className="bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors group">
+                            <Card key={project.id} className="bg-card backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors group">
                                 <CardContent className="p-5 flex flex-col md:flex-row items-start md:items-center gap-4">
                                     {/* Main Info (Left) */}
                                     <div className="flex-1 min-w-0">

@@ -1,10 +1,10 @@
 import { PrismaClient } from "@prisma/client";
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+const globalForPrisma = globalThis as unknown as { prismaGlobal: PrismaClient };
 
 // Configure connection pool to avoid exhausting Supabase limits
 export const db =
-    globalForPrisma.prisma ||
+    globalForPrisma.prismaGlobal ||
     new PrismaClient({
         datasources: {
             db: {
@@ -15,7 +15,7 @@ export const db =
 
 // Ensure we reuse the same instance in development
 if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = db;
+    globalForPrisma.prismaGlobal = db;
 }
 
 // Graceful shutdown

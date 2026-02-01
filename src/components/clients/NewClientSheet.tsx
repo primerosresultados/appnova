@@ -61,7 +61,7 @@ export function NewClientSheet() {
                     <Plus className="mr-2 h-4 w-4" /> Agregar Cliente
                 </Button>
             </SheetTrigger>
-            <SheetContent className="sm:max-w-[540px]">
+            <SheetContent className="sm:max-w-[540px] p-10">
                 <SheetHeader>
                     <SheetTitle>Agregar Nuevo Cliente</SheetTitle>
                     <SheetDescription>

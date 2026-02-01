@@ -57,7 +57,7 @@ export function EditClientDialog({ client, open, onOpenChange }: EditClientDialo
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[500px] p-10">
                 <DialogHeader>
                     <DialogTitle>Editar Cliente</DialogTitle>
                     <DialogDescription>

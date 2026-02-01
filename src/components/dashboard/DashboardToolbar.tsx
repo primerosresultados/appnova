@@ -24,7 +24,7 @@ export function DashboardToolbar() {
     };
 
     return (
-        <div className="flex items-center gap-2 bg-card/50 backdrop-blur-sm p-1 rounded-lg border border-border/50">
+        <div className="flex items-center gap-2 bg-card backdrop-blur-sm p-1 rounded-lg border border-border/50">
             <div className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground border-r border-border/50">
                 <Filter className="h-4 w-4" />
                 <span className="font-medium hidden sm:inline-block">Filtrar por:</span>

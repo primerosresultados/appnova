@@ -40,6 +40,7 @@ interface ProjectCalendarProps {
     milestones: Milestone[];
     contents: Content[];
     tasks: any[];
+    isClient?: boolean;
 }
 
 const initialState = {
@@ -47,7 +48,7 @@ const initialState = {
     success: false
 };
 
-export function ProjectCalendar({ projectId, milestones, contents, tasks }: ProjectCalendarProps) {
+export function ProjectCalendar({ projectId, milestones, contents, tasks, isClient = false }: ProjectCalendarProps) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     // Unified events list
@@ -88,7 +89,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks }: Proj
 
     return (
         <div className="flex flex-col lg:flex-row gap-6 h-full">
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50 flex-1">
+            <Card className="bg-card backdrop-blur-sm border-border/50 flex-1">
                 <CardHeader>
                     <CardTitle>Calendario de Hitos</CardTitle>
                     <CardDescription>Selecciona un día para ver o agregar entregables.</CardDescription>
@@ -132,7 +133,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks }: Proj
             </Card>
 
             <div className="w-full lg:w-[350px] space-y-4">
-                <Card className="bg-card/50 backdrop-blur-sm border-border/50 h-full">
+                <Card className="bg-card backdrop-blur-sm border-border/50 h-full">
                     <CardHeader>
                         <CardTitle className="text-sm">
                             {date ? format(date, "d 'de' MMMM", { locale: es }) : "Selecciona una fecha"}
@@ -157,7 +158,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks }: Proj
                                             )}
                                             {item.title}
                                         </h4>
-                                        {item._kind === 'MILESTONE' && (
+                                        {item._kind === 'MILESTONE' && !isClient && (
                                             <Button size="icon" variant="ghost" className="h-4 w-4 text-destructive" onClick={() => handleDelete(item.id)}>
                                                 <Trash2 className="h-3 w-3" />
                                             </Button>
@@ -194,7 +195,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks }: Proj
                                 </div>
                             ))}
 
-                            {date && (
+                            {date && !isClient && (
                                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                                     <DialogTrigger asChild>
                                         <Button size="sm" className="w-full mt-4" variant="outline">

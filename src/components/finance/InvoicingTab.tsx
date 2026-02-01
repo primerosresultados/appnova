@@ -35,7 +35,7 @@ export function InvoicingTab({ invoices }: InvoicingTabProps) {
     };
 
     return (
-        <Card className="bg-card/50 border border-border/40 shadow-lg overflow-hidden">
+        <Card className="bg-card border border-border/40 shadow-lg overflow-hidden">
             <CardHeader className="pb-4">
                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Control de Facturación</CardTitle>
                 <CardDescription>Historial completo de facturas y estados de pago.</CardDescription>

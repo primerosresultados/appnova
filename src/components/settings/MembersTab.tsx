@@ -120,7 +120,7 @@ export function MembersTab({ users }: MembersTabProps) {
                 </Dialog>
             </div>
 
-            <Card className="bg-card/50 border-border/50">
+            <Card className="bg-card border-border/50">
                 <CardContent className="p-0">
                     <div className="divide-y divide-border/50">
                         {users.map((user) => (

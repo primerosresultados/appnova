@@ -1,9 +1,8 @@
 
-export const dynamic = 'force-dynamic';
 import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Activity, CreditCard, DollarSign, Users, TrendingUp } from "lucide-react";
+import { FolderKanban, Clock, AlertTriangle, BarChart3 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -13,8 +12,10 @@ import { DashboardToolbar } from "@/components/dashboard/DashboardToolbar";
 import { Suspense } from "react";
 import { AttentionCenter } from "@/components/dashboard/AttentionCenter";
 import { getAttentionItems, getCalendarEvents } from "@/app/actions/dashboard-actions";
-import { MasterCalendar } from "@/components/dashboard/MasterCalendar";
+import { getUserSession } from "@/app/actions/auth-actions";
+import { ClientDashboard } from "@/components/dashboard/ClientDashboard";
 
+export const dynamic = 'force-dynamic';
 
 const data = [
   { name: 'Mon', value: 4000 },
@@ -22,6 +23,8 @@ const data = [
   { name: 'Wed', value: 2000 },
   { name: 'Thu', value: 2780 },
   { name: 'Fri', value: 1890 },
+  { name: 'Sat', value: 2390 },
+  { name: 'Sun', value: 3490 },
   { name: 'Sat', value: 2390 },
   { name: 'Sun', value: 3490 },
 ];
@@ -71,61 +74,68 @@ interface SearchParamsProps {
 }
 
 export default async function Dashboard({ searchParams }: SearchParamsProps) {
+  const user = await getUserSession();
+
+  // Redirect or show client specific dashboard
+  if (user?.role === 'CLIENTE') {
+    return (
+      <div className="p-6">
+        <ClientDashboard />
+      </div>
+    );
+  }
+
   const params = await searchParams;
   const period = params?.period || '30d';
   const stats = await getDashboardStats(period);
   const attentionItems = await getAttentionItems();
-  const calendarData = await getCalendarEvents();
   const recentActivity = await getRecentActivity();
-  const formattedTotalIncome = new Intl.NumberFormat('es-CL', {
-    style: 'currency',
-    currency: 'CLP',
-  }).format(stats.totalIncome);
 
   return (
     <div className="space-y-4 md:space-y-6 animate-in fade-in-50 duration-500">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent">
-          Centro de Comando
-        </h1>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground uppercase">
+            Panel de Control
+          </h1>
+          <div className="flex items-center gap-2 text-muted-foreground mt-1">
+            <span className="font-bold">Resumen General</span>
+            <span className="h-1 w-1 rounded-full bg-muted-foreground/50" />
+            <Badge variant="secondary" className="bg-muted text-[10px] tracking-widest uppercase font-bold text-muted-foreground rounded-md px-2">Vista Gerencia</Badge>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Suspense>
+            <DashboardToolbar />
+          </Suspense>
+        </div>
       </div>
 
-      {/* Master Calendar */}
-      <MasterCalendar events={calendarData.events} users={calendarData.users} />
-
-      <div className="flex flex-col md:flex-row items-end md:items-center justify-between gap-4 mt-8">
-        <h2 className="text-lg font-bold text-muted-foreground uppercase tracking-wider">Métricas Clave</h2>
-        <Suspense>
-          <DashboardToolbar />
-        </Suspense>
-      </div>
-
-      <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
         {[
-          { title: "Ingresos", value: formattedTotalIncome, change: "+0% mes", icon: DollarSign, color: "text-emerald-500" },
-          { title: "Proyectos", value: stats.totalProjects.toString(), change: "En curso", icon: FolderKanban, color: "text-blue-500" },
-          { title: "Satisfacción", value: "98.2%", change: "+4% mes", icon: TrendingUp, color: "text-amber-500" },
-          { title: "Clientes", value: stats.activeClients.toString(), change: "Activos", icon: Users, color: "text-purple-500" }
+          { title: "TOTAL PROYECTOS", value: stats.totalProjects.toString(), icon: FolderKanban, color: "text-blue-500", bg: "bg-blue-500/10" },
+          { title: "ACTIVOS", value: "3", icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
+          { title: "TIEMPOS CRÍTICOS", value: "1", icon: AlertTriangle, color: "text-red-500", bg: "bg-red-500/10" },
+          { title: "% CUMPLIMIENTO", value: "32%", icon: BarChart3, color: "text-purple-500", bg: "bg-purple-500/10" }
         ].map((item, i) => (
-          <Card key={i} className="bg-card/50 backdrop-blur-sm border-border/50 hover:bg-card/80 active:bg-card transition-all duration-300 group">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
-              <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-                {item.title}
-              </CardTitle>
-              <item.icon className="h-3.5 w-3.5 md:h-4 md:w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-            </CardHeader>
-            <CardContent className="p-3 md:p-6 pt-0">
-              <div className="text-lg md:text-2xl font-bold tracking-tight">{item.value}</div>
-              <p className="text-[10px] md:text-xs text-muted-foreground mt-1">
-                <span className="text-emerald-500 font-medium">{item.change}</span>
-              </p>
+          <Card key={i} className="bg-card backdrop-blur-sm border-border/50 hover:bg-accent/50 active:bg-accent transition-all duration-300 group overflow-hidden relative">
+            <CardContent className="p-6 flex items-center gap-6">
+              <div className={`h-16 w-16 rounded-2xl ${item.bg} flex items-center justify-center shrink-0`}>
+                <item.icon className={`h-8 w-8 ${item.color}`} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  {item.title}
+                </p>
+                <div className="text-4xl font-black tracking-tight text-foreground">{item.value}</div>
+              </div>
             </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-7">
-        <Card className="lg:col-span-4 bg-card/50 backdrop-blur-sm border-border/50">
+        <Card className="lg:col-span-4 bg-card backdrop-blur-sm border-border/50">
           <CardHeader className="p-4 md:p-6">
             <CardTitle className="text-base md:text-lg">Resumen de Ingresos</CardTitle>
             <CardDescription className="text-xs md:text-sm">Rendimiento mensual del trimestre.</CardDescription>
@@ -144,10 +154,9 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
             urgentProjects={attentionItems.urgentProjects}
           />
 
-          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-            <CardHeader>
-              <CardTitle>Actividad Reciente</CardTitle>
-              <CardDescription>Últimas actualizaciones de tu equipo y clientes.</CardDescription>
+          <Card className="bg-card backdrop-blur-sm border-border/50">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-xl">Actividad Reciente</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -155,7 +164,7 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
                   <p className="text-muted-foreground text-sm">No hay actividad reciente.</p>
                 ) : (
                   recentActivity.slice(0, 3).map((log: any) => (
-                    <div key={log.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-white/5 transition-colors">
+                    <div key={log.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-accent/50 transition-colors">
                       <Avatar className={`h-9 w-9 border-0 ${getActionColor(log.type)}`}>
                         <AvatarFallback className="bg-transparent font-bold">
                           {log.user?.name ? log.user.name.substring(0, 2).toUpperCase() : 'Sys'}
@@ -181,22 +190,4 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
   );
 }
 
-function FolderKanban(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect width="20" height="14" x="2" y="5" rx="2" />
-      <path d="M2 10h20" />
-    </svg>
-  )
-}
+

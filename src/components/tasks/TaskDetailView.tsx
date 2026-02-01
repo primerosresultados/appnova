@@ -163,7 +163,7 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                             dueDate={task.dueDate}
                             status={task.status}
                         />
-                        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+                        <Card className="bg-card backdrop-blur-sm border-border/50">
                             <CardContent className="p-6 space-y-6">
                                 <div>
                                     <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Descripción</h3>
@@ -205,7 +205,7 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value="entregables" className="min-h-[200px]">
-                                <div className="text-center py-12 border-2 border-dashed border-border/40 rounded-xl bg-card/30 hover:bg-card/50 transition-colors">
+                                <div className="text-center py-12 border-2 border-dashed border-border/40 rounded-xl bg-card hover:bg-card transition-colors">
                                     <Paperclip className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-30" />
                                     <h3 className="text-lg font-medium mb-1">Zona de Archivos</h3>
                                     <p className="text-muted-foreground mb-6 text-sm max-w-md mx-auto">Sube documentos, diseños o cualquier entregable relacionado con esta tarea.</p>
@@ -218,7 +218,7 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                                     ) : (
                                         <div className="grid gap-2">
                                             {JSON.parse(task.attachments).map((file: any, index: number) => (
-                                                <div key={index} className="flex items-center justify-between p-3 rounded-md border border-border/40 bg-card/60 hover:bg-card transition-colors group">
+                                                <div key={index} className="flex items-center justify-between p-3 rounded-md border border-border/40 bg-card hover:bg-accent/50 transition-colors group">
                                                     <div className="flex items-center gap-3">
                                                         <div className="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary">
                                                             <FileText className="h-4 w-4" />
@@ -377,7 +377,7 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
 
                     {/* Sidebar / Bitacora */}
                     <div className="lg:col-span-1">
-                        <Card className="h-[600px] flex flex-col bg-card/50 backdrop-blur-sm border-border/50 sticky top-6">
+                        <Card className="h-[600px] flex flex-col bg-card backdrop-blur-sm border-border/50 sticky top-6">
                             <CardHeader className="pb-3 border-b border-border/50">
                                 <CardTitle className="text-base flex items-center gap-2">
                                     <FileText className="h-4 w-4 text-primary" /> Bitácora de Actividad

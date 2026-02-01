@@ -57,7 +57,7 @@ export default function ClientsPage() {
                 </div>
             </div>
 
-            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+            <Card className="bg-card backdrop-blur-sm border-border/50">
                 <CardContent className="p-0">
                     <Suspense fallback={<div className="p-6"><ClientsTableSkeleton /></div>}>
                         <ClientsTable />

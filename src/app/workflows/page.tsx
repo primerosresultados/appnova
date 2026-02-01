@@ -36,7 +36,7 @@ export default async function WorkflowsPage() {
             )}
 
             {workflows.length === 0 ? (
-                <div className="text-center py-20 border border-dashed rounded-lg bg-card/30">
+                <div className="text-center py-20 border border-dashed rounded-lg bg-card">
                     <Workflow className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
                     <h3 className="text-lg font-medium">No hay flujos de trabajo</h3>
                     <p className="text-muted-foreground mb-6 max-w-sm mx-auto">

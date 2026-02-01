@@ -3,11 +3,13 @@
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { getUserSession } from "@/app/actions/auth-actions";
 
 const logSchema = z.object({
     projectId: z.string(),
     content: z.string().min(1, "Message is required"),
     type: z.string().default("NOTE"),
+    isPublic: z.string().transform((val) => val === "true").optional(),
 });
 
 export async function addActionLog(prevState: any, formData: FormData) {
@@ -15,6 +17,7 @@ export async function addActionLog(prevState: any, formData: FormData) {
         projectId: formData.get("projectId"),
         content: formData.get("content"),
         type: formData.get("type"),
+        isPublic: formData.get("isPublic"),
     });
 
     if (!validatedFields.success) {
@@ -25,23 +28,18 @@ export async function addActionLog(prevState: any, formData: FormData) {
         };
     }
 
-    const { projectId, content, type } = validatedFields.data;
-
-    // Mock User ID for now (Assuming first user or creating one if needed, or just null if strictly following schema)
-    // Since we don't have Auth, we will treat 'User' as optional in logic or hardcode if we had a seeded user.
-    // The schema allows userId to be null, so we'll leave it null for now, or fetch a "default" admin.
-    // Ideally, we would fetch session here.
+    const { projectId, content, type, isPublic } = validatedFields.data;
 
     try {
-        // Try to find a default user to attribute
-        const user = await db.user.findFirst();
+        const user = await getUserSession();
 
         await db.actionLog.create({
             data: {
                 projectId,
                 content,
                 type,
-                userId: user?.id, // Attribute to first found user or null
+                userId: user?.id,
+                isPublic: isPublic || false,
             },
         });
     } catch (error) {

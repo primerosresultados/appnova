@@ -5,6 +5,8 @@ import { ProjectDetailsView } from "@/components/projects/ProjectDetailsView";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getWorkflows } from "@/app/workflows/actions";
+import { getUserSession } from "@/app/actions/auth-actions";
+
 
 interface PageProps {
     params: Promise<{
@@ -92,7 +94,7 @@ function ProjectDetailsSkeleton() {
     )
 }
 
-async function ProjectDetailsContent({ id }: { id: string }) {
+async function ProjectDetailsContent({ id, currentUser }: { id: string; currentUser: any }) {
     let project = null;
     let allWorkflows: any[] = [];
     let error = null;
@@ -124,15 +126,17 @@ async function ProjectDetailsContent({ id }: { id: string }) {
         notFound();
     }
 
-    return <ProjectDetailsView project={project} allWorkflows={allWorkflows} />;
+    return <ProjectDetailsView project={project} allWorkflows={allWorkflows} currentUser={currentUser} />;
 }
+
 
 export default async function ProjectDetailsPage({ params }: PageProps) {
     const { id } = await params;
+    const user = await getUserSession();
 
     return (
         <Suspense fallback={<ProjectDetailsSkeleton />}>
-            <ProjectDetailsContent id={id} />
+            <ProjectDetailsContent id={id} currentUser={user} />
         </Suspense>
     );
 }
