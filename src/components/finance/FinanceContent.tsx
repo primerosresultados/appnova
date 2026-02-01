@@ -1,5 +1,6 @@
 import { NewEmployeeDialog } from "@/components/finance/NewEmployeeDialog";
 import { EmployeeActions } from "@/components/finance/EmployeeActions";
+import { AgreementActions } from "@/components/finance/AgreementActions";
 import { ProcessPayrollDialog } from "@/components/finance/ProcessPayrollDialog";
 import { Users, User } from "lucide-react";
 
@@ -76,22 +77,42 @@ const getCachedFinanceData = unstable_cache(
 
         const totalBalance = accounts.reduce((acc, curr) => acc + curr.balance, 0);
 
-        // Calculate active contract income
+        // Calculate active contract income with "Day 5" logic
         const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
         const activeContracts = contracts.filter(c =>
             c.status === 'ACTIVE' &&
             new Date(c.startDate) <= now &&
             (!c.endDate || new Date(c.endDate) >= now)
         );
 
-        const monthlyContractIncome = activeContracts.reduce((sum, contract) => {
+        let monthlyContractIncome = 0;
+        let incomeByDay5 = 0;
+
+        activeContracts.forEach(contract => {
+            const startDate = new Date(contract.startDate);
+            const startDay = startDate.getDate();
+            const startMonth = startDate.getMonth();
+            const startYear = startDate.getFullYear();
+
+            // Frequency factor
+            let amount = 0;
             if (contract.frequency === 'MONTHLY') {
-                return sum + contract.amount;
+                amount = contract.amount;
             } else if (contract.frequency === 'ANNUALLY') {
-                return sum + (contract.amount / 12);
+                amount = contract.amount / 12;
             }
-            return sum;
-        }, 0);
+
+            // Recurring monthly income base
+            monthlyContractIncome += amount;
+
+            // Day 5 collection pool
+            if (startDay <= 5) {
+                incomeByDay5 += amount;
+            }
+        });
 
         // Calculate Monthly Salaries
         const monthlySalaries = employees.reduce((sum, emp) => sum + emp.salary, 0);
@@ -102,6 +123,7 @@ const getCachedFinanceData = unstable_cache(
             totalBalance,
             income: (incomeThisMonth._sum.amount || 0) + monthlyContractIncome,
             expenses: (expensesThisMonth._sum.amount || 0) + monthlySalaries,
+            incomeByDay5,
             clients,
             pendingTax: 0,
             allFinancialRecords: allFinancialRecords,
@@ -130,7 +152,8 @@ async function getFinanceData() {
             contracts: [],
             clients: [],
             employees: [],
-            monthlySalaries: 0
+            monthlySalaries: 0,
+            incomeByDay5: 0
         };
     }
 }
@@ -185,7 +208,15 @@ export async function FinanceContent() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">${data.income.toLocaleString()}</div>
-                                <p className="text-xs text-muted-foreground mt-1">Acumulado {format(new Date(), 'MMMM', { locale: es })}</p>
+                                <div className="flex flex-col gap-1 mt-2">
+                                    <div className="flex items-center justify-between text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded-md border border-emerald-500/20">
+                                        <span className="font-medium uppercase">Base Mensual (Día 5):</span>
+                                        <span className="font-bold">${data.incomeByDay5.toLocaleString()}</span>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground uppercase tracking-tight pl-1">
+                                        Acumulado {format(new Date(), 'MMMM', { locale: es })}
+                                    </p>
+                                </div>
                             </CardContent>
                         </Card>
 
@@ -330,10 +361,10 @@ export async function FinanceContent() {
                                                 <h4 className="font-bold text-base flex items-center gap-2">
                                                     {contract.title}
                                                     <Badge variant="outline" className={`text-[9px] h-4 px-1.5 ${contract.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' :
-                                                        contract.status === 'EXPIRED' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
+                                                        contract.status === 'TERMINATED' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
                                                             'bg-amber-500/10 text-amber-500 border-amber-500/20'
                                                         }`}>
-                                                        {contract.status}
+                                                        {contract.status === 'TERMINATED' ? 'TERMINADO' : contract.status}
                                                     </Badge>
                                                 </h4>
                                                 <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -353,12 +384,15 @@ export async function FinanceContent() {
                                                     )}
                                                 </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-xl font-black tracking-tight">${contract.amount.toLocaleString()}</p>
-                                                <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                                                    {contract.frequency === 'MONTHLY' ? 'Mensual' :
-                                                        contract.frequency === 'ANNUALLY' ? 'Anual' : 'Total'}
-                                                </p>
+                                            <div className="flex items-center gap-4">
+                                                <div className="text-right">
+                                                    <p className="text-xl font-black tracking-tight">${contract.amount.toLocaleString()}</p>
+                                                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                                                        {contract.frequency === 'MONTHLY' ? 'Mensual' :
+                                                            contract.frequency === 'ANNUALLY' ? 'Anual' : 'Total'}
+                                                    </p>
+                                                </div>
+                                                <AgreementActions contract={contract} clients={data.clients} />
                                             </div>
                                         </div>
                                     ))}

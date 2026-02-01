@@ -157,4 +157,71 @@ export async function createContract(prevState: any, formData: FormData) {
     }
 }
 
+export async function updateContract(contractId: string, prevState: any, formData: FormData) {
+    const title = formData.get("title") as string;
+    const clientId = formData.get("clientId") as string;
+    const amountStr = formData.get("amount") as string;
+    const frequency = formData.get("frequency") as string;
+    const startDateStr = formData.get("startDate") as string;
+    const endDateStr = formData.get("endDate") as string;
+    const description = formData.get("description") as string;
 
+    if (!title || !clientId || !amountStr || !startDateStr) {
+        return { success: false, message: "Título, cliente, monto y fecha de inicio son requeridos" };
+    }
+
+    try {
+        const amount = parseFloat(amountStr);
+        if (isNaN(amount)) return { success: false, message: "Monto inválido" };
+
+        await db.contract.update({
+            where: { id: contractId },
+            data: {
+                title,
+                clientId,
+                amount,
+                frequency: frequency || null,
+                startDate: new Date(startDateStr),
+                endDate: endDateStr ? new Date(endDateStr) : null,
+                description: description || null,
+            }
+        });
+
+        revalidatePath("/finance");
+        return { success: true, message: "Acuerdo comercial actualizado correctamente" };
+    } catch (error) {
+        console.error("Error updating contract:", error);
+        return { success: false, message: "Error al actualizar el acuerdo" };
+    }
+}
+
+
+
+export async function deleteContract(id: string) {
+    if (!id) return { success: false, message: "ID requerido" };
+
+    try {
+        await db.contract.delete({ where: { id } });
+        revalidatePath("/finance");
+        return { success: true, message: "Acuerdo comercial eliminado" };
+    } catch (error) {
+        console.error("Error deleting contract:", error);
+        return { success: false, message: "Error al eliminar el acuerdo" };
+    }
+}
+
+export async function updateContractStatus(id: string, status: string) {
+    if (!id || !status) return { success: false, message: "ID y estado requeridos" };
+
+    try {
+        await db.contract.update({
+            where: { id },
+            data: { status }
+        });
+        revalidatePath("/finance");
+        return { success: true, message: "Estado del acuerdo actualizado" };
+    } catch (error) {
+        console.error("Error updating contract status:", error);
+        return { success: false, message: "Error al actualizar el estado" };
+    }
+}
