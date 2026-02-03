@@ -23,8 +23,10 @@ function urlBase64ToUint8Array(base64String: string) {
 export function NotificationToggle() {
     const [isSubscribed, setIsSubscribed] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
+        setMounted(true);
         if ('serviceWorker' in navigator && 'PushManager' in window) {
             navigator.serviceWorker.ready.then((registration) => {
                 registration.pushManager.getSubscription().then((subscription) => {
@@ -70,7 +72,11 @@ export function NotificationToggle() {
         }
     };
 
-    if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
+    if (!mounted) {
+        return null;
+    }
+
+    if (!('serviceWorker' in navigator)) {
         return null;
     }
 
