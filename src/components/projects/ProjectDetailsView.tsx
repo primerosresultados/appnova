@@ -121,7 +121,7 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
                 </div>
 
                 <Tabs defaultValue="tasks" className="w-full">
-                    <TabsList className="w-full flex justify-start bg-muted border-b-0 rounded-xl h-auto p-1 mb-6 gap-1 flex-nowrap overflow-x-auto max-w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <TabsList className="w-full flex justify-start bg-muted border-b-0 rounded-xl h-auto p-1 mb-6 gap-1 flex-nowrap overflow-x-auto overflow-y-hidden max-w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <TabsTrigger value="tasks" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                             <ListTodo className="h-4 w-4" /> Tareas Pendientes
                         </TabsTrigger>
