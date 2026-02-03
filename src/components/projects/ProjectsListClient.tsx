@@ -140,10 +140,12 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
                                                 <StatusIcon className="mr-1.5 h-3.5 w-3.5" />
                                                 {status.label}
                                             </Badge>
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <Calendar className="h-4 w-4 opacity-70" />
-                                                <span>{project.dueDate ? format(new Date(project.dueDate), 'd MMM') : 'Sin fecha'}</span>
-                                            </div>
+                                            {project.dueDate && (
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <Calendar className="h-4 w-4 opacity-70" />
+                                                    <span>{format(new Date(project.dueDate), 'd MMM')}</span>
+                                                </div>
+                                            )}
                                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                                 <CheckCircle2 className="h-4 w-4 opacity-70" />
                                                 <span>{project._count.tasks} Tareas</span>

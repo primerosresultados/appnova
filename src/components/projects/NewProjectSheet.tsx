@@ -1,9 +1,8 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
     Sheet,
     SheetClose,
@@ -50,6 +49,7 @@ export function NewProjectSheet() {
     const [state, formAction] = useActionState(createProject, initialState);
     const [open, setOpen] = useState(false);
     const [clients, setClients] = useState<{ id: string, name: string }[]>([]);
+    const [noDeadline, setNoDeadline] = useState(false);
 
     useEffect(() => {
         if (open) {
@@ -60,6 +60,7 @@ export function NewProjectSheet() {
     useEffect(() => {
         if (state?.success) {
             setOpen(false);
+            setNoDeadline(false); // Reset checkbox on success
         }
     }, [state]);
 
@@ -134,9 +135,28 @@ export function NewProjectSheet() {
                         </div>
                     </div>
 
-                    <div className="grid gap-2">
+                    <div className="grid gap-3">
                         <Label htmlFor="dueDate">Fecha de Entrega</Label>
-                        <Input id="dueDate" name="dueDate" type="date" />
+                        <Input
+                            id="dueDate"
+                            name="dueDate"
+                            type="date"
+                            disabled={noDeadline}
+                            className={noDeadline ? "opacity-50 cursor-not-allowed" : ""}
+                        />
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="noDeadline"
+                                checked={noDeadline}
+                                onCheckedChange={(checked) => setNoDeadline(checked === true)}
+                            />
+                            <label
+                                htmlFor="noDeadline"
+                                className="text-sm text-muted-foreground cursor-pointer select-none"
+                            >
+                                Sin fecha de entrega
+                            </label>
+                        </div>
                     </div>
 
                     <SheetFooter>
