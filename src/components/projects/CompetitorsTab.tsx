@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useActionState, useEffect } from "react";
-import { createCompetitor, deleteCompetitor } from "@/app/projects/competitor-actions";
+import { createCompetitor, updateCompetitor, deleteCompetitor } from "@/app/projects/competitor-actions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Target, Plus, Trash2, ExternalLink, Globe, X } from "lucide-react";
+import { Target, Plus, Trash2, ExternalLink, Globe, X, Pencil } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Badge } from "@/components/ui/badge";
 
@@ -37,26 +37,57 @@ const initialState = {
 };
 
 export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) {
-    const [state, formAction] = useActionState(createCompetitor, initialState);
+    const [createState, createAction] = useActionState(createCompetitor, initialState);
+    const [updateState, updateAction] = useActionState(updateCompetitor, initialState);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingCompetitor, setEditingCompetitor] = useState<Competitor | null>(null);
 
     // Dynamic lists
     const [advantages, setAdvantages] = useState<string[]>([""]);
     const [products, setProducts] = useState<{ name: string; price: string }[]>([{ name: "", price: "" }]);
     const [services, setServices] = useState<{ name: string; price: string }[]>([{ name: "", price: "" }]);
 
+    //  Reset form when opening for creation
+    const handleOpenCreate = () => {
+        setEditingCompetitor(null);
+        setAdvantages([""]);
+        setProducts([{ name: "", price: "" }]);
+        setServices([{ name: "", price: "" }]);
+        setIsDialogOpen(true);
+    };
+
+    // Load data when editing
+    const handleOpenEdit = (comp: Competitor) => {
+        setEditingCompetitor(comp);
+
+        // Parse advantages
+        const parsedAdvantages = parseAdvantages(comp.competitiveAdvantages);
+        setAdvantages(parsedAdvantages.length > 0 ? parsedAdvantages : [""]);
+
+        // Parse products
+        const parsedProducts = parseJSON(comp.products);
+        setProducts(parsedProducts.length > 0 ? parsedProducts : [{ name: "", price: "" }]);
+
+        // Parse services
+        const parsedServices = parseJSON(comp.services);
+        setServices(parsedServices.length > 0 ? parsedServices : [{ name: "", price: "" }]);
+
+        setIsDialogOpen(true);
+    };
+
     useEffect(() => {
-        if (state.success) {
-            toast.success("Competidor agregado");
+        const currentState = editingCompetitor ? updateState : createState;
+        if (currentState.success) {
+            toast.success(currentState.message);
             setIsDialogOpen(false);
-            // Reset form
+            setEditingCompetitor(null);
             setAdvantages([""]);
             setProducts([{ name: "", price: "" }]);
             setServices([{ name: "", price: "" }]);
-        } else if (state.message) {
-            toast.error(state.message);
+        } else if (currentState.message) {
+            toast.error(currentState.message);
         }
-    }, [state]);
+    }, [createState, updateState, editingCompetitor]);
 
     const handleDelete = async (id: string) => {
         if (confirm("¿Eliminar este competidor?")) {
@@ -91,6 +122,8 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
         }
     };
 
+    const currentAction = editingCompetitor ? updateAction : createAction;
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -104,20 +137,21 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
 
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button onClick={handleOpenCreate}>
                             <Plus className="h-4 w-4 mr-2" /> Agregar Competidor
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
-                            <DialogTitle>Agregar Competidor</DialogTitle>
+                            <DialogTitle>{editingCompetitor ? "Editar" : "Agregar"} Competidor</DialogTitle>
                             <DialogDescription>
                                 Registra información clave sobre la competencia.
                             </DialogDescription>
                         </DialogHeader>
 
-                        <form action={formAction} className="space-y-6">
+                        <form action={currentAction} className="space-y-6">
                             <input type="hidden" name="projectId" value={projectId} />
+                            {editingCompetitor && <input type="hidden" name="id" value={editingCompetitor.id} />}
                             <input type="hidden" name="competitiveAdvantages" value={JSON.stringify(advantages.filter(a => a.trim()))} />
                             <input type="hidden" name="products" value={JSON.stringify(products.filter(p => p.name.trim()))} />
                             <input type="hidden" name="services" value={JSON.stringify(services.filter(s => s.name.trim()))} />
@@ -125,17 +159,35 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="name">Nombre del Competidor *</Label>
-                                    <Input id="name" name="name" required placeholder="Ej: Competidor ABC" />
+                                    <Input
+                                        id="name"
+                                        name="name"
+                                        required
+                                        placeholder="Ej: Competidor ABC"
+                                        defaultValue={editingCompetitor?.name || ""}
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="website">Sitio Web</Label>
-                                    <Input id="website" name="website" type="url" placeholder="https://..." />
+                                    <Input
+                                        id="website"
+                                        name="website"
+                                        type="url"
+                                        placeholder="https://..."
+                                        defaultValue={editingCompetitor?.website || ""}
+                                    />
                                 </div>
                             </div>
 
                             <div className="space-y-2">
                                 <Label htmlFor="description">Descripción</Label>
-                                <Textarea id="description" name="description" placeholder="Breve descripción del competidor..." rows={2} />
+                                <Textarea
+                                    id="description"
+                                    name="description"
+                                    placeholder="Breve descripción del competidor..."
+                                    rows={2}
+                                    defaultValue={editingCompetitor?.description || ""}
+                                />
                             </div>
 
                             {/* Ventajas Competitivas - Dynamic List */}
@@ -179,11 +231,23 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="metaAdsUrl">📘 Enlace Anuncios Meta</Label>
-                                    <Input id="metaAdsUrl" name="metaAdsUrl" type="url" placeholder="Meta Ads Library URL" />
+                                    <Input
+                                        id="metaAdsUrl"
+                                        name="metaAdsUrl"
+                                        type="url"
+                                        placeholder="Meta Ads Library URL"
+                                        defaultValue={editingCompetitor?.metaAdsUrl || ""}
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="googleAdsUrl">🔍 Enlace Anuncios Google</Label>
-                                    <Input id="googleAdsUrl" name="googleAdsUrl" type="url" placeholder="Google Ads Transparency URL" />
+                                    <Input
+                                        id="googleAdsUrl"
+                                        name="googleAdsUrl"
+                                        type="url"
+                                        placeholder="Google Ads Transparency URL"
+                                        defaultValue={editingCompetitor?.googleAdsUrl || ""}
+                                    />
                                 </div>
                             </div>
 
@@ -284,7 +348,7 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
                             </div>
 
                             <DialogFooter>
-                                <Button type="submit">Guardar Competidor</Button>
+                                <Button type="submit">{editingCompetitor ? "Actualizar" : "Guardar"} Competidor</Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>
@@ -305,17 +369,27 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
 
                         return (
                             <Card key={comp.id} className="relative group hover:border-primary/50 transition-colors">
-                                <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 h-8 w-8 text-muted-foreground hover:text-destructive transition-opacity"
-                                    onClick={() => handleDelete(comp.id)}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
+                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                        onClick={() => handleOpenEdit(comp)}
+                                    >
+                                        <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                        onClick={() => handleDelete(comp.id)}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
 
                                 <CardHeader>
-                                    <div className="flex items-start justify-between pr-8">
+                                    <div className="flex items-start justify-between pr-20">
                                         <div>
                                             <CardTitle className="text-lg">{comp.name}</CardTitle>
                                             {comp.website && (

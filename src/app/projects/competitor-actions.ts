@@ -48,7 +48,9 @@ export async function createCompetitor(prevState: any, formData: FormData) {
     }
 }
 
-export async function updateCompetitor(id: string, prevState: any, formData: FormData) {
+
+export async function updateCompetitor(prevState: any, formData: FormData) {
+    const id = formData.get("id") as string;
     const projectId = formData.get("projectId") as string;
     const name = formData.get("name") as string;
     const website = formData.get("website") as string;
@@ -61,9 +63,10 @@ export async function updateCompetitor(id: string, prevState: any, formData: For
     const pricing = formData.get("pricing") as string;
     const offers = formData.get("offers") as string;
 
-    if (!name) {
+
+    if (!id || !name) {
         return {
-            message: "Nombre es requerido",
+            message: "ID y nombre son requeridos",
             success: false,
         };
     }

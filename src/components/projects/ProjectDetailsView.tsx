@@ -111,9 +111,14 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
                                         {status.label}
                                     </Badge>
                                 </div>
-                                <p className="text-muted-foreground text-sm flex items-center gap-2">
-                                    <User className="h-3 w-3 flex-shrink-0" /> <span className="truncate">{project.client.name}</span>
-                                </p>
+                                <div className="text-sm text-muted-foreground flex items-center gap-1.5 flex-wrap">
+                                    <Link
+                                        href={`/clients/${project.client.id}`}
+                                        className="flex items-center gap-1.5 hover:text-primary hover:underline transition-colors"
+                                    >
+                                        <User className="h-3 w-3 flex-shrink-0" /> <span className="truncate">{project.client.name}</span>
+                                    </Link>
+                                </div>
                             </div>
                         )}
                         {isClient && <div className="flex-1" />}
