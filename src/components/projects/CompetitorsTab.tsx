@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useActionState } from "react";
+import { useState, useActionState, useEffect } from "react";
 import { createCompetitor, deleteCompetitor } from "@/app/projects/competitor-actions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Target, Plus, Trash2, ExternalLink, Globe } from "lucide-react";
+import { Target, Plus, Trash2, ExternalLink, Globe, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Badge } from "@/components/ui/badge";
 
@@ -40,6 +40,24 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
     const [state, formAction] = useActionState(createCompetitor, initialState);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+    // Dynamic lists
+    const [advantages, setAdvantages] = useState<string[]>([""]);
+    const [products, setProducts] = useState<{ name: string; price: string }[]>([{ name: "", price: "" }]);
+    const [services, setServices] = useState<{ name: string; price: string }[]>([{ name: "", price: "" }]);
+
+    useEffect(() => {
+        if (state.success) {
+            toast.success("Competidor agregado");
+            setIsDialogOpen(false);
+            // Reset form
+            setAdvantages([""]);
+            setProducts([{ name: "", price: "" }]);
+            setServices([{ name: "", price: "" }]);
+        } else if (state.message) {
+            toast.error(state.message);
+        }
+    }, [state]);
+
     const handleDelete = async (id: string) => {
         if (confirm("¿Eliminar este competidor?")) {
             const result = await deleteCompetitor(id, projectId);
@@ -61,6 +79,37 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
         }
     };
 
+    // Parse advantages (can be JSON array or line-separated string)
+    const parseAdvantages = (str: string | null): string[] => {
+        if (!str) return [];
+        try {
+            const parsed = JSON.parse(str);
+            return Array.isArray(parsed) ? parsed : [str];
+        } catch {
+            // If not JSON, split by newlines
+            return str.split('\n').filter(a => a.trim());
+        }
+    };
+
+    const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+
+        // Filter and serialize advantages
+        const validAdvantages = advantages.filter(a => a.trim());
+        formData.set("competitiveAdvantages", JSON.stringify(validAdvantages));
+
+        // Filter and serialize products
+        const validProducts = products.filter(p => p.name.trim());
+        formData.set("products", JSON.stringify(validProducts));
+
+        // Filter and serialize services
+        const validServices = services.filter(s => s.name.trim());
+        formData.set("services", JSON.stringify(validServices));
+
+        formAction(formData);
+    };
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -78,7 +127,7 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
                             <Plus className="h-4 w-4 mr-2" /> Agregar Competidor
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                         <DialogHeader>
                             <DialogTitle>Agregar Competidor</DialogTitle>
                             <DialogDescription>
@@ -86,7 +135,7 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
                             </DialogDescription>
                         </DialogHeader>
 
-                        <form action={formAction} className="space-y-4">
+                        <form onSubmit={handleFormSubmit} className="space-y-6">
                             <input type="hidden" name="projectId" value={projectId} />
 
                             <div className="grid grid-cols-2 gap-4">
@@ -105,9 +154,42 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
                                 <Textarea id="description" name="description" placeholder="Breve descripción del competidor..." rows={2} />
                             </div>
 
+                            {/* Ventajas Competitivas - Dynamic List */}
                             <div className="space-y-2">
-                                <Label htmlFor="competitiveAdvantages">Ventajas Competitivas</Label>
-                                <Textarea id="competitiveAdvantages" name="competitiveAdvantages" placeholder="¿Qué hace mejor este competidor?" rows={3} />
+                                <Label>Ventajas Competitivas</Label>
+                                {advantages.map((advantage, index) => (
+                                    <div key={index} className="flex gap-2">
+                                        <Input
+                                            value={advantage}
+                                            onChange={(e) => {
+                                                const newAdvantages = [...advantages];
+                                                newAdvantages[index] = e.target.value;
+                                                setAdvantages(newAdvantages);
+                                            }}
+                                            placeholder="Ej: Precios más bajos"
+                                            className="flex-1"
+                                        />
+                                        {advantages.length > 1 && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setAdvantages(advantages.filter((_, i) => i !== index))}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                ))}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setAdvantages([...advantages, ""])}
+                                    className="w-full"
+                                >
+                                    <Plus className="h-4 w-4 mr-2" /> Agregar Ventaja
+                                </Button>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -121,37 +203,100 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
                                 </div>
                             </div>
 
+                            {/* Productos - Dynamic List */}
                             <div className="space-y-2">
-                                <Label htmlFor="products">Productos (JSON)</Label>
-                                <Textarea
-                                    id="products"
-                                    name="products"
-                                    placeholder={'[{"name":"Producto 1","price":"$100","description":"..."}]'}
-                                    rows={2}
-                                    className="font-mono text-xs"
-                                />
+                                <Label>Productos</Label>
+                                {products.map((product, index) => (
+                                    <div key={index} className="flex gap-2">
+                                        <Input
+                                            value={product.name}
+                                            onChange={(e) => {
+                                                const newProducts = [...products];
+                                                newProducts[index].name = e.target.value;
+                                                setProducts(newProducts);
+                                            }}
+                                            placeholder="Nombre del producto"
+                                            className="flex-1"
+                                        />
+                                        <Input
+                                            value={product.price}
+                                            onChange={(e) => {
+                                                const newProducts = [...products];
+                                                newProducts[index].price = e.target.value;
+                                                setProducts(newProducts);
+                                            }}
+                                            placeholder="Precio"
+                                            className="w-32"
+                                        />
+                                        {products.length > 1 && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setProducts(products.filter((_, i) => i !== index))}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                ))}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setProducts([...products, { name: "", price: "" }])}
+                                    className="w-full"
+                                >
+                                    <Plus className="h-4 w-4 mr-2" /> Agregar Producto
+                                </Button>
                             </div>
 
+                            {/* Servicios - Dynamic List */}
                             <div className="space-y-2">
-                                <Label htmlFor="services">Servicios (JSON)</Label>
-                                <Textarea
-                                    id="services"
-                                    name="services"
-                                    placeholder={'[{"name":"Servicio 1","price":"$50/mes"}]'}
-                                    rows={2}
-                                    className="font-mono text-xs"
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="pricing">Estructura de Precios</Label>
-                                    <Textarea id="pricing" name="pricing" placeholder="Describe la estrategia de precios..." rows={2} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="offers">Ofertas Actuales</Label>
-                                    <Textarea id="offers" name="offers" placeholder="¿Qué promociones tienen activas?" rows={2} />
-                                </div>
+                                <Label>Servicios</Label>
+                                {services.map((service, index) => (
+                                    <div key={index} className="flex gap-2">
+                                        <Input
+                                            value={service.name}
+                                            onChange={(e) => {
+                                                const newServices = [...services];
+                                                newServices[index].name = e.target.value;
+                                                setServices(newServices);
+                                            }}
+                                            placeholder="Nombre del servicio"
+                                            className="flex-1"
+                                        />
+                                        <Input
+                                            value={service.price}
+                                            onChange={(e) => {
+                                                const newServices = [...services];
+                                                newServices[index].price = e.target.value;
+                                                setServices(newServices);
+                                            }}
+                                            placeholder="Precio"
+                                            className="w-32"
+                                        />
+                                        {services.length > 1 && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setServices(services.filter((_, i) => i !== index))}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                ))}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setServices([...services, { name: "", price: "" }])}
+                                    className="w-full"
+                                >
+                                    <Plus className="h-4 w-4 mr-2" /> Agregar Servicio
+                                </Button>
                             </div>
 
                             <DialogFooter>
@@ -170,6 +315,7 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
             ) : (
                 <div className="grid gap-4">
                     {competitors.map((comp) => {
+                        const advantagesList = parseAdvantages(comp.competitiveAdvantages);
                         const products = parseJSON(comp.products);
                         const services = parseJSON(comp.services);
 
@@ -207,15 +353,22 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
                                 </CardHeader>
 
                                 <CardContent className="space-y-4">
-                                    {comp.competitiveAdvantages && (
+                                    {advantagesList.length > 0 && (
                                         <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3">
-                                            <h4 className="font-semibold text-sm mb-1 text-amber-700 dark:text-amber-400">💪 Ventajas Competitivas</h4>
-                                            <p className="text-sm">{comp.competitiveAdvantages}</p>
+                                            <h4 className="font-semibold text-sm mb-2 text-amber-700 dark:text-amber-400">💪 Ventajas Competitivas</h4>
+                                            <ul className="space-y-1">
+                                                {advantagesList.map((adv, i) => (
+                                                    <li key={i} className="text-sm flex items-start gap-2">
+                                                        <span className="text-amber-600 dark:text-amber-400">•</span>
+                                                        <span>{adv}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
                                         </div>
                                     )}
 
                                     {(comp.metaAdsUrl || comp.googleAdsUrl) && (
-                                        <div className="flex gap-2">
+                                        <div className="flex gap-2 flex-wrap">
                                             {comp.metaAdsUrl && (
                                                 <a
                                                     href={comp.metaAdsUrl}
@@ -242,12 +395,12 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
                                     <div className="grid md:grid-cols-2 gap-4">
                                         {products.length > 0 && (
                                             <div>
-                                                <h4 className="font-semibold text-sm mb-2">Productos</h4>
+                                                <h4 className="font-semibold text-sm mb-2">📦 Productos</h4>
                                                 <div className="space-y-1">
                                                     {products.map((prod: any, i: number) => (
                                                         <div key={i} className="text-sm flex justify-between items-center bg-muted/50 px-2 py-1 rounded">
                                                             <span>{prod.name}</span>
-                                                            <Badge variant="outline" className="text-xs">{prod.price}</Badge>
+                                                            {prod.price && <Badge variant="outline" className="text-xs">{prod.price}</Badge>}
                                                         </div>
                                                     ))}
                                                 </div>
@@ -256,35 +409,18 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
 
                                         {services.length > 0 && (
                                             <div>
-                                                <h4 className="font-semibold text-sm mb-2">Servicios</h4>
+                                                <h4 className="font-semibold text-sm mb-2">⚙️ Servicios</h4>
                                                 <div className="space-y-1">
                                                     {services.map((serv: any, i: number) => (
                                                         <div key={i} className="text-sm flex justify-between items-center bg-muted/50 px-2 py-1 rounded">
                                                             <span>{serv.name}</span>
-                                                            <Badge variant="outline" className="text-xs">{serv.price}</Badge>
+                                                            {serv.price && <Badge variant="outline" className="text-xs">{serv.price}</Badge>}
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
                                         )}
                                     </div>
-
-                                    {(comp.pricing || comp.offers) && (
-                                        <div className="grid md:grid-cols-2 gap-3 pt-2 border-t">
-                                            {comp.pricing && (
-                                                <div>
-                                                    <h4 className="font-semibold text-xs text-muted-foreground mb-1">PRECIOS</h4>
-                                                    <p className="text-sm">{comp.pricing}</p>
-                                                </div>
-                                            )}
-                                            {comp.offers && (
-                                                <div>
-                                                    <h4 className="font-semibold text-xs text-muted-foreground mb-1">OFERTAS</h4>
-                                                    <p className="text-sm">{comp.offers}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
                                 </CardContent>
                             </Card>
                         );
