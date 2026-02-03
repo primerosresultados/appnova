@@ -10,6 +10,7 @@ const resourceSchema = z.object({
     type: z.enum(["DRIVE", "LINK", "FILE", "CREDENTIAL", "IDEA"]),
     url: z.string().optional(),
     content: z.string().optional(),
+    justification: z.string().optional(),
     projectId: z.string().min(1, "Project ID is required"),
 });
 
@@ -44,7 +45,7 @@ export async function createResource(prevState: any, formData: FormData) {
         };
     }
 
-    let { name, type: validType, url: validUrl, content, projectId } = validatedFields.data;
+    let { name, type: validType, url: validUrl, content, justification, projectId } = validatedFields.data;
 
     // Fetch OpenGraph Image for Links
     if (validType === "LINK" && validUrl) {
@@ -84,6 +85,7 @@ export async function createResource(prevState: any, formData: FormData) {
                 type: validType,
                 url: validUrl || null,
                 content: content || null,
+                justification: justification || null,
                 projectId,
             },
         });
@@ -108,5 +110,35 @@ export async function deleteResource(id: string, projectId: string) {
         return { message: "Resource deleted successfully", success: true };
     } catch (error) {
         return { message: "Failed to delete resource", success: false };
+    }
+}
+
+export async function toggleVote(resourceId: string, projectId: string) {
+    const { getUserSession } = await import('@/app/actions/auth-actions');
+    const user = await getUserSession();
+    if (!user) return { success: false, message: "Unauthorized" };
+
+    try {
+        const existingVote = await db.resourceVote.findUnique({
+            where: {
+                resourceId_userId: {
+                    resourceId,
+                    userId: user.id
+                }
+            }
+        });
+
+        if (existingVote) {
+             await db.resourceVote.delete({ where: { id: existingVote.id } });
+        } else {
+             await db.resourceVote.create({
+                 data: { resourceId, userId: user.id }
+             });
+        }
+        revalidatePath(`/projects/${projectId}`);
+        return { success: true };
+    } catch (e) {
+        console.error("Vote error:", e);
+        return { success: false, message: "Failed to vote" };
     }
 }

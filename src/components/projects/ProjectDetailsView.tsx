@@ -222,7 +222,7 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
                     </TabsContent>
 
                     <TabsContent value="creativity" className="space-y-4">
-                        <CreativitiesTab projectId={project.id} resources={project.resources || []} />
+                        <CreativitiesTab projectId={project.id} resources={project.resources || []} currentUser={currentUser} />
                     </TabsContent>
 
                     <TabsContent value="content" className="space-y-4">

@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, useActionState, useOptimistic, startTransition } from "react";
-import { createResource, deleteResource } from "@/app/projects/resource-actions";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { createResource, deleteResource, toggleVote } from "@/app/projects/resource-actions";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Brain, Plus, Trash2, ExternalLink, Lightbulb, Link as LinkIcon, ChevronDown, ChevronUp } from "lucide-react";
+import { Brain, Plus, Trash2, ExternalLink, Lightbulb, Link as LinkIcon, ChevronDown, ChevronUp, Heart } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { ReferenceCard } from "./ReferenceCard";
@@ -16,14 +16,17 @@ import { ReferenceCard } from "./ReferenceCard";
 interface Resource {
     id: string;
     name: string;
-    type: string; // IDEA, LINK, etc.
+    type: string;
     url: string | null;
     content: string | null;
+    justification?: string | null;
+    votes?: { userId: string }[];
 }
 
 interface CreativitiesTabProps {
     projectId: string;
     resources: Resource[];
+    currentUser?: any;
 }
 
 const initialState = {
@@ -31,7 +34,7 @@ const initialState = {
     success: false
 };
 
-export function CreativitiesTab({ projectId, resources }: CreativitiesTabProps) {
+export function CreativitiesTab({ projectId, resources, currentUser }: CreativitiesTabProps) {
     const [state, formAction, isPending] = useActionState(createResource, initialState);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<"IDEA" | "LINK">("IDEA");
@@ -58,6 +61,8 @@ export function CreativitiesTab({ projectId, resources }: CreativitiesTabProps) 
             type: formData.get("type") as string,
             url: formData.get("url") as string || null,
             content: formData.get("content") as string || null,
+            justification: formData.get("justification") as string || null,
+            votes: [],
         };
 
         startTransition(() => {
@@ -66,6 +71,11 @@ export function CreativitiesTab({ projectId, resources }: CreativitiesTabProps) 
 
         setIsDialogOpen(false);
         formAction(formData);
+    };
+
+    const handleVote = async (resourceId: string) => {
+        if (!currentUser) return;
+        await toggleVote(resourceId, projectId);
     };
 
     const ideas = optimisticResources.filter(r => r.type === "IDEA");
@@ -132,11 +142,17 @@ export function CreativitiesTab({ projectId, resources }: CreativitiesTabProps) 
                             </div>
 
                             {activeTab === "IDEA" ? (
-                                <div className="space-y-2">
-                                    <Label>Descripción de la Idea</Label>
-                                    <RichTextEditor value={content} onChange={setContent} placeholder="Describe la idea con formato..." className="min-h-[150px]" />
-                                    <input type="hidden" name="content" value={content} />
-                                </div>
+                                <>
+                                    <div className="space-y-2">
+                                        <Label>Descripción de la Idea</Label>
+                                        <RichTextEditor value={content} onChange={setContent} placeholder="Describe la idea con formato..." className="min-h-[150px]" />
+                                        <input type="hidden" name="content" value={content} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>¿Por qué es una buena idea?</Label>
+                                        <Textarea name="justification" placeholder="Explica el valor o impacto de esta idea..." className="h-20" />
+                                    </div>
+                                </>
                             ) : (
                                 <div className="space-y-2">
                                     <Label>URL de Referencia</Label>
@@ -180,12 +196,32 @@ export function CreativitiesTab({ projectId, resources }: CreativitiesTabProps) 
                                     Creado el {new Date().toLocaleDateString()}
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="space-y-3">
                                 <div
                                     className="text-sm text-foreground/80 prose prose-sm dark:prose-invert max-w-none [&>p]:mb-2 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4"
                                     dangerouslySetInnerHTML={{ __html: idea.content || '' }}
                                 />
+                                {idea.justification && (
+                                    <div className="bg-muted/50 p-3 rounded-md text-sm italic border-l-2 border-primary/30">
+                                        <span className="font-semibold not-italic block mb-1 text-xs text-muted-foreground uppercase">Por qué:</span>
+                                        "{idea.justification}"
+                                    </div>
+                                )}
                             </CardContent>
+                            <CardFooter className="pt-0 flex justify-between items-center text-xs text-muted-foreground">
+                                <span>Votos: {idea.votes?.length || 0}</span>
+                                {currentUser && (
+                                    <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        className={`h-8 px-2 ${idea.votes?.some(v => v.userId === currentUser.id) ? "text-red-500 hover:text-red-600 bg-red-500/10" : "hover:text-red-500"}`}
+                                        onClick={() => handleVote(idea.id)}
+                                    >
+                                        <Heart className={`h-4 w-4 mr-1 ${idea.votes?.some(v => v.userId === currentUser.id) ? "fill-current" : ""}`} />
+                                        Votar
+                                    </Button>
+                                )}
+                            </CardFooter>
                         </Card>
                     ))}
                 </div>

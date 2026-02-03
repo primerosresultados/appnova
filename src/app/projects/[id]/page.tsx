@@ -36,7 +36,10 @@ async function getProject(id: string) {
                 orderBy: { date: 'asc' }
             },
             resources: {
-                orderBy: { createdAt: 'desc' }
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    votes: true
+                }
             },
             actionLogs: {
                 orderBy: { createdAt: 'desc' },
