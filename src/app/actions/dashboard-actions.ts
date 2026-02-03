@@ -38,14 +38,42 @@ const getCachedDashboardStats = unstable_cache(
                 date: { gte: startDate }
             } : {};
 
-            const [totalProjects, activeClients, totalIncome, incomeByCategory, totalIncomeEntries] = await Promise.all([
+            const sevenDaysFromNow = new Date(now);
+            sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+            const [totalProjects, activeProjects, activeClients, criticalTasks, totalTasks, completedTasks, totalIncome, incomeByCategory, totalIncomeEntries] = await Promise.all([
                 db.project.count({
                     where: {
                         status: { not: 'COMPLETED' },
                         ...dateFilter
                     }
                 }),
+                db.project.count({
+                    where: {
+                        status: { in: ['IN_PROGRESS', 'REVIEW'] },
+                        ...dateFilter
+                    }
+                }),
                 db.client.count({ where: { status: 'ACTIVE' } }), // Active clients usually doesn't obey time filter unless "New active clients"
+                db.task.count({
+                    where: {
+                        OR: [
+                            { dueDate: { lt: now }, status: { notIn: ['DONE', 'COMPLETED'] } }, // Overdue
+                            { dueDate: { lte: sevenDaysFromNow, gte: now }, priority: 'HIGH', status: { notIn: ['DONE', 'COMPLETED'] } } // High priority due soon
+                        ]
+                    }
+                }),
+                db.task.count({
+                    where: {
+                        ...dateFilter
+                    }
+                }),
+                db.task.count({
+                    where: {
+                        status: { in: ['DONE', 'COMPLETED'] },
+                        ...dateFilter
+                    }
+                }),
                 db.transaction.aggregate({
                     _sum: { amount: true },
                     where: {
@@ -72,6 +100,9 @@ const getCachedDashboardStats = unstable_cache(
                 })
             ]);
 
+            // Calculate completion percentage
+            const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
             // Process data for chart
             const chartData = totalIncomeEntries.map(entry => ({
                 name: new Date(entry.date).toLocaleDateString('es-CL', { day: '2-digit', month: 'short' }),
@@ -80,7 +111,10 @@ const getCachedDashboardStats = unstable_cache(
 
             return {
                 totalProjects,
+                activeProjects,
                 activeClients,
+                criticalTasks,
+                completionPercentage,
                 totalIncome: totalIncome._sum.amount || 0,
                 incomeByCategory,
                 chartData: chartData.length > 0 ? chartData : [
@@ -97,7 +131,10 @@ const getCachedDashboardStats = unstable_cache(
             console.error("Dashboard Stats Error:", error);
             return {
                 totalProjects: 0,
+                activeProjects: 0,
                 activeClients: 0,
+                criticalTasks: 0,
+                completionPercentage: 0,
                 totalIncome: 0,
                 incomeByCategory: [],
                 chartData: []

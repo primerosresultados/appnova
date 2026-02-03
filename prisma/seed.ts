@@ -2,6 +2,19 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 async function main() {
+    // 🚨 PROTECCIÓN: No ejecutar seed en producción
+    const dbUrl = process.env.DATABASE_URL || '';
+
+    if (dbUrl.includes('supabase.co') || dbUrl.includes('pooler.supabase')) {
+        console.error('');
+        console.error('❌ ERROR: SEED BLOQUEADO EN PRODUCCIÓN');
+        console.error('');
+        console.error('El script de seed solo debe ejecutarse en desarrollo local.');
+        console.error('Para ejecutar en producción, elimina esta validación CON EXTREMO CUIDADO.');
+        console.error('');
+        process.exit(1);
+    }
+
     console.log('Seeding data...');
 
     // 1. Ensure a user exists
@@ -15,18 +28,24 @@ async function main() {
         },
     });
 
-    // 2. Ensure a client exists
-    const client = await prisma.client.create({
-        data: {
+    // 2. Ensure a client exists (usando upsert para no duplicar)
+    const client = await prisma.client.upsert({
+        where: { id: 'seed-client-techflow' },
+        update: {},
+        create: {
+            id: 'seed-client-techflow',
             name: 'TechFlow Solutions',
             industry: 'Software',
             status: 'ACTIVE',
         },
     });
 
-    // 3. Ensure a project exists
-    const project = await prisma.project.create({
-        data: {
+    // 3. Ensure a project exists (usando upsert para no duplicar)
+    const project = await prisma.project.upsert({
+        where: { id: 'seed-project-q1-2026' },
+        update: {},
+        create: {
+            id: 'seed-project-q1-2026',
             name: 'Campaña Q1 2026',
             description: 'Campaña integral de marketing y SEO.',
             clientId: client.id,

@@ -145,9 +145,9 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
       <div className="grid gap-3 md:gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6 md:mb-12">
         {[
           { title: "TOTAL PROYECTOS", value: stats.totalProjects.toString(), icon: FolderKanban, color: "text-blue-500", bg: "bg-blue-500/10" },
-          { title: "ACTIVOS", value: "3", icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
-          { title: "TIEMPOS CRÍTICOS", value: "1", icon: AlertTriangle, color: "text-red-500", bg: "bg-red-500/10" },
-          { title: "% CUMPLIMIENTO", value: "32%", icon: BarChart3, color: "text-purple-500", bg: "bg-purple-500/10" }
+          { title: "ACTIVOS", value: stats.activeProjects.toString(), icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
+          { title: "TIEMPOS CRÍTICOS", value: stats.criticalTasks.toString(), icon: AlertTriangle, color: "text-red-500", bg: "bg-red-500/10" },
+          { title: "% CUMPLIMIENTO", value: `${stats.completionPercentage}%`, icon: BarChart3, color: "text-purple-500", bg: "bg-purple-500/10" }
         ].map((item, i) => (
           <Card key={i} className="bg-card backdrop-blur-sm border-border/50 hover:bg-accent/50 active:bg-accent transition-all duration-300 group overflow-hidden relative">
             <CardContent className="p-4 md:p-6 flex items-center gap-3 md:gap-6">
