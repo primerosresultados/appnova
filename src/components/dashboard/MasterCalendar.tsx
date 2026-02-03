@@ -90,10 +90,10 @@ export function MasterCalendar({ events, users }: MasterCalendarProps) {
                             </CardDescription>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="grid grid-cols-2 gap-2 w-full md:w-auto md:flex">
                         {/* Type Filter */}
                         <Select value={selectedType} onValueChange={setSelectedType}>
-                            <SelectTrigger className="w-[140px] h-9 text-xs">
+                            <SelectTrigger className="w-full md:w-[140px] h-9 text-xs">
                                 <Filter className="h-3 w-3 mr-1" />
                                 <SelectValue placeholder="Tipo" />
                             </SelectTrigger>
@@ -109,7 +109,7 @@ export function MasterCalendar({ events, users }: MasterCalendarProps) {
 
                         {/* User Filter */}
                         <Select value={selectedUser} onValueChange={setSelectedUser}>
-                            <SelectTrigger className="w-[140px] h-9 text-xs">
+                            <SelectTrigger className="w-full md:w-[140px] h-9 text-xs">
                                 <UserIcon className="h-3 w-3 mr-1" />
                                 <SelectValue placeholder="Usuario" />
                             </SelectTrigger>
@@ -128,7 +128,7 @@ export function MasterCalendar({ events, users }: MasterCalendarProps) {
             <CardContent className="p-0">
                 <div className="flex flex-col lg:flex-row">
                     {/* Calendar */}
-                    <div className="p-6 flex-1 border-b lg:border-b-0 lg:border-r border-border/30">
+                    <div className="p-5 md:p-6 flex-1 border-b lg:border-b-0 lg:border-r border-border/30">
                         <div className="flex items-center justify-between mb-4">
                             <Button
                                 variant="ghost"
@@ -192,7 +192,7 @@ export function MasterCalendar({ events, users }: MasterCalendarProps) {
                     </div>
 
                     {/* Events List */}
-                    <div className="w-full lg:w-[350px] p-6">
+                    <div className="w-full lg:w-[350px] p-5 md:p-6">
                         <h4 className="text-sm font-bold mb-4">
                             {selectedDate
                                 ? format(selectedDate, "d 'de' MMMM", { locale: es })
