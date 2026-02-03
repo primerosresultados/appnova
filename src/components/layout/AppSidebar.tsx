@@ -11,11 +11,11 @@ import { getOrganizationSettings } from "@/app/actions/organization-actions";
 
 const menuItems = [
   { href: "/", label: "Panel Principal", icon: LayoutDashboard },
-  { href: "/clients", label: "Clientes", icon: Users },
   { href: "/projects", label: "Proyectos", icon: FolderKanban },
   { href: "/tasks", label: "Tareas", icon: ListTodo },
   { href: "/workflows", label: "Flujos de Trabajo", icon: Workflow },
   { href: "/finance", label: "Finanzas", icon: CreditCard },
+  { href: "/clients", label: "Clientes", icon: Users },
 ];
 
 interface AppSidebarProps {

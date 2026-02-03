@@ -17,7 +17,7 @@ import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DynamicBrand } from "@/components/theme/DynamicBrand";
 
-import { PWAInit } from "@/components/pwa/PWAInit";
+// import { PWAInit } from "@/components/pwa/PWAInit"; // Disabled until PWA is properly configured
 
 export const metadata: Metadata = {
   title: "Nova Partners | Agency OS",
@@ -47,7 +47,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <PWAInit />
+          {/* <PWAInit /> */}
           <MainLayout initialIsClient={isClient}>
             <DynamicBrand />
             {children}
