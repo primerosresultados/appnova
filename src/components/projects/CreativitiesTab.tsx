@@ -34,6 +34,33 @@ const initialState = {
     success: false
 };
 
+// Expandable justification component
+function JustificationBox({ justification }: { justification: string }) {
+    const [expanded, setExpanded] = useState(false);
+    const isLong = justification.length > 100;
+
+    return (
+        <div className="bg-muted/50 rounded-md text-sm border-l-2 border-primary/30">
+            <button
+                onClick={() => setExpanded(!expanded)}
+                className="w-full p-3 text-left hover:bg-muted/70 transition-colors flex items-start justify-between gap-2"
+            >
+                <div className="flex-1">
+                    <span className="font-semibold not-italic block mb-1 text-xs text-muted-foreground uppercase">Por qué:</span>
+                    <p className={`italic ${!expanded && isLong ? 'line-clamp-2' : ''}`}>
+                        "{justification}"
+                    </p>
+                </div>
+                {isLong && (
+                    expanded ?
+                        <ChevronUp className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-1" /> :
+                        <ChevronDown className="h-4 w-4 flex-shrink-0 text-muted-foreground mt-1" />
+                )}
+            </button>
+        </div>
+    );
+}
+
 export function CreativitiesTab({ projectId, resources, currentUser }: CreativitiesTabProps) {
     const [state, formAction, isPending] = useActionState(createResource, initialState);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -202,10 +229,7 @@ export function CreativitiesTab({ projectId, resources, currentUser }: Creativit
                                     dangerouslySetInnerHTML={{ __html: idea.content || '' }}
                                 />
                                 {idea.justification && (
-                                    <div className="bg-muted/50 p-3 rounded-md text-sm italic border-l-2 border-primary/30">
-                                        <span className="font-semibold not-italic block mb-1 text-xs text-muted-foreground uppercase">Por qué:</span>
-                                        "{idea.justification}"
-                                    </div>
+                                    <JustificationBox justification={idea.justification} />
                                 )}
                             </CardContent>
                             <CardFooter className="pt-0 flex justify-between items-center text-xs text-muted-foreground">
