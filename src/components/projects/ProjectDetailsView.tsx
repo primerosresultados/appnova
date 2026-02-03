@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar as CalendarIcon, CheckCircle2, Circle, ListTodo, Workflow, FileText, LayoutDashboard, Database, User, Link as LinkIcon, ChevronDown, ChevronUp, Brain, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, CheckCircle2, Circle, ListTodo, Workflow, FileText, LayoutDashboard, Database, User, Link as LinkIcon, ChevronDown, ChevronUp, Brain, ChevronLeft, ChevronRight, Target } from "lucide-react";
 import Link from "next/link";
 import { ActionLogPanel } from "@/components/projects/ActionLogPanel";
 import { TaskStatusSelect } from "@/components/tasks/TaskStatusSelect";
@@ -14,6 +14,7 @@ import { ResourcesTab } from "@/components/projects/ResourcesTab";
 import { ContentsTab } from "@/components/projects/ContentsTab";
 import { WorkflowsTab } from "@/components/projects/WorkflowsTab";
 import { CreativitiesTab } from "@/components/projects/CreativitiesTab";
+import { CompetitorsTab } from "@/components/projects/CompetitorsTab";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -136,6 +137,9 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
                         <TabsTrigger value="creativity" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                             <Brain className="h-4 w-4" /> Creatividades
                         </TabsTrigger>
+                        <TabsTrigger value="competitors" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                            <Target className="h-4 w-4" /> Competencia
+                        </TabsTrigger>
                         <TabsTrigger value="content" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                             <FileText className="h-4 w-4" /> Contenido
                         </TabsTrigger>
@@ -223,6 +227,10 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
 
                     <TabsContent value="creativity" className="space-y-4">
                         <CreativitiesTab projectId={project.id} resources={project.resources || []} currentUser={currentUser} />
+                    </TabsContent>
+
+                    <TabsContent value="competitors" className="space-y-4">
+                        <CompetitorsTab projectId={project.id} competitors={project.competitors || []} />
                     </TabsContent>
 
                     <TabsContent value="content" className="space-y-4">

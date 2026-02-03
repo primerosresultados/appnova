@@ -53,6 +53,9 @@ async function getProject(id: string) {
             contents: {
                 orderBy: { publishDate: 'asc' }
             },
+            competitors: {
+                orderBy: { createdAt: 'desc' }
+            },
             workflows: {
                 include: {
                     workflow: {
