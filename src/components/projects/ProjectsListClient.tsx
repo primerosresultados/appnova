@@ -56,7 +56,7 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
     }, [projects, searchQuery]);
 
     return (
-        <div className="space-y-4 md:space-y-6 animate-in fade-in-50 duration-500 max-w-full overflow-x-hidden p-1">
+        <div className="space-y-4 md:space-y-6 animate-in fade-in-50 duration-500 w-full max-w-[100vw] overflow-x-hidden px-1">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Proyectos</h1>
