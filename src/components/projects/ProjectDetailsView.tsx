@@ -94,28 +94,30 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
     return (
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_350px] h-[calc(100vh-4rem)] w-full gap-0 overflow-hidden">
             <div className="h-full overflow-y-auto space-y-6 p-4 md:p-6">
-                <div className="flex items-center gap-4">
-                    <Link href={isClient ? "/dashboard" : "/projects"}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                    </Link>
-                    {!isClient && (
-                        <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                                <h1 className="text-2xl font-bold tracking-tight">{project.name}</h1>
-                                <Badge variant="outline" className={status.color}>
-                                    <StatusIcon className="mr-1 h-3 w-3" />
-                                    {status.label}
-                                </Badge>
+                <div className="flex flex-col md:flex-row md:items-center gap-4">
+                    <div className="flex items-start gap-3 w-full">
+                        <Link href={isClient ? "/dashboard" : "/projects"}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 mt-1">
+                                <ArrowLeft className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                        {!isClient && (
+                            <div className="flex-1 min-w-0">
+                                <div className="flex flex-wrap items-center gap-2 mb-1">
+                                    <h1 className="text-xl md:text-2xl font-bold tracking-tight leading-tight break-words">{project.name}</h1>
+                                    <Badge variant="outline" className={`${status.color} whitespace-nowrap`}>
+                                        <StatusIcon className="mr-1 h-3 w-3" />
+                                        {status.label}
+                                    </Badge>
+                                </div>
+                                <p className="text-muted-foreground text-sm flex items-center gap-2">
+                                    <User className="h-3 w-3 flex-shrink-0" /> <span className="truncate">{project.client.name}</span>
+                                </p>
                             </div>
-                            <p className="text-muted-foreground text-sm flex items-center gap-2 mt-1">
-                                <User className="h-3 w-3" /> {project.client.name}
-                            </p>
-                        </div>
-                    )}
-                    {isClient && <div className="flex-1" />} {/* Spacer for layout balance if needed */}
-                    {!isClient && <Button variant="outline">Editar Proyecto</Button>}
+                        )}
+                        {isClient && <div className="flex-1" />}
+                    </div>
+                    {!isClient && <Button variant="outline" className="w-full md:w-auto ml-0 md:ml-0">Editar Proyecto</Button>}
                 </div>
 
                 <Tabs defaultValue="tasks" className="w-full">
@@ -161,14 +163,14 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
                                     {project.tasks.map((task: any) => (
                                         <Link key={task.id} href={`/tasks/${task.id}`}>
                                             <div className="flex flex-col gap-2 p-4 rounded-lg border border-border/50 bg-card hover:bg-card transition-colors cursor-pointer group">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`p-2 rounded-full ${task.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/10 text-primary'}`}>
+                                                <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 md:gap-0">
+                                                    <div className="flex items-start gap-3 w-full">
+                                                        <div className={`p-2 rounded-full mt-0.5 shrink-0 ${task.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/10 text-primary'}`}>
                                                             {task.status === 'DONE' ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
                                                         </div>
-                                                        <div>
-                                                            <h4 className={`font-medium ${task.status === 'DONE' ? 'line-through text-muted-foreground' : 'group-hover:text-primary transition-colors'}`}>{task.title}</h4>
-                                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                                                        <div className="min-w-0 flex-1">
+                                                            <h4 className={`font-medium leading-snug ${task.status === 'DONE' ? 'line-through text-muted-foreground' : 'group-hover:text-primary transition-colors'}`}>{task.title}</h4>
+                                                            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
                                                                 {task.assignee ? (
                                                                     <div className="flex items-center gap-1">
                                                                         <Avatar className="h-4 w-4">
@@ -184,7 +186,7 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-2 ml-11 md:ml-0 self-start">
                                                         <Badge variant="outline" className={priorityMap[task.priority]?.color}>
                                                             {priorityMap[task.priority]?.label}
                                                         </Badge>
