@@ -53,3 +53,69 @@ export async function addActionLog(prevState: any, formData: FormData) {
     revalidatePath(`/projects/${projectId}`);
     return { message: "Log added", success: true };
 }
+
+export async function deleteActionLog(logId: string, projectId: string) {
+    if (!logId || !projectId) {
+        return { success: false, message: "Missing required fields" };
+    }
+
+    try {
+        const user = await getUserSession();
+        if (!user) {
+            return { success: false, message: "Unauthorized" };
+        }
+
+        // Ideally check ownership: user.id === log.userId OR user.role === ADMIN
+        // For now, assuming anyone with access can delete for simplicity, or check basic ownership
+        const log = await db.actionLog.findUnique({ where: { id: logId } });
+
+        if (!log) {
+            return { success: false, message: "Log not found" };
+        }
+
+        // Check permission (Admin or Owner)
+        const isAdmin = user.role === 'SUPERADMIN' || user.role === 'PROJECT_MANAGER';
+        const isOwner = log.userId === user.id;
+
+        if (!isAdmin && !isOwner) {
+            return { success: false, message: "No tienes permiso para eliminar este registro" };
+        }
+
+        await db.actionLog.delete({
+            where: { id: logId }
+        });
+
+        revalidatePath(`/projects/${projectId}`);
+        return { success: true, message: "Registro eliminado" };
+    } catch (error) {
+        console.error("Delete Log Error:", error);
+        return { success: false, message: "Error al eliminar registro" };
+    }
+}
+
+export async function toggleLogVisibility(logId: string, projectId: string) {
+    if (!logId || !projectId) {
+        return { success: false, message: "Missing required fields" };
+    }
+
+    try {
+        const user = await getUserSession();
+        if (!user || user.role === 'CLIENTE') {
+            return { success: false, message: "Unauthorized: Clientes no pueden cambiar visibilidad" };
+        }
+
+        const log = await db.actionLog.findUnique({ where: { id: logId } });
+        if (!log) return { success: false, message: "Log not found" };
+
+        const updatedLog = await db.actionLog.update({
+            where: { id: logId },
+            data: { isPublic: !log.isPublic }
+        });
+
+        revalidatePath(`/projects/${projectId}`);
+        return { success: true, message: updatedLog.isPublic ? "Visible para el cliente" : "Oculto para el cliente", isPublic: updatedLog.isPublic };
+    } catch (error) {
+        console.error("Toggle Log Visibility Error:", error);
+        return { success: false, message: "Error al cambiar visibilidad" };
+    }
+}

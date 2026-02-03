@@ -36,3 +36,66 @@ export async function getClientProjects() {
         return { success: false, error: "Failed to fetch projects" };
     }
 }
+
+export async function getClientProjectDetails(id: string) {
+    const user = await getUserSession();
+
+    // Ensure the project belongs to the client (if user is client)
+    const where: any = { id };
+    if (user?.role === 'CLIENTE' && user.clientId) {
+        where.clientId = user.clientId;
+    }
+
+    try {
+        const project = await db.project.findUnique({
+            where,
+            include: {
+                client: true,
+                tasks: {
+                    orderBy: { createdAt: 'desc' },
+                    include: {
+                        assignee: { select: { id: true, name: true, avatar: true } },
+                    }
+                },
+                milestones: {
+                    orderBy: { date: 'asc' }
+                },
+                actionLogs: {
+                    where: {
+                        OR: [
+                            { isPublic: true },
+                            { userId: user?.id }
+                        ]
+                    },
+                    orderBy: { createdAt: 'asc' },
+                    include: {
+                        user: { select: { id: true, name: true, avatar: true } }
+                    }
+                },
+                contents: {
+                    orderBy: { publishDate: 'asc' },
+                    include: {
+                        project: { select: { name: true } }
+                    }
+                },
+                workflows: {
+                    include: {
+                        workflow: {
+                            include: {
+                                stages: {
+                                    include: { tasks: true },
+                                    orderBy: { order: 'asc' }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        return project;
+    } catch (error) {
+        console.error("Error fetching client project details:", error);
+        return null;
+    }
+}

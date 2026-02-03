@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { TaskStatusSelect } from "@/components/tasks/TaskStatusSelect";
 import { Badge } from "@/components/ui/badge";
-import { Circle, Clock, CheckCircle2, User, ArrowUpRight, Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Circle, Clock, CheckCircle2, User, ArrowUpRight, Filter, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { format, differenceInDays } from "date-fns";
@@ -32,12 +34,15 @@ interface ClientTaskListProps {
 
 export function ClientTaskList({ initialTasks, users, userRole }: ClientTaskListProps) {
     const [filterUserId, setFilterUserId] = useState<string>("ALL");
+    const [showCompleted, setShowCompleted] = useState(true);
 
     const canFilter = userRole === 'SUPERADMIN' || userRole === 'ADMIN' || userRole === 'KAM';
 
     const filteredTasks = canFilter && filterUserId !== "ALL"
         ? initialTasks.filter(task => task.assigneeId === filterUserId)
         : initialTasks;
+
+    const finalTasks = showCompleted ? filteredTasks : filteredTasks.filter(t => t.status !== 'DONE');
 
     return (
         <div className="space-y-6 md:space-y-8">
@@ -67,18 +72,29 @@ export function ClientTaskList({ initialTasks, users, userRole }: ClientTaskList
                         </Select>
                     </div>
                 )}
+
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCompleted(!showCompleted)}
+                    className="h-9 gap-2"
+                >
+                    {showCompleted ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showCompleted ? "Ocultar Completadas" : "Mostrar Completadas"}
+                </Button>
             </div>
 
             <div className="grid gap-4">
-                {filteredTasks.length === 0 ? (
+                {finalTasks.length === 0 ? (
                     <div className="text-center py-20 border border-dashed rounded-xl bg-card">
                         <CheckCircle2 className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                         <h3 className="text-lg font-medium">Todo al día</h3>
                         <p className="text-muted-foreground">No hay tareas pendientes con este filtro.</p>
                     </div>
                 ) : (
-                    filteredTasks.map((task) => {
+                    finalTasks.map((task) => {
                         const status = statusMap[task.status] || statusMap.TODO;
+                        // Rest of the component remains the same for item rendering logic provided it uses 'task'
                         const StatusIcon = status.icon;
 
                         return (
@@ -88,10 +104,7 @@ export function ClientTaskList({ initialTasks, users, userRole }: ClientTaskList
 
                                     <div className="flex-1 z-10">
                                         <div className="flex items-center flex-wrap gap-2 mb-2">
-                                            <Badge variant="outline" className={`${status.color} border-transparent font-medium text-xs`}>
-                                                <StatusIcon className="mr-1 h-3 w-3" />
-                                                {status.label}
-                                            </Badge>
+                                            <TaskStatusSelect taskId={task.id} status={task.status} variant="minimal" />
                                             <Badge variant="secondary" className={`${priorityMap[task.priority]?.color} border-transparent text-xs`}>
                                                 {priorityMap[task.priority]?.label}
                                             </Badge>

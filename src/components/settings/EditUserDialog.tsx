@@ -109,13 +109,16 @@ export function EditUserDialog({ user }: EditUserDialogProps) {
                     </div>
 
                     <div className="space-y-2 pt-2 border-t border-border/50">
-                        <Label>Contraseña</Label>
+                        <Label htmlFor="password">Nueva Contraseña</Label>
                         <p className="text-xs text-muted-foreground mb-2">
-                            Para cambiar la contraseña, solicita un restablecimiento.
+                            Deja en blanco para mantener la contraseña actual.
                         </p>
-                        <Button variant="outline" type="button" className="w-full" disabled>
-                            Enviar correo de restablecimiento (Próximamente)
-                        </Button>
+                        <Input
+                            id="password"
+                            name="password"
+                            type="password"
+                            placeholder="Nueva contraseña"
+                        />
                     </div>
 
                     <DialogFooter>

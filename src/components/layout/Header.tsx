@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Bell, Search, Users, FolderKanban, ListTodo, User, Loader2, Menu, X } from "lucide-react";
+import { Bell, Search, Users, FolderKanban, ListTodo, User, Loader2, Menu, X, LogOut as KeyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NotificationCarousel } from "./NotificationCarousel";
@@ -190,6 +190,20 @@ export function Header({ onMenuClick, isClient = false }: HeaderProps) {
                         <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
                     </Button>
                     <ModeToggle />
+                    {isClient && (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                            onClick={async () => {
+                                const { logout } = await import('@/app/login/actions');
+                                await logout();
+                            }}
+                            title="Cerrar Sesión"
+                        >
+                            <KeyIcon className="h-5 w-5" />
+                        </Button>
+                    )}
                 </div>
             </header>
 

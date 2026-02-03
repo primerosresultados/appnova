@@ -124,7 +124,15 @@ export async function getAttentionItems() {
                     dueDate: { lt: now },
                     status: { notIn: ['DONE', 'COMPLETED', 'CANCELLED'] }
                 },
-                include: { project: true, assignee: true },
+                select: {
+                    id: true,
+                    title: true,
+                    dueDate: true,
+                    status: true,
+                    priority: true,
+                    project: { select: { id: true, name: true } },
+                    assignee: { select: { id: true, name: true, avatar: true } }
+                },
                 take: 5,
                 orderBy: { dueDate: 'asc' }
             }),
@@ -166,10 +174,19 @@ export async function getAttentionItems() {
 
 export async function getCalendarEvents() {
     try {
+        const now = new Date();
+        const startFilter = new Date(now);
+        startFilter.setMonth(now.getMonth() - 6); // Optimize: fetch only last 6 months + future
+
         const [tasks, projects, contracts, contents, milestones, users] = await Promise.all([
             // Tasks with due dates
             db.task.findMany({
-                where: { dueDate: { not: null } },
+                where: {
+                    dueDate: {
+                        not: null,
+                        gte: startFilter
+                    }
+                },
                 select: {
                     id: true,
                     title: true,
@@ -181,7 +198,12 @@ export async function getCalendarEvents() {
             }),
             // Projects with due dates
             db.project.findMany({
-                where: { dueDate: { not: null } },
+                where: {
+                    dueDate: {
+                        not: null,
+                        gte: startFilter
+                    }
+                },
                 select: {
                     id: true,
                     name: true,
@@ -192,6 +214,9 @@ export async function getCalendarEvents() {
             }),
             // Contracts/Agreements
             db.contract.findMany({
+                where: {
+                    startDate: { gte: startFilter }
+                },
                 select: {
                     id: true,
                     title: true,
@@ -203,7 +228,12 @@ export async function getCalendarEvents() {
             }),
             // Content with publish dates
             db.content.findMany({
-                where: { publishDate: { not: null } },
+                where: {
+                    publishDate: {
+                        not: null,
+                        gte: startFilter
+                    }
+                },
                 select: {
                     id: true,
                     title: true,
@@ -215,6 +245,9 @@ export async function getCalendarEvents() {
             }),
             // Milestones
             db.milestone.findMany({
+                where: {
+                    date: { gte: startFilter }
+                },
                 select: {
                     id: true,
                     title: true,

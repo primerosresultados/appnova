@@ -22,11 +22,16 @@ export const metadata: Metadata = {
   description: "Central operation hub for high-performance agencies",
 };
 
-export default function RootLayout({
+import { getUserSession } from "@/app/actions/auth-actions";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getUserSession();
+  const isClient = user?.role === 'CLIENTE';
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
@@ -39,7 +44,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <MainLayout>
+          <MainLayout initialIsClient={isClient}>
             <DynamicBrand />
             {children}
           </MainLayout>

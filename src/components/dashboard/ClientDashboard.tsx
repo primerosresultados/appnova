@@ -10,38 +10,17 @@ import { getClientProjects } from "@/app/actions/client-actions";
 import { getUserSession } from "@/app/actions/auth-actions"; // Or pass as prop
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function ClientDashboard() {
-    const [projects, setProjects] = useState<any[]>([]);
-    const [user, setUser] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+interface ClientDashboardProps {
+    initialProjects?: any[];
+    user?: any;
+}
 
-    useEffect(() => {
-        async function loadData() {
-            const [sessionUser, projectsResult] = await Promise.all([
-                getUserSession(),
-                getClientProjects()
-            ]);
+export function ClientDashboard({ initialProjects = [], user }: ClientDashboardProps) {
+    const projects = initialProjects;
 
-            setUser(sessionUser);
-            if (projectsResult.success && projectsResult.data) {
-                setProjects(projectsResult.data);
-            }
-            setLoading(false);
-        }
-        loadData();
-    }, []);
+    // If no user provided (edge case), we might want to handle it, but for now assume it's passed.
 
-    if (loading) {
-        return (
-            <div className="space-y-6 p-6">
-                <Skeleton className="h-12 w-64" />
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <Skeleton className="h-40 w-full rounded-xl" />
-                    <Skeleton className="h-40 w-full rounded-xl" />
-                </div>
-            </div>
-        );
-    }
+    // Proceed directly to render.
 
     return (
         <div className="space-y-8 animate-in fade-in-50 duration-500">

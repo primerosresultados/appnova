@@ -4,14 +4,16 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar as CalendarIcon, CheckCircle2, Circle, ListTodo, Workflow, FileText, LayoutDashboard, Database, User, Link as LinkIcon, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, CheckCircle2, Circle, ListTodo, Workflow, FileText, LayoutDashboard, Database, User, Link as LinkIcon, ChevronDown, ChevronUp, Brain, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { ActionLogPanel } from "@/components/projects/ActionLogPanel";
+import { TaskStatusSelect } from "@/components/tasks/TaskStatusSelect";
 import { ProjectCalendar } from "@/components/projects/ProjectCalendar";
 import { NewTaskSheet } from "@/components/projects/NewTaskSheet";
 import { ResourcesTab } from "@/components/projects/ResourcesTab";
 import { ContentsTab } from "@/components/projects/ContentsTab";
 import { WorkflowsTab } from "@/components/projects/WorkflowsTab";
+import { CreativitiesTab } from "@/components/projects/CreativitiesTab";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -87,10 +89,11 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
     const status = statusMap[project.status] || statusMap.PLANNING;
     const StatusIcon = status.icon;
     const isClient = currentUser?.role === 'CLIENTE';
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] -m-6 md:-m-8">
-            <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_350px] h-[calc(100vh-4rem)] w-full gap-0 overflow-hidden">
+            <div className="h-full overflow-y-auto space-y-6 p-4 md:p-6">
                 <div className="flex items-center gap-4">
                     <Link href={isClient ? "/dashboard" : "/projects"}>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -116,22 +119,25 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
                 </div>
 
                 <Tabs defaultValue="tasks" className="w-full">
-                    <TabsList className="w-full justify-start bg-muted border-b-0 rounded-xl h-auto p-1 mb-6 gap-1 flex-wrap">
-                        <TabsTrigger value="tasks" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                    <TabsList className="w-full flex justify-start bg-muted border-b-0 rounded-xl h-auto p-1 mb-6 gap-1 flex-nowrap overflow-x-auto max-w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <TabsTrigger value="tasks" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                             <ListTodo className="h-4 w-4" /> Tareas Pendientes
                         </TabsTrigger>
-                        <TabsTrigger value="planning" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                        <TabsTrigger value="planning" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                             <CalendarIcon className="h-4 w-4" /> Planificación
                         </TabsTrigger>
                         {!isClient && (
-                            <TabsTrigger value="resources" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                            <TabsTrigger value="resources" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                                 <Database className="h-4 w-4" /> Recursos
                             </TabsTrigger>
                         )}
-                        <TabsTrigger value="content" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                        <TabsTrigger value="creativity" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                            <Brain className="h-4 w-4" /> Creatividades
+                        </TabsTrigger>
+                        <TabsTrigger value="content" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                             <FileText className="h-4 w-4" /> Contenido
                         </TabsTrigger>
-                        <TabsTrigger value="workflows" className="rounded-lg border-0 px-4 py-2 gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+                        <TabsTrigger value="workflows" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
                             <Workflow className="h-4 w-4" /> Flujos de Trabajo
                         </TabsTrigger>
                     </TabsList>
@@ -182,9 +188,7 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
                                                         <Badge variant="outline" className={priorityMap[task.priority]?.color}>
                                                             {priorityMap[task.priority]?.label}
                                                         </Badge>
-                                                        <Badge variant="secondary">
-                                                            {taskStatusMap[task.status]}
-                                                        </Badge>
+                                                        <TaskStatusSelect taskId={task.id} status={task.status} variant="minimal" />
                                                     </div>
                                                 </div>
 
@@ -212,7 +216,11 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
                     </TabsContent>
 
                     <TabsContent value="resources" className="space-y-4">
-                        <ResourcesTab projectId={project.id} resources={project.resources} />
+                        <ResourcesTab projectId={project.id} resources={project.resources || []} />
+                    </TabsContent>
+
+                    <TabsContent value="creativity" className="space-y-4">
+                        <CreativitiesTab projectId={project.id} resources={project.resources || []} />
                     </TabsContent>
 
                     <TabsContent value="content" className="space-y-4">
@@ -225,7 +233,23 @@ export function ProjectDetailsView({ project, allWorkflows = [], currentUser }: 
                 </Tabs>
             </div>
 
-            <div className="w-[350px] shrink-0 border-l border-border h-full hidden xl:block">
+            {/* Mobile Action Log Sidebar */}
+            <div
+                className="fixed top-16 bottom-0 z-50 flex items-center transition-[right] duration-300 xl:hidden"
+                style={{ right: mobileSidebarOpen ? '0px' : '-350px' }}
+            >
+                <button
+                    onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+                    className="w-8 h-12 bg-primary text-primary-foreground rounded-l-md flex items-center justify-center shadow-md border-y border-l border-primary-foreground/20"
+                >
+                    {mobileSidebarOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+                </button>
+                <div className="w-[350px] h-full bg-background border-l shadow-2xl overflow-hidden">
+                    <ActionLogPanel projectId={project.id} logs={project.actionLogs} currentUser={currentUser} />
+                </div>
+            </div>
+
+            <div className="h-full hidden xl:block border-l border-border">
                 <ActionLogPanel projectId={project.id} logs={project.actionLogs} currentUser={currentUser} />
             </div>
         </div>

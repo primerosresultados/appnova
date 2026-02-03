@@ -31,7 +31,8 @@ export default async function TasksPage() {
                             include: { client: true }
                         },
                         assignee: true
-                    }
+                    },
+                    take: 100 // Limit for performance
                 }),
                 db.user.findMany({
                     select: { id: true, name: true, role: true },
@@ -43,6 +44,7 @@ export default async function TasksPage() {
             tasks = await db.task.findMany({
                 where: { assigneeId: currentUser.id },
                 orderBy: { createdAt: 'desc' },
+                take: 100, // Limit for performance
                 include: {
                     project: {
                         include: { client: true }

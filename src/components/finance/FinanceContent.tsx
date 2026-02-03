@@ -162,7 +162,7 @@ export async function FinanceContent() {
     const data = await getFinanceData();
 
     return (
-        <div className="space-y-8 animate-in fade-in-50 duration-500 pb-10">
+        <div className="space-y-8 animate-in fade-in-50 duration-500 pb-10 max-w-full overflow-x-hidden p-1">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 <div>
@@ -177,16 +177,16 @@ export async function FinanceContent() {
             </div>
 
             <Tabs defaultValue="overview" className="space-y-8">
-                <TabsList className="bg-secondary/30 p-1 rounded-xl h-12">
-                    <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Resumen</TabsTrigger>
-                    <TabsTrigger value="invoices" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Facturación</TabsTrigger>
-                    <TabsTrigger value="agreements" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Acuerdos Comerciales</TabsTrigger>
-                    <TabsTrigger value="hr" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Recursos Humanos</TabsTrigger>
+                <TabsList className="w-full flex justify-start bg-secondary/30 border-b-0 rounded-xl h-12 p-1 gap-1 flex-nowrap overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-4 md:px-8 h-10 transition-all font-medium whitespace-nowrap">Resumen</TabsTrigger>
+                    <TabsTrigger value="invoices" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-4 md:px-8 h-10 transition-all font-medium whitespace-nowrap">Facturación</TabsTrigger>
+                    <TabsTrigger value="agreements" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-4 md:px-8 h-10 transition-all font-medium whitespace-nowrap">Acuerdos Comerciales</TabsTrigger>
+                    <TabsTrigger value="hr" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-4 md:px-8 h-10 transition-all font-medium whitespace-nowrap">Recursos Humanos</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
                     {/* KPI Cards */}
-                    <div className="grid gap-6 md:grid-cols-4">
+                    <div className="grid gap-4 md:gap-6 md:grid-cols-4">
                         {/* ... Existing KPI Cards ... */}
                         <Card className="bg-card border border-border/40 shadow-lg overflow-hidden relative group hover:border-emerald-500/30 transition-colors">
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -297,17 +297,17 @@ export async function FinanceContent() {
                                 ) : (
                                     <div className="space-y-1">
                                         {data.recentTransactions.map(t => (
-                                            <div key={t.id} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg transition-colors group">
-                                                <div className="flex items-center gap-4">
-                                                    <div className={`h-9 w-9 rounded-full flex items-center justify-center ${t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                                                        {t.type === 'INCOME' ? <ArrowUpRight className="h-5 w-5" /> : <ArrowDownRight className="h-5 w-5" />}
+                                            <div key={t.id} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg transition-colors group gap-3">
+                                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                    <div className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center ${t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                                                        {t.type === 'INCOME' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
                                                     </div>
-                                                    <div>
-                                                        <div className="font-medium text-sm group-hover:text-primary transition-colors">{t.description || "Sin descripción"}</div>
-                                                        <div className="text-xs text-muted-foreground flex items-center gap-2">
-                                                            <span>{format(new Date(t.date), 'dd MMM, HH:mm', { locale: es })}</span>
-                                                            <span className="w-1 h-1 rounded-full bg-border" />
-                                                            <Badge variant="outline" className="text-[9px] h-4 py-0">{t.category}</Badge>
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="font-medium text-sm group-hover:text-primary transition-colors truncate">{t.description || "Sin descripción"}</div>
+                                                        <div className="text-xs text-muted-foreground flex items-center gap-2 truncate">
+                                                            <span className="shrink-0">{format(new Date(t.date), 'dd MMM', { locale: es })}</span>
+                                                            <span className="w-1 h-1 rounded-full bg-border shrink-0" />
+                                                            <Badge variant="outline" className="text-[9px] h-4 py-0 shrink-0">{t.category}</Badge>
                                                         </div>
                                                     </div>
                                                 </div>

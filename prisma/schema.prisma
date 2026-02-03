@@ -39,6 +39,8 @@ model Client {
   updatedAt   DateTime @updatedAt
   
   users       User[]
+
+  @@index([status])
 }
 
 model Project {
@@ -62,6 +64,9 @@ model Project {
   resources Resource[]
   transactions Transaction[]
   contents Content[]
+
+  @@index([clientId])
+  @@index([status])
 }
 
 model Task {
@@ -82,6 +87,10 @@ model Task {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([status])
 }
 
 model ActionLog {
@@ -98,6 +107,9 @@ model ActionLog {
   user      User?    @relation(fields: [userId], references: [id])
   isPublic  Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@index([projectId])
+  @@index([taskId])
 }
 
 model Workflow {
@@ -190,6 +202,8 @@ model Milestone {
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
 }
 
 model Resource {
@@ -202,6 +216,8 @@ model Resource {
   project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([projectId])
 }
 
 model FinancialRecord {
@@ -222,6 +238,9 @@ model FinancialRecord {
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([status])
 }
 
 model ClientNote {
@@ -274,6 +293,10 @@ model Transaction {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([accountId])
+  @@index([projectId])
+  @@index([clientId])
 }
 
 model Contract {
@@ -294,6 +317,9 @@ model Contract {
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([clientId])
+  @@index([status])
 }
 
 model Content {
@@ -318,6 +344,9 @@ model Content {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([status])
 }
 
 model Employee {

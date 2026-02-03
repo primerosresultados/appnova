@@ -56,14 +56,14 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
     }, [projects, searchQuery]);
 
     return (
-        <div className="space-y-4 md:space-y-6 animate-in fade-in-50 duration-500">
+        <div className="space-y-4 md:space-y-6 animate-in fade-in-50 duration-500 max-w-full overflow-x-hidden p-1">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Proyectos</h1>
                     <p className="text-sm md:text-base text-muted-foreground">Gestiona y rastrea el progreso de todos los proyectos.</p>
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-auto">
-                    <div className="relative w-full md:w-64">
+                    <div className="relative flex-1 md:w-64 md:flex-none">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Buscar proyectos..."
@@ -99,51 +99,68 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
 
                         return (
                             <Card key={project.id} className="bg-card backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors group">
-                                <CardContent className="p-5 flex flex-col md:flex-row items-start md:items-center gap-4">
-                                    {/* Main Info (Left) */}
-                                    <div className="flex-1 min-w-0">
-                                        <Link href={`/projects/${project.id}`} className="block group-hover:underline decoration-primary underline-offset-4">
-                                            <h3 className="text-xl font-bold leading-none tracking-tight truncate mb-1.5">
-                                                {project.name}
-                                            </h3>
-                                        </Link>
-                                        <div className="text-sm text-muted-foreground truncate flex items-center gap-2">
-                                            <span className="font-medium text-foreground">{project.client.name}</span>
-                                            {project.description && (
-                                                <>
-                                                    <span className="w-1 h-1 rounded-full bg-slate-600" />
-                                                    <span className="truncate opacity-80">{project.description}</span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Metadata & Actions (Right) */}
-                                    <div className="flex flex-wrap items-center gap-3 md:gap-6 w-full md:w-auto mt-2 md:mt-0 justify-between md:justify-end">
-                                        {/* Status Badge */}
-                                        <Badge variant="outline" className={`${status.color} border font-medium px-2.5 py-0.5`}>
-                                            <StatusIcon className="mr-1.5 h-3.5 w-3.5" />
-                                            {status.label}
-                                        </Badge>
-
-                                        {/* Deadline Indicator */}
-                                        <div className="flex items-center gap-2 text-sm" title="Fecha de entrega">
-                                            <Calendar className={`h-4 w-4 ${!project.dueDate ? 'text-slate-500' : 'text-slate-400'}`} />
-                                            <span className={!project.dueDate ? 'text-muted-foreground' : ''}>
-                                                {project.dueDate ? format(new Date(project.dueDate), 'd MMM') : 'Sin fecha'}
-                                            </span>
-                                        </div>
-
-                                        {/* Task Count */}
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground" title="Tareas totales">
-                                            <div className="flex items-center justify-center h-6 w-6 rounded-full bg-secondary/50 text-xs font-bold">
-                                                {project._count.tasks}
+                                <CardContent className="p-3 md:p-4">
+                                    <div className="flex flex-col gap-2 md:gap-4">
+                                        {/* Header: Name and Actions */}
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex-1 min-w-0">
+                                                <Link href={`/projects/${project.id}`} className="block group-hover:text-primary transition-colors">
+                                                    <h3 className="text-lg font-bold leading-tight truncate">
+                                                        {project.name}
+                                                    </h3>
+                                                </Link>
+                                                <div className="text-sm text-muted-foreground mt-0.5 truncate">
+                                                    {project.client.name}
+                                                </div>
                                             </div>
-                                            <span className="hidden md:inline">Tareas</span>
+                                            <div className="flex items-center gap-2">
+                                                <div className="md:hidden">
+                                                    <Badge variant="outline" className={`${status.color} border font-medium px-2 py-0.5 text-[10px]`}>
+                                                        {status.label}
+                                                    </Badge>
+                                                </div>
+                                                <ProjectActions projectId={project.id} />
+                                            </div>
                                         </div>
 
-                                        <div className="pl-2 border-l border-border/40">
-                                            <ProjectActions projectId={project.id} />
+                                        {/* Desktop: Horizontal Layout (Hidden on Mobile) */}
+                                        <div className="hidden md:flex items-center justify-between mt-2 pt-2 border-t border-border/40">
+                                            <div className="text-sm text-muted-foreground truncate max-w-[40%]">
+                                                {project.description}
+                                            </div>
+                                            <div className="flex items-center gap-6">
+                                                <Badge variant="outline" className={`${status.color} border font-medium px-2.5 py-0.5 text-xs`}>
+                                                    <StatusIcon className="mr-1.5 h-3.5 w-3.5" />
+                                                    {status.label}
+                                                </Badge>
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <Calendar className="h-4 w-4 opacity-70" />
+                                                    <span>{project.dueDate ? format(new Date(project.dueDate), 'd MMM') : 'Sin fecha'}</span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <CheckCircle2 className="h-4 w-4 opacity-70" />
+                                                    <span>{project._count.tasks} Tareas</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Mobile: Metadata Row (Hidden on Desktop) */}
+                                        <div className="flex md:hidden items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/50">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
+                                                    {project.dueDate ? format(new Date(project.dueDate), 'd MMM') : '-'}
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground/70" />
+                                                    {project._count.tasks}
+                                                </div>
+                                            </div>
+                                            {project.description && (
+                                                <div className="truncate max-w-[120px] opacity-70 italic text-[10px]">
+                                                    {project.description}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </CardContent>

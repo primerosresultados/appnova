@@ -43,7 +43,7 @@ export default async function ClientPage(props: { params: Params }) {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in-50 duration-500 pb-10">
+        <div className="space-y-8 animate-in fade-in-50 duration-500 pb-10 max-w-full overflow-x-hidden p-1">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 <div className="space-y-2">
@@ -80,10 +80,10 @@ export default async function ClientPage(props: { params: Params }) {
             </div>
 
             <Tabs defaultValue="overview" className="space-y-8">
-                <TabsList className="bg-secondary/30 p-1 rounded-xl h-12">
-                    <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Resumen</TabsTrigger>
-                    <TabsTrigger value="billing" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Finanzas</TabsTrigger>
-                    <TabsTrigger value="records" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-8 h-10 transition-all font-medium">Registros Importantes</TabsTrigger>
+                <TabsList className="w-full flex justify-start bg-secondary/30 border-b-0 rounded-xl h-12 p-1 gap-1 flex-nowrap overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-4 md:px-8 h-10 transition-all font-medium whitespace-nowrap">Resumen</TabsTrigger>
+                    <TabsTrigger value="billing" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-4 md:px-8 h-10 transition-all font-medium whitespace-nowrap">Finanzas</TabsTrigger>
+                    <TabsTrigger value="records" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-4 md:px-8 h-10 transition-all font-medium whitespace-nowrap">Registros</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
@@ -91,10 +91,10 @@ export default async function ClientPage(props: { params: Params }) {
                         {/* Contact Info Card */}
                         <Card className="md:col-span-4 bg-card backdrop-blur-md border border-border/40 shadow-xl overflow-hidden group">
                             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                            <CardHeader className="pb-6 relative border-b border-border/30">
+                            <CardHeader className="pb-3 relative border-b border-border/30">
                                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Información de Contacto</CardTitle>
                             </CardHeader>
-                            <CardContent className="space-y-7 pt-6 relative">
+                            <CardContent className="space-y-4 pt-4 relative">
                                 <div className="space-y-2">
                                     <label className="text-[10px] uppercase font-black text-muted-foreground/50 tracking-[0.2em]">Teléfono</label>
                                     <div className="text-base font-semibold flex items-center gap-3">
@@ -132,10 +132,10 @@ export default async function ClientPage(props: { params: Params }) {
                         {/* Projects Card */}
                         <Card className="md:col-span-8 bg-card backdrop-blur-md border border-border/40 shadow-xl relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -mr-32 -mt-32 transition-transform duration-1000 group-hover:scale-125" />
-                            <CardHeader className="pb-6 border-b border-border/30">
+                            <CardHeader className="pb-3 border-b border-border/30">
                                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Proyectos Activos</CardTitle>
                             </CardHeader>
-                            <CardContent className="pt-6">
+                            <CardContent className="pt-4">
                                 {client.projects.length > 0 ? (
                                     <div className="grid sm:grid-cols-2 gap-5">
                                         {client.projects.map((p: any) => (
@@ -179,12 +179,12 @@ export default async function ClientPage(props: { params: Params }) {
                         <div className="absolute top-0 right-0 p-8 opacity-10">
                             <CreditCard className="h-16 w-16" />
                         </div>
-                        <CardHeader className="pb-8 border-b border-border/30">
+                        <CardHeader className="pb-4 border-b border-border/30">
                             <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80 flex items-center gap-3">
                                 <CreditCard className="h-5 w-5 text-primary" /> Información Financiera
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="pt-8">
+                        <CardContent className="pt-4">
                             <div className="grid md:grid-cols-3 gap-10">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.2em]">Razón Social / Tax ID</label>
@@ -203,7 +203,7 @@ export default async function ClientPage(props: { params: Params }) {
                     </Card>
 
                     <Card className="bg-card backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
-                        <CardHeader className="flex flex-row items-center justify-between pb-8 border-b border-border/30 bg-secondary/5 px-8">
+                        <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-border/30 bg-secondary/5 px-8">
                             <div>
                                 <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Historial Financiero</CardTitle>
                                 <CardDescription className="text-xs font-semibold text-muted-foreground mt-1">Compromisos de pago y registros históricos.</CardDescription>
@@ -233,6 +233,7 @@ export default async function ClientPage(props: { params: Params }) {
                                             <div className="flex items-center gap-10">
                                                 <div className="text-right">
                                                     <p className="text-2xl font-black text-foreground tracking-tighter">${record.amount.toLocaleString()}</p>
+                                                    <p className="text-2xl font-black text-foreground tracking-tighter">${record.amount.toLocaleString()}</p>
                                                     <Badge variant="outline" className={`text-[10px] h-5 mt-2 font-black border-2 px-3 ${record.status === 'COMPLETED' ? 'bg-emerald-500/5 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/5 text-amber-500 border-amber-500/20'}`}>
                                                         {record.status}
                                                     </Badge>
@@ -248,7 +249,7 @@ export default async function ClientPage(props: { params: Params }) {
 
                 <TabsContent value="records" className="animate-in slide-in-from-bottom-2 duration-500">
                     <Card className="bg-card backdrop-blur-md border border-border/40 shadow-xl overflow-hidden">
-                        <CardHeader className="flex flex-row items-center justify-between pb-8 bg-secondary/5 border-b border-border/30 px-8">
+                        <CardHeader className="flex flex-row items-center justify-between pb-4 bg-secondary/5 border-b border-border/30 px-8">
                             <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80 flex items-center gap-3">
                                 <AlertCircle className="h-5 w-5 text-primary" /> Bitácora de Cliente
                             </CardTitle>

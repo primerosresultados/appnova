@@ -94,6 +94,29 @@ export async function archiveTask(taskId: string) {
         return { success: true, message: "Task archived successfully" };
     } catch (error) {
         console.error("Failed to archive task", error);
-        return { success: false, message: "Failed to archive task" };
+    }
+}
+
+export async function updateTaskStatus(taskId: string, status: string, path?: string) {
+    try {
+        const task = await db.task.findUnique({ where: { id: taskId } });
+        if (!task) return { success: false, message: "Task not found" };
+
+        await db.task.update({
+            where: { id: taskId },
+            data: { status },
+        });
+
+        if (path) {
+            revalidatePath(path);
+        }
+        revalidatePath(`/projects/${task.projectId}`);
+        revalidatePath(`/tasks`);
+        revalidatePath(`/dashboard`);
+
+        return { success: true, message: "Status updated" };
+    } catch (error) {
+        console.error("Failed to update status", error);
+        return { success: false, message: "Failed to update status" };
     }
 }

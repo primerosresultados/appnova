@@ -5,7 +5,7 @@ import { addActionLog } from "@/app/projects/log-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Send, Clock, FileText, CheckSquare, Users, Mail, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { Send, Clock, FileText, CheckSquare, Users, Mail, AlertTriangle, Eye, EyeOff, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -18,6 +18,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import toast from "react-hot-toast";
 
 interface ActionLog {
     id: string;
@@ -101,7 +102,7 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
     }, [state, isClient]);
 
     return (
-        <div className="flex flex-col h-[600px] border-l border-border/50 bg-card backdrop-blur-sm">
+        <div className="flex flex-col h-full bg-card backdrop-blur-sm">
             <div className="p-4 border-b border-border/50 bg-card">
                 <h3 className="font-semibold flex items-center gap-2">
                     <Clock className="h-4 w-4 text-primary" />
@@ -122,7 +123,7 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
                             const isOwnMessage = currentUser && log.userId === currentUser.id;
 
                             return (
-                                <div key={log.id} className="flex flex-col gap-1">
+                                <div key={log.id} className="flex flex-col gap-1 relative group">
                                     <div className={`p-3 rounded-lg border text-sm ${colorClass} ${isOwnMessage ? 'rounded-tr-none' : 'rounded-tl-none'}`}>
                                         <div className="flex items-center justify-between mb-1">
                                             <div className="flex items-center gap-2">
@@ -134,15 +135,65 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
                                                     {typeLabels[log.type] || log.type}
                                                 </span>
                                             </div>
-                                            {!isClient && (
-                                                <div title={log.isPublic ? "Público para el cliente" : "Solo interno"}>
-                                                    {log.isPublic ? (
-                                                        <Eye className="h-3 w-3 text-emerald-500" />
-                                                    ) : (
-                                                        <EyeOff className="h-3 w-3 text-muted-foreground" />
-                                                    )}
-                                                </div>
-                                            )}
+                                            <div className="flex items-center gap-2">
+                                                {!isClient && (
+                                                    <button
+                                                        type="button"
+                                                        title={log.isPublic ? "Visible para cliente (Click para ocultar)" : "Privado (Click para hacer público)"}
+                                                        className="hover:bg-accent p-0.5 rounded transition-colors cursor-pointer"
+                                                        onClick={async () => {
+                                                            const message = log.isPublic
+                                                                ? "¿Estás seguro de que deseas OCULTAR este comentario al cliente?"
+                                                                : "¿Estás seguro de que deseas que el cliente VEA este comentario?";
+
+                                                            if (confirm(message)) {
+                                                                const { toggleLogVisibility } = await import("@/app/projects/log-actions");
+                                                                try {
+                                                                    const res = await toggleLogVisibility(log.id, projectId);
+                                                                    if (res.success) {
+                                                                        toast.success(res.message);
+                                                                    } else {
+                                                                        toast.error(res.message);
+                                                                    }
+                                                                } catch (e) {
+                                                                    toast.error("Error al actualizar");
+                                                                }
+                                                            }
+                                                        }}
+                                                    >
+                                                        {log.isPublic ? (
+                                                            <Eye className="h-3 w-3 text-emerald-500" />
+                                                        ) : (
+                                                            <EyeOff className="h-3 w-3 text-muted-foreground" />
+                                                        )}
+                                                    </button>
+                                                )}
+                                                {(isOwnMessage || !isClient) && (
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (confirm("¿Estás seguro de eliminar este registro?")) {
+                                                                const { deleteActionLog } = await import("@/app/projects/log-actions");
+                                                                // Optimistic update or just wait for revalidate
+                                                                // For now, simpler to just convert to client component fully or use action directly
+                                                                try {
+                                                                    const res = await deleteActionLog(log.id, projectId);
+                                                                    if (res.success) {
+                                                                        toast.success("Registro eliminado");
+                                                                    } else {
+                                                                        toast.error(res.message);
+                                                                    }
+                                                                } catch (err) {
+                                                                    toast.error("Error al eliminar");
+                                                                }
+                                                            }
+                                                        }}
+                                                        className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:bg-black/10 rounded cursor-pointer text-muted-foreground hover:text-destructive"
+                                                        title="Eliminar"
+                                                    >
+                                                        <Trash2 className="h-3 w-3" />
+                                                    </button>
+                                                )}
+                                            </div>
                                         </div>
                                         <p className="text-foreground whitespace-pre-wrap">{log.content}</p>
                                     </div>

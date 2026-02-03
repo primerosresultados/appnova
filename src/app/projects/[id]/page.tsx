@@ -20,15 +20,16 @@ async function getProject(id: string) {
     const project = await db.project.findUnique({
         where: { id },
         include: {
-            client: true,
+            client: {
+                select: { id: true, name: true }
+            },
             tasks: {
                 orderBy: { createdAt: 'desc' },
                 include: {
-                    assignee: true,
-                    actionLogs: {
-                        include: { user: true },
-                        orderBy: { createdAt: 'desc' }
+                    assignee: {
+                        select: { id: true, name: true, avatar: true }
                     }
+                    // Removed actionLogs for performance, fetched on task detail only
                 }
             },
             milestones: {
@@ -38,9 +39,12 @@ async function getProject(id: string) {
                 orderBy: { createdAt: 'desc' }
             },
             actionLogs: {
-                orderBy: { createdAt: 'asc' },
+                orderBy: { createdAt: 'desc' },
+                take: 50, // Optimize: Fetch only last 50 logs
                 include: {
-                    user: true
+                    user: {
+                        select: { id: true, name: true, avatar: true }
+                    }
                 }
             },
             contents: {
@@ -65,7 +69,7 @@ async function getProject(id: string) {
 
 function ProjectDetailsSkeleton() {
     return (
-        <div className="flex h-[calc(100vh-4rem)] -m-6 md:-m-8 animate-pulse">
+        <div className="flex h-[calc(100vh-8rem)] w-full gap-6 animate-pulse">
             <div className="flex-1 p-6 md:p-8 space-y-6">
                 <div className="flex items-center gap-4">
                     <Skeleton className="h-8 w-8 rounded-full" />
@@ -100,11 +104,19 @@ async function ProjectDetailsContent({ id, currentUser }: { id: string; currentU
     let error = null;
 
     try {
-        // Parallelize the heavy lifting
-        [project, allWorkflows] = await Promise.all([
-            getProject(id),
-            getWorkflows()
-        ]);
+        if (currentUser?.role === 'CLIENTE') {
+            const { getClientProjectDetails } = await import('@/app/actions/client-actions');
+            // Clients don't need valid workflows list to add new ones
+            [project] = await Promise.all([
+                getClientProjectDetails(id)
+            ]);
+        } else {
+            // Parallelize the heavy lifting
+            [project, allWorkflows] = await Promise.all([
+                getProject(id),
+                getWorkflows()
+            ]);
+        }
     } catch (e: any) {
         console.error("Error fetching project details:", e);
         error = e.message;

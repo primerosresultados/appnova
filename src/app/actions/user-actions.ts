@@ -122,36 +122,55 @@ export async function updateUser(prevState: any, formData: FormData) {
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
     const role = formData.get("role") as string;
+    const password = formData.get("password") as string;
 
     if (!id || !name || !email) {
         return { success: false, message: "Faltan campos requeridos" };
     }
 
     try {
-        // 1. Update in Supabase Auth (if email changed or name updated in metadata)
+        // 1. Update in Supabase Auth
+        // Ensure we have the key
+        if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            console.error("Missing SUPABASE_SERVICE_ROLE_KEY. Cannot update Auth user.");
+            if (password) {
+                // If trying to update password but no key, this is a critical failure for that specific action
+                return { success: false, message: "Error de configuración: No se puede actualizar contraseña (Falta Key)" };
+            }
+        }
+
         if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
             const supabaseAdmin = createAdminClient();
 
-            // Need to find user by previous email to get ID (if strict) or just assume sync?
-            // Safer to list users or find by ID if we stored Auth ID (we don't stored it yet in User model, relying on email sync)
-
-            const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
             // Find by ID match or Email match? Our User ID is local UUID.
             // Best effort: Match by currentEmail
+            const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
             const authUser = users?.users.find(u => u.email === currentEmail);
 
             if (authUser) {
+                const updateData: any = {
+                    email: email,
+                    user_metadata: { full_name: name }
+                };
+
+                // Only update password if provided
+                if (password) {
+                    updateData.password = password;
+                }
+
                 const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
                     authUser.id,
-                    {
-                        email: email,
-                        user_metadata: { full_name: name }
-                    }
+                    updateData
                 );
 
                 if (updateError) {
                     console.error("Supabase Auth Update Error:", updateError);
-                    // Don't fail completely, try to update DB at least
+                    return { success: false, message: `Error al actualizar Auth: ${updateError.message}` };
+                }
+            } else {
+                console.warn("Auth user not found for email:", currentEmail);
+                if (password) {
+                    return { success: false, message: "No se encontró el usuario en Auth para cambiar contraseña" };
                 }
             }
         }

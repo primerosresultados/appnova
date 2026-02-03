@@ -2,6 +2,7 @@
 
 import { uploadFile } from "@/app/actions/upload-actions";
 
+import { TaskStatusSelect } from "@/components/tasks/TaskStatusSelect";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -136,9 +137,7 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary" onClick={() => setIsEditOpen(true)}>
                                 <Edit2 className="h-4 w-4" />
                             </Button>
-                            <Badge variant="outline" className={task.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/10 text-primary'}>
-                                {task.status}
-                            </Badge>
+                            <TaskStatusSelect taskId={task.id} status={task.status} />
                             <Badge variant="secondary" className="text-xs">
                                 {task.priority}
                             </Badge>
@@ -199,13 +198,20 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                         </Card>
 
                         <Tabs defaultValue="entregables" className="w-full">
-                            <TabsList className="w-full justify-start bg-transparent border-b border-border rounded-none h-auto p-0 mb-6">
-                                <TabsTrigger value="entregables" className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-4 py-2 gap-2">
+                            <TabsList className="w-full justify-start bg-transparent h-auto p-0 mb-6">
+                                <TabsTrigger
+                                    value="entregables"
+                                    className="border border-border bg-card data-[state=active]:border-primary data-[state=active]:bg-background px-4 py-2 gap-2 w-full md:w-auto justify-start"
+                                    style={{ borderRadius: 'var(--radius)' }}
+                                >
                                     <Paperclip className="h-4 w-4" /> Entregables y Archivos
                                 </TabsTrigger>
                             </TabsList>
                             <TabsContent value="entregables" className="min-h-[200px]">
-                                <div className="text-center py-12 border-2 border-dashed border-border/40 rounded-xl bg-card hover:bg-card transition-colors">
+                                <div
+                                    className="text-center py-12 border-2 border-dashed border-border/40 bg-card hover:bg-card transition-colors"
+                                    style={{ borderRadius: 'calc(var(--radius) + 4px)' }}
+                                >
                                     <Paperclip className="h-10 w-10 text-muted-foreground mx-auto mb-4 opacity-30" />
                                     <h3 className="text-lg font-medium mb-1">Zona de Archivos</h3>
                                     <p className="text-muted-foreground mb-6 text-sm max-w-md mx-auto">Sube documentos, diseños o cualquier entregable relacionado con esta tarea.</p>

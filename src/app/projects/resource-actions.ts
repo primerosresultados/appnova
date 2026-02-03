@@ -7,7 +7,7 @@ import { uploadFile } from "@/lib/upload";
 
 const resourceSchema = z.object({
     name: z.string().min(1, "Name is required"),
-    type: z.enum(["DRIVE", "LINK", "FILE", "CREDENTIAL"]),
+    type: z.enum(["DRIVE", "LINK", "FILE", "CREDENTIAL", "IDEA"]),
     url: z.string().optional(),
     content: z.string().optional(),
     projectId: z.string().min(1, "Project ID is required"),
@@ -44,7 +44,38 @@ export async function createResource(prevState: any, formData: FormData) {
         };
     }
 
-    const { name, type: validType, url: validUrl, content, projectId } = validatedFields.data;
+    let { name, type: validType, url: validUrl, content, projectId } = validatedFields.data;
+
+    // Fetch OpenGraph Image for Links
+    if (validType === "LINK" && validUrl) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000); // 3s timeout
+            const response = await fetch(validUrl, {
+                signal: controller.signal,
+                headers: { 'User-Agent': 'bot-fetcher' }
+            });
+            clearTimeout(timeoutId);
+
+            if (response.ok) {
+                const html = await response.text();
+                const match = html.match(/<meta property="og:image" content="([^"]+)"/i) ||
+                    html.match(/<meta name="twitter:image" content="([^"]+)"/i);
+                if (match && match[1]) {
+                    let imgUrl = match[1];
+                    if (imgUrl.startsWith('/')) {
+                        try {
+                            const urlObj = new URL(validUrl);
+                            imgUrl = `${urlObj.protocol}//${urlObj.host}${imgUrl}`;
+                        } catch (e) { }
+                    }
+                    content = imgUrl;
+                }
+            }
+        } catch (e) {
+            console.log("Failed to fetch OG image");
+        }
+    }
 
     try {
         await db.resource.create({

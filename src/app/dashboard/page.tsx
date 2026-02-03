@@ -34,9 +34,16 @@ async function getRecentActivity() {
     const logs = await db.actionLog.findMany({
       take: 5,
       orderBy: { createdAt: 'desc' },
-      include: {
-        user: true,
-        project: true,
+      select: {
+        id: true,
+        type: true,
+        createdAt: true,
+        user: {
+          select: { name: true }
+        },
+        project: {
+          select: { name: true }
+        }
       }
     });
     return logs;
@@ -73,27 +80,39 @@ interface SearchParamsProps {
   }>;
 }
 
+import { MasterCalendar } from "@/components/dashboard/MasterCalendar";
+
+import { getClientProjects } from "@/app/actions/client-actions";
+
 export default async function Dashboard({ searchParams }: SearchParamsProps) {
   const user = await getUserSession();
 
   // Redirect or show client specific dashboard
   if (user?.role === 'CLIENTE') {
+    const projectsResult = await getClientProjects();
+    const projects = projectsResult.data || [];
+
     return (
       <div className="p-6">
-        <ClientDashboard />
+        <ClientDashboard initialProjects={projects} user={user} />
       </div>
     );
   }
 
   const params = await searchParams;
   const period = params?.period || '30d';
-  const stats = await getDashboardStats(period);
-  const attentionItems = await getAttentionItems();
-  const recentActivity = await getRecentActivity();
+
+  // Paralellize independent data fetching
+  const [stats, attentionItems, recentActivity, calendarData] = await Promise.all([
+    getDashboardStats(period),
+    getAttentionItems(),
+    getRecentActivity(),
+    getCalendarEvents()
+  ]);
 
   return (
-    <div className="space-y-4 md:space-y-6 animate-in fade-in-50 duration-500">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+    <div className="space-y-4 md:space-y-6 animate-in fade-in-50 duration-500 max-w-full overflow-x-hidden p-1">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 md:mb-8">
         <div>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground uppercase">
             Panel de Control
@@ -104,14 +123,26 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
             <Badge variant="secondary" className="bg-muted text-[10px] tracking-widest uppercase font-bold text-muted-foreground rounded-md px-2">Vista Gerencia</Badge>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Suspense>
-            <DashboardToolbar />
-          </Suspense>
-        </div>
+        {/* Toolbar moved to Income Chart */}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-12">
+      <div className="my-4 md:my-6">
+        <MasterCalendar
+          events={calendarData.events}
+          users={calendarData.users}
+        />
+      </div>
+
+      {/* MOBILE SPECIFIC ORDERING: Attention Center immediately after Calendar */}
+      <div className="md:hidden space-y-4 my-4">
+        <AttentionCenter
+          overdueTasks={attentionItems.overdueTasks}
+          pendingInvoices={attentionItems.pendingInvoices}
+          urgentProjects={attentionItems.urgentProjects}
+        />
+      </div>
+
+      <div className="grid gap-3 md:gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6 md:mb-12">
         {[
           { title: "TOTAL PROYECTOS", value: stats.totalProjects.toString(), icon: FolderKanban, color: "text-blue-500", bg: "bg-blue-500/10" },
           { title: "ACTIVOS", value: "3", icon: Clock, color: "text-amber-500", bg: "bg-amber-500/10" },
@@ -119,15 +150,15 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
           { title: "% CUMPLIMIENTO", value: "32%", icon: BarChart3, color: "text-purple-500", bg: "bg-purple-500/10" }
         ].map((item, i) => (
           <Card key={i} className="bg-card backdrop-blur-sm border-border/50 hover:bg-accent/50 active:bg-accent transition-all duration-300 group overflow-hidden relative">
-            <CardContent className="p-6 flex items-center gap-6">
-              <div className={`h-16 w-16 rounded-2xl ${item.bg} flex items-center justify-center shrink-0`}>
-                <item.icon className={`h-8 w-8 ${item.color}`} />
+            <CardContent className="p-4 md:p-6 flex items-center gap-3 md:gap-6">
+              <div className={`h-12 w-12 md:h-16 md:w-16 rounded-xl md:rounded-2xl ${item.bg} flex items-center justify-center shrink-0`}>
+                <item.icon className={`h-6 w-6 md:h-8 md:w-8 ${item.color}`} />
               </div>
               <div className="flex flex-col gap-1">
                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                   {item.title}
                 </p>
-                <div className="text-4xl font-black tracking-tight text-foreground">{item.value}</div>
+                <div className="text-2xl md:text-3xl lg:text-4xl font-black tracking-tight text-foreground">{item.value}</div>
               </div>
             </CardContent>
           </Card>
@@ -136,9 +167,16 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
 
       <div className="grid gap-4 lg:grid-cols-7">
         <Card className="lg:col-span-4 bg-card backdrop-blur-sm border-border/50">
-          <CardHeader className="p-4 md:p-6">
-            <CardTitle className="text-base md:text-lg">Resumen de Ingresos</CardTitle>
-            <CardDescription className="text-xs md:text-sm">Rendimiento mensual del trimestre.</CardDescription>
+          <CardHeader className="p-4 md:p-6 flex flex-row items-center justify-between space-y-0 relative">
+            <div className="space-y-1">
+              <CardTitle className="text-base md:text-lg">Resumen de Ingresos</CardTitle>
+              <CardDescription className="text-xs md:text-sm">Rendimiento financiero.</CardDescription>
+            </div>
+            <div className="shrink-0 scale-90 md:scale-100 origin-right">
+              <Suspense>
+                <DashboardToolbar />
+              </Suspense>
+            </div>
           </CardHeader>
           <CardContent className="p-2 md:pl-2">
             <div className="h-[200px] md:h-[300px] w-full">
@@ -148,25 +186,28 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
         </Card>
 
         <div className="lg:col-span-3 space-y-4">
-          <AttentionCenter
-            overdueTasks={attentionItems.overdueTasks}
-            pendingInvoices={attentionItems.pendingInvoices}
-            urgentProjects={attentionItems.urgentProjects}
-          />
+          {/* DESKTOP ONLY: Attention Center */}
+          <div className="hidden md:block">
+            <AttentionCenter
+              overdueTasks={attentionItems.overdueTasks}
+              pendingInvoices={attentionItems.pendingInvoices}
+              urgentProjects={attentionItems.urgentProjects}
+            />
+          </div>
 
           <Card className="bg-card backdrop-blur-sm border-border/50">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-xl">Actividad Reciente</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between p-4 md:p-6">
+              <CardTitle className="text-lg md:text-xl">Actividad Reciente</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+            <CardContent className="p-4 pt-0 md:p-6 md:pt-0">
+              <div className="space-y-3 md:space-y-4">
                 {recentActivity.length === 0 ? (
                   <p className="text-muted-foreground text-sm">No hay actividad reciente.</p>
                 ) : (
                   recentActivity.slice(0, 3).map((log: any) => (
-                    <div key={log.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-accent/50 transition-colors">
-                      <Avatar className={`h-9 w-9 border-0 ${getActionColor(log.type)}`}>
-                        <AvatarFallback className="bg-transparent font-bold">
+                    <div key={log.id} className="flex items-center gap-3 md:gap-4 p-2 rounded-lg hover:bg-accent/50 transition-colors">
+                      <Avatar className={`h-8 w-8 md:h-9 md:w-9 border-0 ${getActionColor(log.type)}`}>
+                        <AvatarFallback className="bg-transparent font-bold text-xs md:text-sm">
                           {log.user?.name ? log.user.name.substring(0, 2).toUpperCase() : 'Sys'}
                         </AvatarFallback>
                       </Avatar>
@@ -189,5 +230,3 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
     </div>
   );
 }
-
-
