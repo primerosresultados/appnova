@@ -3,14 +3,19 @@ import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 const webpush = require('web-push');
 
-webpush.setVapidDetails(
-    'mailto:admin@novapartners.cl',
-    process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-);
-
 export async function POST(req: Request) {
     try {
+        if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+            console.error("VAPID keys not set");
+            return NextResponse.json({ error: "Configuration Error" }, { status: 500 });
+        }
+
+        webpush.setVapidDetails(
+            'mailto:admin@novapartners.cl',
+            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+            process.env.VAPID_PRIVATE_KEY
+        );
+
         const { userId, title, body, url } = await req.json();
 
         const subscriptions = await db.pushSubscription.findMany({
