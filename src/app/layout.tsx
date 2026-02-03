@@ -17,9 +17,12 @@ import { Toaster } from "react-hot-toast";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DynamicBrand } from "@/components/theme/DynamicBrand";
 
+import { PWAInit } from "@/components/pwa/PWAInit";
+
 export const metadata: Metadata = {
   title: "Nova Partners | Agency OS",
   description: "Central operation hub for high-performance agencies",
+  manifest: "/manifest.json",
 };
 
 import { getUserSession } from "@/app/actions/auth-actions";
@@ -44,6 +47,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <PWAInit />
           <MainLayout initialIsClient={isClient}>
             <DynamicBrand />
             {children}

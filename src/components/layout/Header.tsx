@@ -8,6 +8,7 @@ import { NotificationCarousel } from "./NotificationCarousel";
 import { globalSearch, SearchResult } from "@/app/actions/search-actions";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { NotificationToggle } from "@/components/pwa/NotificationToggle";
 import { ModeToggle } from "@/components/mode-toggle";
 import { ClientProjectSelector } from "@/components/clients/ClientProjectSelector";
 import { getUserSession } from "@/app/actions/auth-actions";
@@ -185,10 +186,7 @@ export function Header({ onMenuClick, isClient = false }: HeaderProps) {
                         </Button>
                     )}
 
-                    <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
-                        <Bell className="h-5 w-5" />
-                        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
-                    </Button>
+                    <NotificationToggle />
                     <ModeToggle />
                     {isClient && (
                         <Button

@@ -188,6 +188,20 @@ model User {
   
   clientId  String?
   client    Client?   @relation(fields: [clientId], references: [id])
+  
+  pushSubscriptions PushSubscription[]
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  endpoint  String   @unique
+  keys      String   // JSON string of { p256dh, auth }
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 model Milestone {
