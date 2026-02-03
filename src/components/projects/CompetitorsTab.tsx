@@ -91,25 +91,6 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
         }
     };
 
-    const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const formData = new FormData(e.currentTarget);
-
-        // Filter and serialize advantages
-        const validAdvantages = advantages.filter(a => a.trim());
-        formData.set("competitiveAdvantages", JSON.stringify(validAdvantages));
-
-        // Filter and serialize products
-        const validProducts = products.filter(p => p.name.trim());
-        formData.set("products", JSON.stringify(validProducts));
-
-        // Filter and serialize services
-        const validServices = services.filter(s => s.name.trim());
-        formData.set("services", JSON.stringify(validServices));
-
-        formAction(formData);
-    };
-
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -135,8 +116,11 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
                             </DialogDescription>
                         </DialogHeader>
 
-                        <form onSubmit={handleFormSubmit} className="space-y-6">
+                        <form action={formAction} className="space-y-6">
                             <input type="hidden" name="projectId" value={projectId} />
+                            <input type="hidden" name="competitiveAdvantages" value={JSON.stringify(advantages.filter(a => a.trim()))} />
+                            <input type="hidden" name="products" value={JSON.stringify(products.filter(p => p.name.trim()))} />
+                            <input type="hidden" name="services" value={JSON.stringify(services.filter(s => s.name.trim()))} />
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
