@@ -137,13 +137,20 @@ export function NewProjectSheet() {
 
                     <div className="grid gap-3">
                         <Label htmlFor="dueDate">Fecha de Entrega</Label>
-                        <Input
-                            id="dueDate"
-                            name="dueDate"
-                            type="date"
-                            disabled={noDeadline}
-                            className={noDeadline ? "opacity-50 cursor-not-allowed" : ""}
-                        />
+                        {noDeadline ? (
+                            <input type="hidden" name="dueDate" value="" />
+                        ) : (
+                            <Input
+                                id="dueDate"
+                                name="dueDate"
+                                type="date"
+                            />
+                        )}
+                        {noDeadline && (
+                            <div className="h-10 px-3 py-2 border border-input rounded-md bg-muted/50 flex items-center text-sm text-muted-foreground">
+                                Sin fecha de entrega definida
+                            </div>
+                        )}
                         <div className="flex items-center space-x-2">
                             <Checkbox
                                 id="noDeadline"
