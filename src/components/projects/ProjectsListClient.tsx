@@ -98,73 +98,60 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
                         const StatusIcon = status.icon;
 
                         return (
-                            <Card key={project.id} className="bg-card backdrop-blur-sm border-border/50 hover:border-primary/50 transition-colors group">
-                                <CardContent className="p-3 md:p-4">
-                                    <div className="flex flex-col gap-2 md:gap-4">
-                                        {/* Header: Name and Actions */}
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div className="flex-1 min-w-0">
+                            <div key={project.id} className="group border-b border-border/40 last:border-0 md:border md:rounded-xl md:bg-card md:backdrop-blur-sm md:border-border/50 hover:border-primary/50 transition-colors">
+                                <div className="p-3 md:p-4 flex flex-col gap-1 md:gap-4">
+                                    {/* Header: Name and Actions */}
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-0.5">
                                                 <Link href={`/projects/${project.id}`} className="block group-hover:text-primary transition-colors">
-                                                    <h3 className="text-lg font-bold leading-tight truncate">
+                                                    <h3 className="text-base md:text-lg font-bold leading-none truncate">
                                                         {project.name}
                                                     </h3>
                                                 </Link>
-                                                <div className="text-sm text-muted-foreground mt-0.5 truncate">
-                                                    {project.client.name}
-                                                </div>
+                                                {/* Mobile Status Dot */}
+                                                <div className={`md:hidden h-2 w-2 rounded-full ${status.color.split(' ')[1] ? status.color.split(' ')[1].replace('text-', 'bg-') : 'bg-gray-500'}`} />
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="md:hidden">
-                                                    <Badge variant="outline" className={`${status.color} border font-medium px-2 py-0.5 text-[10px]`}>
-                                                        {status.label}
-                                                    </Badge>
-                                                </div>
-                                                <ProjectActions projectId={project.id} />
+                                            <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground truncate">
+                                                <span className="truncate">{project.client.name}</span>
+                                                <span className="md:hidden text-muted-foreground/40">•</span>
+                                                <span className="md:hidden">{project._count.tasks} Tareas</span>
                                             </div>
                                         </div>
-
-                                        {/* Desktop: Horizontal Layout (Hidden on Mobile) */}
-                                        <div className="hidden md:flex items-center justify-between mt-2 pt-2 border-t border-border/40">
-                                            <div className="text-sm text-muted-foreground truncate max-w-[40%]">
-                                                {project.description}
+                                        <div className="flex items-center gap-2">
+                                            <div className="md:hidden">
+                                                {project.dueDate && (
+                                                    <span className="text-[10px] text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded mr-2">
+                                                        {format(new Date(project.dueDate!), 'd MMM')}
+                                                    </span>
+                                                )}
                                             </div>
-                                            <div className="flex items-center gap-6">
-                                                <Badge variant="outline" className={`${status.color} border font-medium px-2.5 py-0.5 text-xs`}>
-                                                    <StatusIcon className="mr-1.5 h-3.5 w-3.5" />
-                                                    {status.label}
-                                                </Badge>
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    <Calendar className="h-4 w-4 opacity-70" />
-                                                    <span>{project.dueDate ? format(new Date(project.dueDate), 'd MMM') : 'Sin fecha'}</span>
-                                                </div>
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                    <CheckCircle2 className="h-4 w-4 opacity-70" />
-                                                    <span>{project._count.tasks} Tareas</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Mobile: Metadata Row (Hidden on Desktop) */}
-                                        <div className="flex md:hidden items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/50">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Calendar className="h-3.5 w-3.5 text-muted-foreground/70" />
-                                                    {project.dueDate ? format(new Date(project.dueDate), 'd MMM') : '-'}
-                                                </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <CheckCircle2 className="h-3.5 w-3.5 text-muted-foreground/70" />
-                                                    {project._count.tasks}
-                                                </div>
-                                            </div>
-                                            {project.description && (
-                                                <div className="truncate max-w-[120px] opacity-70 italic text-[10px]">
-                                                    {project.description}
-                                                </div>
-                                            )}
+                                            <ProjectActions projectId={project.id} />
                                         </div>
                                     </div>
-                                </CardContent>
-                            </Card>
+
+                                    {/* Desktop: Horizontal Layout (Hidden on Mobile) */}
+                                    <div className="hidden md:flex items-center justify-between mt-0 pt-2 border-t border-border/40">
+                                        <div className="text-sm text-muted-foreground truncate max-w-[40%]">
+                                            {project.description}
+                                        </div>
+                                        <div className="flex items-center gap-6">
+                                            <Badge variant="outline" className={`${status.color} border font-medium px-2.5 py-0.5 text-xs`}>
+                                                <StatusIcon className="mr-1.5 h-3.5 w-3.5" />
+                                                {status.label}
+                                            </Badge>
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <Calendar className="h-4 w-4 opacity-70" />
+                                                <span>{project.dueDate ? format(new Date(project.dueDate), 'd MMM') : 'Sin fecha'}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <CheckCircle2 className="h-4 w-4 opacity-70" />
+                                                <span>{project._count.tasks} Tareas</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         );
                     })}
                 </div>

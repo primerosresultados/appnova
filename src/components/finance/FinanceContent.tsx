@@ -162,7 +162,7 @@ export async function FinanceContent() {
     const data = await getFinanceData();
 
     return (
-        <div className="space-y-8 animate-in fade-in-50 duration-500 pb-10 max-w-full overflow-x-hidden p-1">
+        <div className="space-y-4 md:space-y-8 animate-in fade-in-50 duration-500 pb-20 w-full max-w-[100vw] overflow-x-hidden px-1">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 <div>
