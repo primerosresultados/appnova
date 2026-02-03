@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Bold, Italic, Underline as UnderlineIcon, Link as LinkIcon, List, ListOrdered, Undo, Redo, Eraser } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useRef, useCallback } from 'react';
 
 interface RichTextEditorProps {
     value?: string;
@@ -19,6 +20,17 @@ interface RichTextEditorProps {
 }
 
 export function RichTextEditor({ value, onChange, placeholder, className }: RichTextEditorProps) {
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const debouncedOnChange = useCallback((html: string) => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+        debounceTimerRef.current = setTimeout(() => {
+            onChange(html);
+        }, 150); // 150ms debounce
+    }, [onChange]);
+
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -39,7 +51,7 @@ export function RichTextEditor({ value, onChange, placeholder, className }: Rich
             },
         },
         onUpdate: ({ editor }) => {
-            onChange(editor.getHTML());
+            debouncedOnChange(editor.getHTML());
         },
         immediatelyRender: false,
     });
