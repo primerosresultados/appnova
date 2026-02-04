@@ -51,6 +51,7 @@ export async function addActionLog(prevState: any, formData: FormData) {
     }
 
     revalidatePath(`/projects/${projectId}`);
+    revalidatePath('/dashboard'); // Refresh dashboard activity feed
     return { message: "Log added", success: true };
 }
 
@@ -85,6 +86,7 @@ export async function deleteActionLog(logId: string, projectId: string) {
             where: { id: logId }
         });
 
+        revalidatePath('/dashboard'); // Refresh dashboard activity feed
         revalidatePath(`/projects/${projectId}`);
         return { success: true, message: "Registro eliminado" };
     } catch (error) {
