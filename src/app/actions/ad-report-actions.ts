@@ -4,7 +4,7 @@ import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 
 /**
- * Create a new ad campaign report
+ * Create a new ad campaign report with blocks
  */
 export async function createAdReport(data: {
     projectId: string;
@@ -17,7 +17,12 @@ export async function createAdReport(data: {
     clicks?: number;
     spend?: number;
     conversions?: number;
-    content?: string;
+    blocks?: {
+        title: string;
+        description: string;
+        images: string[];
+        files: { name: string; url: string; size: number; type: string }[];
+    }[];
     createdById?: string;
 }) {
     try {
@@ -33,8 +38,16 @@ export async function createAdReport(data: {
                 clicks: data.clicks,
                 spend: data.spend,
                 conversions: data.conversions,
-                content: data.content,
                 createdById: data.createdById,
+                blocks: data.blocks && data.blocks.length > 0 ? {
+                    create: data.blocks.map((block, index) => ({
+                        order: index,
+                        title: block.title,
+                        description: block.description,
+                        images: block.images,
+                        files: block.files,
+                    })),
+                } : undefined,
             },
         });
 

@@ -3,7 +3,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Facebook, Chrome, TrendingUp, Trash2, X } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Facebook, Chrome, TrendingUp, Trash2, Download, FileText, File } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CommentSection } from './CommentSection';
@@ -11,6 +12,7 @@ import { deleteAdReport } from '@/app/actions/ad-report-actions';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import Image from 'next/image';
 
 interface AdReportViewProps {
     report: {
@@ -24,7 +26,19 @@ interface AdReportViewProps {
         clicks?: number | null;
         spend?: number | null;
         conversions?: number | null;
-        content?: string | null;
+        blocks?: {
+            id: string;
+            order: number;
+            title: string;
+            description: string;
+            images: string[];
+            files?: {
+                name: string;
+                url: string;
+                size: number;
+                type: string;
+            }[];
+        }[];
         createdBy?: {
             id: string;
             name: string;
@@ -60,6 +74,17 @@ const platformConfig = {
     },
 };
 
+const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+};
+
+const getFileIcon = (type: string) => {
+    if (type?.includes('pdf')) return FileText;
+    return File;
+};
+
 export function AdReportView({ report, projectId, currentUser, onClose }: AdReportViewProps) {
     const router = useRouter();
     const [isDeleting, setIsDeleting] = useState(false);
@@ -71,7 +96,7 @@ export function AdReportView({ report, projectId, currentUser, onClose }: AdRepo
     const hasMetrics = report.reach || report.impressions || report.clicks || report.spend || report.conversions;
 
     const handleDelete = async () => {
-        if (!confirm('¿Seguro que quieres eliminar este reporte? Esta acci&oacute;n no se puede deshacer.')) {
+        if (!confirm('¿Seguro que quieres eliminar este reporte? Esta acción no se puede deshacer.')) {
             return;
         }
 
@@ -90,7 +115,7 @@ export function AdReportView({ report, projectId, currentUser, onClose }: AdRepo
 
     return (
         <Dialog open={!!report} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
@@ -121,51 +146,109 @@ export function AdReportView({ report, projectId, currentUser, onClose }: AdRepo
                 <div className="space-y-6 pt-4">
                     {/* Metrics */}
                     {hasMetrics && (
-                        <div className="border rounded-lg p-4">
-                            <h3 className="font-semibold mb-3">Métricas</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                {report.reach !== null && report.reach !== undefined && (
-                                    <div>
-                                        <div className="text-xs text-muted-foreground">Alcance</div>
-                                        <div className="text-2xl font-bold">{report.reach.toLocaleString()}</div>
-                                    </div>
-                                )}
-                                {report.impressions !== null && report.impressions !== undefined && (
-                                    <div>
-                                        <div className="text-xs text-muted-foreground">Impresiones</div>
-                                        <div className="text-2xl font-bold">{report.impressions.toLocaleString()}</div>
-                                    </div>
-                                )}
-                                {report.clicks !== null && report.clicks !== undefined && (
-                                    <div>
-                                        <div className="text-xs text-muted-foreground">Clics</div>
-                                        <div className="text-2xl font-bold">{report.clicks.toLocaleString()}</div>
-                                    </div>
-                                )}
-                                {report.spend !== null && report.spend !== undefined && (
-                                    <div>
-                                        <div className="text-xs text-muted-foreground">Gasto</div>
-                                        <div className="text-2xl font-bold">${report.spend.toFixed(2)}</div>
-                                    </div>
-                                )}
-                                {report.conversions !== null && report.conversions !== undefined && (
-                                    <div>
-                                        <div className="text-xs text-muted-foreground">Conversiones</div>
-                                        <div className="text-2xl font-bold">{report.conversions.toLocaleString()}</div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-base">Métricas</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                    {report.reach !== null && report.reach !== undefined && (
+                                        <div>
+                                            <div className="text-xs text-muted-foreground">Alcance</div>
+                                            <div className="text-2xl font-bold">{report.reach.toLocaleString()}</div>
+                                        </div>
+                                    )}
+                                    {report.impressions !== null && report.impressions !== undefined && (
+                                        <div>
+                                            <div className="text-xs text-muted-foreground">Impresiones</div>
+                                            <div className="text-2xl font-bold">{report.impressions.toLocaleString()}</div>
+                                        </div>
+                                    )}
+                                    {report.clicks !== null && report.clicks !== undefined && (
+                                        <div>
+                                            <div className="text-xs text-muted-foreground">Clics</div>
+                                            <div className="text-2xl font-bold">{report.clicks.toLocaleString()}</div>
+                                        </div>
+                                    )}
+                                    {report.spend !== null && report.spend !== undefined && (
+                                        <div>
+                                            <div className="text-xs text-muted-foreground">Gasto</div>
+                                            <div className="text-2xl font-bold">${report.spend.toFixed(2)}</div>
+                                        </div>
+                                    )}
+                                    {report.conversions !== null && report.conversions !== undefined && (
+                                        <div>
+                                            <div className="text-xs text-muted-foreground">Conversiones</div>
+                                            <div className="text-2xl font-bold">{report.conversions.toLocaleString()}</div>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
                     )}
 
-                    {/* Content */}
-                    {report.content && (
-                        <div className="border rounded-lg p-4">
-                            <h3 className="font-semibold mb-3">Análisis</h3>
-                            <div
-                                className="prose prose-sm dark:prose-invert max-w-none"
-                                dangerouslySetInnerHTML={{ __html: report.content }}
-                            />
+                    {/* Blocks */}
+                    {report.blocks && report.blocks.length > 0 && (
+                        <div className="space-y-4">
+                            {report.blocks.map((block) => (
+                                <Card key={block.id}>
+                                    <CardHeader>
+                                        <CardTitle>{block.title}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        {/* Description */}
+                                        {block.description && (
+                                            <div
+                                                className="prose prose-sm dark:prose-invert max-w-none"
+                                                dangerouslySetInnerHTML={{ __html: block.description }}
+                                            />
+                                        )}
+
+                                        {/* Images */}
+                                        {block.images && block.images.length > 0 && (
+                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                                {block.images.map((url, index) => (
+                                                    <div key={index} className="relative aspect-video rounded-lg overflow-hidden border">
+                                                        <Image
+                                                            src={url}
+                                                            alt={`Imagen ${index + 1}`}
+                                                            fill
+                                                            className="object-cover"
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {/* Files */}
+                                        {block.files && block.files.length > 0 && (
+                                            <div className="space-y-2">
+                                                <p className="text-sm font-medium">Archivos Adjuntos</p>
+                                                <div className="space-y-2">
+                                                    {block.files.map((file, index) => {
+                                                        const FileIcon = getFileIcon(file.type);
+                                                        return (
+                                                            <a
+                                                                key={index}
+                                                                href={file.url}
+                                                                download
+                                                                className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
+                                                            >
+                                                                <FileIcon className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="text-sm font-medium truncate">{file.name}</p>
+                                                                    <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                                                                </div>
+                                                                <Download className="h-4 w-4 text-muted-foreground" />
+                                                            </a>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </CardContent>
+                                </Card>
+                            ))}
                         </div>
                     )}
 

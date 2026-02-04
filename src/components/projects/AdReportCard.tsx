@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Facebook, Chrome, TrendingUp, MessageSquare, Eye } from 'lucide-react';
+import { Facebook, Chrome, TrendingUp, MessageSquare, Eye, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -20,7 +19,12 @@ interface AdReportCardProps {
         clicks?: number | null;
         spend?: number | null;
         conversions?: number | null;
-        content?: string | null;
+        blocks?: {
+            id: string;
+            title: string;
+            description: string;
+            images: string[];
+        }[];
         createdBy?: {
             name: string;
             avatar?: string | null;
@@ -61,8 +65,9 @@ export function AdReportCard({ report, projectId, onViewReport }: AdReportCardPr
     // Check if there are any metrics to display
     const hasMetrics = report.reach || report.impressions || report.clicks || report.spend || report.conversions;
 
-    // Create preview of content
-    const contentPreview = report.content ? stripHtml(report.content).substring(0, 150) + '...' : null;
+    // Get first block for preview
+    const firstBlock = report.blocks && report.blocks.length > 0 ? report.blocks[0] : null;
+    const blockPreview = firstBlock ? stripHtml(firstBlock.description).substring(0, 120) + '...' : null;
 
     return (
         <Card className="bg-card border-border/50 hover:border-border transition-colors cursor-pointer" onClick={() => onViewReport(report.id)}>
@@ -74,8 +79,14 @@ export function AdReportCard({ report, projectId, onViewReport }: AdReportCardPr
                                 <PlatformIcon className="h-3 w-3 mr-1" />
                                 {platform.label}
                             </Badge>
-                            <h3 className="font-semibold">{report.title}</h3>
+                            {report.blocks && report.blocks.length > 0 && (
+                                <Badge variant="outline" className="flex items-center gap-1">
+                                    <FileText className="h-3 w-3" />
+                                    {report.blocks.length} {report.blocks.length === 1 ? 'elemento' : 'elementos'}
+                                </Badge>
+                            )}
                         </div>
+                        <h3 className="font-semibold">{report.title}</h3>
                         <div className="text-sm text-muted-foreground">
                             {format(new Date(report.startDate), 'dd MMM yyyy', { locale: es })} -{' '}
                             {format(new Date(report.endDate), 'dd MMM yyyy', { locale: es })}
@@ -119,9 +130,12 @@ export function AdReportCard({ report, projectId, onViewReport }: AdReportCardPr
                     </div>
                 )}
 
-                {contentPreview && (
-                    <div className="border-t pt-3">
-                        <p className="text-sm text-muted-foreground line-clamp-2">{contentPreview}</p>
+                {firstBlock && (
+                    <div className="border-t pt-3 space-y-1">
+                        <p className="text-sm font-medium">{firstBlock.title}</p>
+                        {blockPreview && (
+                            <p className="text-sm text-muted-foreground line-clamp-2">{blockPreview}</p>
+                        )}
                     </div>
                 )}
 

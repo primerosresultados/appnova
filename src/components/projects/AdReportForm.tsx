@@ -22,7 +22,9 @@ import { es } from 'date-fns/locale';
 import { createAdReport } from '@/app/actions/ad-report-actions';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
-import { RichTextEditor } from '@/components/ui/rich-text-editor';
+import { BlockEditor, ReportBlock } from './BlockEditor';
+import { v4 as uuidv4 } from 'uuid';
+import { Separator } from '@/components/ui/separator';
 
 interface AdReportFormProps {
     projectId: string;
@@ -44,7 +46,17 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
     const [clicks, setClicks] = useState('');
     const [spend, setSpend] = useState('');
     const [conversions, setConversions] = useState('');
-    const [content, setContent] = useState('');
+
+    // Blocks state
+    const [blocks, setBlocks] = useState<ReportBlock[]>([
+        {
+            id: uuidv4(),
+            title: '',
+            description: '',
+            images: [],
+            files: [],
+        },
+    ]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -56,6 +68,13 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
 
         if (!startDate || !endDate) {
             toast.error('Debes seleccionar un rango de fechas');
+            return;
+        }
+
+        // Validate at least one block has content
+        const hasContent = blocks.some(b => b.title.trim() || b.description.trim());
+        if (!hasContent) {
+            toast.error('Agrega al menos un elemento con título o descripción');
             return;
         }
 
@@ -72,7 +91,7 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
             clicks: clicks ? parseInt(clicks) : undefined,
             spend: spend ? parseFloat(spend) : undefined,
             conversions: conversions ? parseInt(conversions) : undefined,
-            content: content || undefined,
+            blocks: blocks.filter(b => b.title.trim() || b.description.trim()), // Only save non-empty blocks
             createdById: currentUserId,
         });
 
@@ -98,7 +117,37 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
         setClicks('');
         setSpend('');
         setConversions('');
-        setContent('');
+        setBlocks([{
+            id: uuidv4(),
+            title: '',
+            description: '',
+            images: [],
+            files: [],
+        }]);
+    };
+
+    const addBlock = () => {
+        setBlocks([...blocks, {
+            id: uuidv4(),
+            title: '',
+            description: '',
+            images: [],
+            files: [],
+        }]);
+    };
+
+    const updateBlock = (index: number, updatedBlock: ReportBlock) => {
+        const newBlocks = [...blocks];
+        newBlocks[index] = updatedBlock;
+        setBlocks(newBlocks);
+    };
+
+    const removeBlock = (index: number) => {
+        if (blocks.length === 1) {
+            toast.error('Debe haber al menos un elemento');
+            return;
+        }
+        setBlocks(blocks.filter((_, i) => i !== index));
     };
 
     return (
@@ -109,88 +158,96 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
                     Nuevo Reporte
                 </Button>
             </SheetTrigger>
-            <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+            <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <SheetHeader>
                         <SheetTitle>Nuevo Reporte de Campaña</SheetTitle>
                         <SheetDescription>
-                            Documenta análisis detallados de las campañas publicitarias
+                            Documenta análisis detallados con múltiples elementos organizados
                         </SheetDescription>
                     </SheetHeader>
 
-                    <div className="space-y-4 py-6">
-                        <div className="space-y-2">
-                            <Label>Plataforma</Label>
-                            <Select
-                                value={platform}
-                                onValueChange={(value) => setPlatform(value as typeof platform)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="META_ADS">Meta Ads (Facebook/Instagram)</SelectItem>
-                                    <SelectItem value="GOOGLE_ADS">Google Ads</SelectItem>
-                                    <SelectItem value="OTHER">Otra Plataforma</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                    <div className="space-y-6 py-6">
+                        {/* Basic Info */}
+                        <div className="space-y-4">
+                            <h4 className="font-medium">Información General</h4>
 
-                        <div className="space-y-2">
-                            <Label>Título *</Label>
-                            <Input
-                                placeholder="Ej: Estado de Cuenta - Pausa por Falta de Pago"
-                                value={title}
-                                onChange={(e) => setTitle(e.target.value)}
-                                required
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Fecha Inicio *</Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className="w-full justify-start text-left">
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {startDate ? format(startDate, 'PPP', { locale: es }) : 'Seleccionar'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <Calendar
-                                            mode="single"
-                                            selected={startDate}
-                                            onSelect={setStartDate}
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+                                <Label>Plataforma</Label>
+                                <Select
+                                    value={platform}
+                                    onValueChange={(value) => setPlatform(value as typeof platform)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="META_ADS">Meta Ads (Facebook/Instagram)</SelectItem>
+                                        <SelectItem value="GOOGLE_ADS">Google Ads</SelectItem>
+                                        <SelectItem value="OTHER">Otra Plataforma</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
 
                             <div className="space-y-2">
-                                <Label>Fecha Fin *</Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className="w-full justify-start text-left">
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {endDate ? format(endDate, 'PPP', { locale: es }) : 'Seleccionar'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <Calendar
-                                            mode="single"
-                                            selected={endDate}
-                                            onSelect={setEndDate}
-                                            initialFocus
-                                            disabled={(date) => startDate ? date < startDate : false}
-                                        />
-                                    </PopoverContent>
-                                </Popover>
+                                <Label>Título del Reporte *</Label>
+                                <Input
+                                    placeholder="Ej: Análisis Meta Ads - Enero 2026"
+                                    value={title}
+                                    onChange={(e) => setTitle(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Fecha Inicio *</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-start text-left">
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {startDate ? format(startDate, 'PPP', { locale: es }) : 'Seleccionar'}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar
+                                                mode="single"
+                                                selected={startDate}
+                                                onSelect={setStartDate}
+                                                initialFocus
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Fecha Fin *</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="w-full justify-start text-left">
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {endDate ? format(endDate, 'PPP', { locale: es }) : 'Seleccionar'}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar
+                                                mode="single"
+                                                selected={endDate}
+                                                onSelect={setEndDate}
+                                                initialFocus
+                                                disabled={(date) => startDate ? date < startDate : false}
+                                            />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
                             </div>
                         </div>
 
-                        <div className="border-t pt-4">
-                            <h4 className="font-medium mb-3">Métricas (Opcionales)</h4>
+                        <Separator />
+
+                        {/* Metrics */}
+                        <div className="space-y-4">
+                            <h4 className="font-medium">Métricas (Opcionales)</h4>
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Alcance</Label>
@@ -245,17 +302,36 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
                             </div>
                         </div>
 
-                        <div className="space-y-2 border-t pt-4">
-                            <Label>Contenido del Reporte</Label>
-                            <RichTextEditor
-                                value={content}
-                                onChange={setContent}
-                                placeholder="Describe hallazgos, estrategias, análisis detallado... Usa formato para organizar mejor la información."
-                                className="min-h-[300px]"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                                Puedes usar negritas, cursivas, listas y colores para organizar tu reporte
-                            </p>
+                        <Separator />
+
+                        {/* Content Blocks */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-medium">Elementos del Reporte</h4>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={addBlock}
+                                >
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Añadir Elemento
+                                </Button>
+                            </div>
+
+                            <div className="space-y-4">
+                                {blocks.map((block, index) => (
+                                    <BlockEditor
+                                        key={block.id}
+                                        block={block}
+                                        index={index}
+                                        reportId={projectId}
+                                        onChange={(updatedBlock) => updateBlock(index, updatedBlock)}
+                                        onRemove={() => removeBlock(index)}
+                                        isFirst={index === 0}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     </div>
 

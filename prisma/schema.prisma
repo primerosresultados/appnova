@@ -469,9 +469,9 @@ model AdReport {
   spend       Float?
   conversions Int?
 
-  // Content - Rich HTML support
+  // Content - Now using blocks
   title   String // Required report title
-  content String? @db.Text // Rich HTML content (was keyConsiderations)
+  content String? @db.Text // Deprecated, kept for backward compatibility
 
   // Audit
   createdById String?
@@ -479,11 +479,29 @@ model AdReport {
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   comments    AdReportComment[]
+  blocks      AdReportBlock[]
 
   @@index([projectId])
   @@index([platform])
   @@index([startDate])
 }
+
+model AdReportBlock {
+  id          String   @id @default(uuid())
+  reportId    String
+  report      AdReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  order       Int      // Display order
+  title       String
+  description String   @db.Text // Rich HTML content
+  images      String[] // Array of image URLs
+  files       Json?    // Array of file metadata { name, url, size, type }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([reportId])
+  @@index([order])
+}
+
 
 model AdReportComment {
   id        String   @id @default(uuid())
