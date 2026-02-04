@@ -115,7 +115,7 @@ export function AdReportView({ report, projectId, currentUser, onClose }: AdRepo
 
     return (
         <Dialog open={!!report} onOpenChange={onClose}>
-            <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-[90vw] max-w-[1600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
