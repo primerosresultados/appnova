@@ -143,21 +143,21 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
     };
 
     return (
-        <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
                 <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Nuevo Reporte
                 </Button>
-            </SheetTrigger>
-            <SheetContent className="w-full sm:max-w-3xl overflow-y-auto">
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
-                    <SheetHeader>
-                        <SheetTitle>Nuevo Reporte de Campaña</SheetTitle>
-                        <SheetDescription>
+                    <DialogHeader>
+                        <DialogTitle>Nuevo Reporte de Campaña</DialogTitle>
+                        <DialogDescription>
                             Documenta análisis detallados con múltiples elementos organizados
-                        </SheetDescription>
-                    </SheetHeader>
+                        </DialogDescription>
+                    </DialogHeader>
 
                     <div className="space-y-6 py-6">
                         {/* Basic Info */}
@@ -327,13 +327,13 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
                         </div>
                     </div>
 
-                    <SheetFooter>
+                    <DialogFooter>
                         <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting ? 'Guardando...' : 'Crear Reporte'}
                         </Button>
-                    </SheetFooter>
+                    </DialogFooter>
                 </form>
-            </SheetContent>
-        </Sheet>
+            </DialogContent>
+        </Dialog>
     );
 }
