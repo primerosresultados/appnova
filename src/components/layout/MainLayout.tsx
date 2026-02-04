@@ -20,8 +20,12 @@ export function MainLayout({ children, initialIsClient = false }: MainLayoutProp
 
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isClient, setIsClient] = useState(initialIsClient);
-    const [loading, setLoading] = useState(!initialIsClient); // If we know it's client, we're not loading. If not, maybe we check? 
-    // Actually, if we pass initialIsClient from server, we can trust it.
+    const [loading, setLoading] = useState(!initialIsClient);
+    const [mounted, setMounted] = useState(false); // Track mounting for hydration fix
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         const checkUserRole = async () => {
@@ -63,14 +67,11 @@ export function MainLayout({ children, initialIsClient = false }: MainLayoutProp
     return (
         <div className="min-h-screen bg-background text-foreground flex" suppressHydrationWarning>
             {/* 
-              Only render Sidebar if we're not a client.
-              To avoid hydration error, we need to ensure the initial render matches server.
-              Server: isClient = false. Sidebar Renders.
-              Client Initial: isClient = false. Sidebar Renders.
-              Client Effect: isClient might become true. Sidebar dissapears.
-              This is valid React. The error likely comes from bad nesting or attributes.
+              Only render Sidebar if we're not a client AND we are mounted.
+              This prevents hydration errors by ensuring we only render this client-dependent component
+              after the specific client environment is ready.
             */}
-            {!isClient && <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
+            {mounted && !isClient && <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
             <div className={`flex-1 flex flex-col ${!isClient ? 'md:pl-72' : ''} transition-all duration-300`}>
                 <Header onMenuClick={() => setSidebarOpen(true)} isClient={isClient} />
                 <main className={`flex-1 overflow-y-auto ${isProjectDetail ? 'p-0' : 'p-6 md:p-8 lg:p-10'}`}>

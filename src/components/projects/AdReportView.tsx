@@ -26,6 +26,14 @@ interface AdReportViewProps {
         clicks?: number | null;
         spend?: number | null;
         conversions?: number | null;
+        selectedMetrics?: string[] | null;
+        // Dynamic fields
+        ctr?: number | null;
+        cpc?: number | null;
+        cpm?: number | null;
+        cpa?: number | null;
+        engagement?: number | null;
+        videoViews?: number | null;
         blocks?: {
             id: string;
             order: number;
@@ -116,7 +124,7 @@ export function AdReportView({ report, projectId, currentUser, onClose, onEdit }
 
     return (
         <Dialog open={!!report} onOpenChange={onClose}>
-            <DialogContent className="w-[90vw] max-w-[1600px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-[90vw] max-w-[1600px] sm:max-w-[1600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
@@ -168,51 +176,57 @@ export function AdReportView({ report, projectId, currentUser, onClose, onEdit }
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    {report.reach !== null && report.reach !== undefined && (
-                                        <div className="flex flex-col gap-1 p-3 rounded-lg border bg-muted/20">
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground w-full">
-                                                <Users className="h-3.5 w-3.5" />
-                                                Alcance
-                                            </div>
-                                            <div className="text-2xl font-bold">{report.reach.toLocaleString('es-CL')}</div>
-                                        </div>
-                                    )}
-                                    {report.impressions !== null && report.impressions !== undefined && (
-                                        <div className="flex flex-col gap-1 p-3 rounded-lg border bg-muted/20">
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <Eye className="h-3.5 w-3.5" />
-                                                Impresiones
-                                            </div>
-                                            <div className="text-2xl font-bold">{report.impressions.toLocaleString('es-CL')}</div>
-                                        </div>
-                                    )}
-                                    {report.clicks !== null && report.clicks !== undefined && (
-                                        <div className="flex flex-col gap-1 p-3 rounded-lg border bg-muted/20">
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <MousePointerClick className="h-3.5 w-3.5" />
-                                                Clics
-                                            </div>
-                                            <div className="text-2xl font-bold">{report.clicks.toLocaleString('es-CL')}</div>
-                                        </div>
-                                    )}
-                                    {report.spend !== null && report.spend !== undefined && (
-                                        <div className="flex flex-col gap-1 p-3 rounded-lg border bg-muted/20">
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <DollarSign className="h-3.5 w-3.5" />
-                                                Gasto
-                                            </div>
-                                            <div className="text-2xl font-bold">${Math.round(report.spend).toLocaleString('es-CL')}</div>
-                                        </div>
-                                    )}
-                                    {report.conversions !== null && report.conversions !== undefined && (
-                                        <div className="flex flex-col gap-1 p-3 rounded-lg border bg-muted/20">
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <Target className="h-3.5 w-3.5" />
-                                                Conversiones
-                                            </div>
-                                            <div className="text-2xl font-bold">{report.conversions.toLocaleString('es-CL')}</div>
-                                        </div>
-                                    )}
+                                    {/* Helper to render metric card */}
+                                    {(() => {
+                                        // Define all available metrics with their metadata
+                                        const metricDefs: Record<string, { label: string, icon: any, format: (val: number | null | undefined) => string }> = {
+                                            reach: { label: 'Alcance', icon: Users, format: (v) => v?.toLocaleString('es-CL') || '-' },
+                                            impressions: { label: 'Impresiones', icon: Eye, format: (v) => v?.toLocaleString('es-CL') || '-' },
+                                            clicks: { label: 'Clics', icon: MousePointerClick, format: (v) => v?.toLocaleString('es-CL') || '-' },
+                                            spend: { label: 'Gasto', icon: DollarSign, format: (v) => v != null ? '$' + Math.round(v).toLocaleString('es-CL') : '-' },
+                                            conversions: { label: 'Conversiones', icon: Target, format: (v) => v?.toLocaleString('es-CL') || '-' },
+                                            ctr: { label: 'CTR', icon: MousePointerClick, format: (v) => v != null ? v.toFixed(2) + '%' : '-' },
+                                            cpc: { label: 'CPC', icon: DollarSign, format: (v) => v != null ? '$' + v.toLocaleString('es-CL') : '-' },
+                                            cpm: { label: 'CPM', icon: DollarSign, format: (v) => v != null ? '$' + v.toLocaleString('es-CL') : '-' },
+                                            cpa: { label: 'CPA', icon: DollarSign, format: (v) => v != null ? '$' + v.toLocaleString('es-CL') : '-' },
+                                            engagement: { label: 'Engagement', icon: Users, format: (v) => v?.toLocaleString('es-CL') || '-' },
+                                            videoViews: { label: 'Video Views', icon: Eye, format: (v) => v?.toLocaleString('es-CL') || '-' },
+                                        };
+
+                                        // Determine which metrics to show
+                                        // If selectedMetrics exists (from new format), use those keys.
+                                        // Fallback to checking standard keys for backward compatibility.
+                                        let metricsToShow: string[] = report.selectedMetrics || [];
+
+                                        if (metricsToShow.length === 0) {
+                                            // Fallback: check values directly for standard metrics
+                                            if (report.reach != null) metricsToShow.push('reach');
+                                            if (report.impressions != null) metricsToShow.push('impressions');
+                                            if (report.clicks != null) metricsToShow.push('clicks');
+                                            if (report.spend != null) metricsToShow.push('spend');
+                                            if (report.conversions != null) metricsToShow.push('conversions');
+                                        }
+
+                                        return metricsToShow.map(key => {
+                                            const def = metricDefs[key];
+                                            const value = (report as any)[key]; // Access dynamic key
+
+                                            // Only skip if no definition exists. Show even if value is null to indicate missing data.
+                                            if (!def) return null;
+
+                                            const Icon = def.icon;
+
+                                            return (
+                                                <div key={key} className="flex flex-col gap-1 p-3 rounded-lg border bg-muted/20">
+                                                    <div className="flex items-center gap-2 text-xs text-muted-foreground w-full">
+                                                        <Icon className="h-3.5 w-3.5" />
+                                                        {def.label}
+                                                    </div>
+                                                    <div className="text-2xl font-bold">{def.format(value)}</div>
+                                                </div>
+                                            );
+                                        });
+                                    })()}
                                 </div>
                             </CardContent>
                         </Card>

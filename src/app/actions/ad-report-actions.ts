@@ -16,7 +16,13 @@ export async function createAdReport(data: {
     impressions?: number;
     clicks?: number;
     spend?: number;
-    conversions?: number;
+    // Additional metrics
+    ctr?: number;
+    cpc?: number;
+    cpm?: number;
+    cpa?: number;
+    engagement?: number;
+    videoViews?: number;
     blocks?: {
         title: string;
         description: string;
@@ -39,6 +45,14 @@ export async function createAdReport(data: {
                 clicks: data.clicks,
                 spend: data.spend,
                 conversions: data.conversions,
+                // New metrics
+                ctr: data.ctr,
+                cpc: data.cpc,
+                cpm: data.cpm,
+                cpa: data.cpa,
+                engagement: data.engagement,
+                videoViews: data.videoViews,
+
                 selectedMetrics: data.selectedMetrics || null,
                 createdById: data.createdById,
                 blocks: data.blocks && data.blocks.length > 0 ? {
@@ -83,6 +97,14 @@ export async function updateAdReport(
         clicks?: number;
         spend?: number;
         conversions?: number;
+        // New metrics
+        ctr?: number;
+        cpc?: number;
+        cpm?: number;
+        cpa?: number;
+        engagement?: number;
+        videoViews?: number;
+
         content?: string;
         selectedMetrics?: string[] | null;
         blocks?: {
@@ -109,6 +131,14 @@ export async function updateAdReport(
                     clicks: data.clicks,
                     spend: data.spend,
                     conversions: data.conversions,
+                    // New metrics
+                    ctr: data.ctr,
+                    cpc: data.cpc,
+                    cpm: data.cpm,
+                    cpa: data.cpa,
+                    engagement: data.engagement,
+                    videoViews: data.videoViews,
+
                     selectedMetrics: data.selectedMetrics,
                     // content field is deprecated in favor of blocks
                 },
@@ -149,9 +179,13 @@ export async function updateAdReport(
         };
     } catch (error) {
         console.error('Error updating ad report:', error);
+        // Log deep error details if available (e.g. Prisma error codes)
+        if (error instanceof Error) {
+            console.error('Update error details:', error.message, error.stack);
+        }
         return {
             success: false,
-            error: 'Failed to update ad report',
+            error: 'Failed to update ad report: ' + (error instanceof Error ? error.message : 'Unknown error'),
         };
     }
 }

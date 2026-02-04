@@ -70,6 +70,12 @@ export function AdReportCard({ report, projectId, onViewReport }: AdReportCardPr
         clicks: { label: 'Clics', format: (v) => v?.toLocaleString('es-CL') || '0' },
         spend: { label: 'Gasto', format: (v) => v ? `$${Math.round(v).toLocaleString('es-CL')}` : '$0' },
         conversions: { label: 'Conversiones', format: (v) => v?.toLocaleString('es-CL') || '0' },
+        ctr: { label: 'CTR', format: (v) => v ? `${v.toFixed(2)}%` : '0%' },
+        cpc: { label: 'CPC', format: (v) => v ? `$${v.toLocaleString('es-CL')}` : '$0' },
+        cpm: { label: 'CPM', format: (v) => v ? `$${v.toLocaleString('es-CL')}` : '$0' },
+        cpa: { label: 'CPA', format: (v) => v ? `$${v.toLocaleString('es-CL')}` : '$0' },
+        engagement: { label: 'Engagement', format: (v) => v?.toLocaleString('es-CL') || '0' },
+        videoViews: { label: 'Video Views', format: (v) => v?.toLocaleString('es-CL') || '0' },
     };
 
     // Use selectedMetrics if available, otherwise fallback to showing all set metrics

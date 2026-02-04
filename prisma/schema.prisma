@@ -485,6 +485,14 @@ model AdReport {
   clicks      Int?
   spend       Float?
   conversions Int?
+
+  // Additional Metrics
+  ctr         Float?
+  cpc         Float?
+  cpm         Float?
+  cpa         Float?
+  engagement  Int?
+  videoViews  Int?
   
   // Selected metrics (to show even if empty)
   selectedMetrics Json? // Array of metric keys: ["reach", "spend", "ctr", "cpa"]

@@ -102,15 +102,32 @@ export function AdReportForm({ projectId, currentUserId, initialData, onSuccess,
                 { key: 'clicks', label: 'Clics', type: 'number' as const, description: 'Clics en el anuncio' },
                 { key: 'spend', label: 'Gasto', type: 'currency' as const, description: 'Inversión total' },
                 { key: 'conversions', label: 'Conversiones', type: 'number' as const, description: 'Oportunidades de venta generadas' },
-                // Add others if needed
+                { key: 'ctr', label: 'CTR', type: 'percentage' as const, description: '% de personas que hicieron clic' },
+                { key: 'cpc', label: 'CPC', type: 'currency' as const, description: 'Costo promedio por clic' },
+                { key: 'cpm', label: 'CPM', type: 'currency' as const, description: 'Costo por mil impresiones' },
+                { key: 'cpa', label: 'CPA', type: 'currency' as const, description: 'Costo por conversión' },
+                { key: 'engagement', label: 'Engagement', type: 'number' as const, description: 'Interacciones totales' },
+                { key: 'videoViews', label: 'Video Views', type: 'number' as const, description: 'Reproducciones de video' },
             ];
 
             // Check standard metrics fields
-            if (initialData.reach) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'reach')!, value: initialData.reach.toString() });
-            if (initialData.impressions) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'impressions')!, value: initialData.impressions.toString() });
-            if (initialData.clicks) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'clicks')!, value: initialData.clicks.toString() });
-            if (initialData.spend) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'spend')!, value: initialData.spend.toString() });
-            if (initialData.conversions) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'conversions')!, value: initialData.conversions.toString() });
+            if (initialData.reach !== undefined && initialData.reach !== null) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'reach')!, value: initialData.reach.toString() });
+            if (initialData.impressions !== undefined && initialData.impressions !== null) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'impressions')!, value: initialData.impressions.toString() });
+            if (initialData.clicks !== undefined && initialData.clicks !== null) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'clicks')!, value: initialData.clicks.toString() });
+            if (initialData.spend !== undefined && initialData.spend !== null) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'spend')!, value: initialData.spend.toString() });
+            if (initialData.conversions !== undefined && initialData.conversions !== null) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'conversions')!, value: initialData.conversions.toString() });
+
+            // Check dynamic metrics fields
+            const dynamicKeys = ['ctr', 'cpc', 'cpm', 'cpa', 'engagement', 'videoViews'];
+            dynamicKeys.forEach(key => {
+                const val = (initialData as any)[key];
+                if (val !== undefined && val !== null) {
+                    const metricDef = availableMetrics.find(m => m.key === key);
+                    if (metricDef) {
+                        loadedMetrics.push({ ...metricDef, value: val.toString() });
+                    }
+                }
+            });
 
             // Ensure unique
             const uniqueMetrics = loadedMetrics.filter((v, i, a) => a.findIndex(t => t.key === v.key) === i);
@@ -244,7 +261,7 @@ export function AdReportForm({ projectId, currentUserId, initialData, onSuccess,
                     </Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-[90vw] max-w-[1600px] sm:max-w-[1600px] max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle>{initialData ? 'Editar Reporte' : 'Nuevo Reporte de Campaña'}</DialogTitle>
