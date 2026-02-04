@@ -10,7 +10,6 @@ import { toast } from "react-hot-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { MetaAdAccountSelector } from "@/components/projects/MetaAdAccountSelector";
 import { getMetaConnectionStatus } from "@/app/actions/meta-actions";
-import { AdsRecordModal } from './AdsRecordModal';
 
 interface Resource {
     id: string;
