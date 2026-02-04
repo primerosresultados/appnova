@@ -23,6 +23,7 @@ export async function createAdReport(data: {
         images: string[];
         files: { name: string; url: string; size: number; type: string }[];
     }[];
+    selectedMetrics?: string[]; // Metric keys like ["reach", "spend", "ctr"]
     createdById?: string;
 }) {
     try {
@@ -38,6 +39,7 @@ export async function createAdReport(data: {
                 clicks: data.clicks,
                 spend: data.spend,
                 conversions: data.conversions,
+                selectedMetrics: data.selectedMetrics || null,
                 createdById: data.createdById,
                 blocks: data.blocks && data.blocks.length > 0 ? {
                     create: data.blocks.map((block, index) => ({

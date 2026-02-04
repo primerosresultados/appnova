@@ -468,6 +468,9 @@ model AdReport {
   clicks      Int?
   spend       Float?
   conversions Int?
+  
+  // Selected metrics (to show even if empty)
+  selectedMetrics Json? // Array of metric keys: ["reach", "spend", "ctr", "cpa"]
 
   // Content - Now using blocks
   title   String // Required report title

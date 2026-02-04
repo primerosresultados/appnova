@@ -90,6 +90,7 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
             endDate,
             title,
             ...metricsData, // Spread dynamic metrics
+            selectedMetrics: selectedMetrics.map(m => m.key), // Save metric keys
             blocks: blocks.filter(b => b.title.trim() || b.description.trim()),
             createdById: currentUserId,
         });
