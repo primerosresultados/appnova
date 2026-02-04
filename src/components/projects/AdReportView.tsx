@@ -54,6 +54,7 @@ interface AdReportViewProps {
         avatar?: string | null;
     };
     onClose: () => void;
+    onEdit?: (reportId: string) => void;
 }
 
 const platformConfig = {
@@ -85,7 +86,7 @@ const getFileIcon = (type: string) => {
     return File;
 };
 
-export function AdReportView({ report, projectId, currentUser, onClose }: AdReportViewProps) {
+export function AdReportView({ report, projectId, currentUser, onClose, onEdit }: AdReportViewProps) {
     const router = useRouter();
     const [isDeleting, setIsDeleting] = useState(false);
 
@@ -135,7 +136,12 @@ export function AdReportView({ report, projectId, currentUser, onClose }: AdRepo
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => alert('Editar funcionalidad próximamente')}
+                                onClick={() => {
+                                    if (onEdit) {
+                                        onEdit(report.id);
+                                        onClose(); // Close view to show edit form
+                                    }
+                                }}
                                 className="text-muted-foreground hover:text-foreground"
                             >
                                 Editar
