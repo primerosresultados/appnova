@@ -161,7 +161,7 @@ export function MasterCalendar({ events, users }: MasterCalendarProps) {
                             classNames={{
                                 root: "w-full",
                                 months: "w-full",
-                                month: "w-full space-y-4",
+                                month: "w-full space-y-1",
                                 caption: "hidden",
                                 caption_label: "hidden",
                                 nav: "hidden",
