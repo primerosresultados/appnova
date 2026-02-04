@@ -19,6 +19,7 @@ interface AdReportCardProps {
         clicks?: number | null;
         spend?: number | null;
         conversions?: number | null;
+        selectedMetrics?: string[] | null; // ["reach", "spend", "ctr", "cpa"]
         blocks?: {
             id: string;
             title: string;
@@ -62,8 +63,19 @@ export function AdReportCard({ report, projectId, onViewReport }: AdReportCardPr
     const platform = platformConfig[report.platform as keyof typeof platformConfig] || platformConfig.OTHER;
     const PlatformIcon = platform.icon;
 
-    // Check if there are any metrics to display
-    const hasMetrics = report.reach || report.impressions || report.clicks || report.spend || report.conversions;
+    // Metric configuration
+    const metricConfig: Record<string, { label: string; format: (val: any) => string }> = {
+        reach: { label: 'Alcance', format: (v) => v?.toLocaleString('es-CL') || '0' },
+        impressions: { label: 'Impresiones', format: (v) => v?.toLocaleString('es-CL') || '0' },
+        clicks: { label: 'Clics', format: (v) => v?.toLocaleString('es-CL') || '0' },
+        spend: { label: 'Gasto', format: (v) => v ? `$${Math.round(v).toLocaleString('es-CL')}` : '$0' },
+        conversions: { label: 'Conversiones', format: (v) => v?.toLocaleString('es-CL') || '0' },
+    };
+
+    // Use selectedMetrics if available, otherwise fallback to showing all set metrics
+    const metricsToShow = report.selectedMetrics && report.selectedMetrics.length > 0
+        ? report.selectedMetrics
+        : Object.keys(metricConfig).filter(key => (report as any)[key] !== null && (report as any)[key] !== undefined);
 
     // Get first block for preview
     const firstBlock = report.blocks && report.blocks.length > 0 ? report.blocks[0] : null;
@@ -95,38 +107,19 @@ export function AdReportCard({ report, projectId, onViewReport }: AdReportCardPr
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
-                {hasMetrics && (
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        {report.reach !== null && report.reach !== undefined && (
-                            <div>
-                                <div className="text-xs text-muted-foreground">Alcance</div>
-                                <div className="text-lg font-bold">{report.reach.toLocaleString()}</div>
-                            </div>
-                        )}
-                        {report.impressions !== null && report.impressions !== undefined && (
-                            <div>
-                                <div className="text-xs text-muted-foreground">Impresiones</div>
-                                <div className="text-lg font-bold">{report.impressions.toLocaleString()}</div>
-                            </div>
-                        )}
-                        {report.clicks !== null && report.clicks !== undefined && (
-                            <div>
-                                <div className="text-xs text-muted-foreground">Clics</div>
-                                <div className="text-lg font-bold">{report.clicks.toLocaleString()}</div>
-                            </div>
-                        )}
-                        {report.spend !== null && report.spend !== undefined && (
-                            <div>
-                                <div className="text-xs text-muted-foreground">Gasto</div>
-                                <div className="text-lg font-bold">${report.spend.toFixed(2)}</div>
-                            </div>
-                        )}
-                        {report.conversions !== null && report.conversions !== undefined && (
-                            <div>
-                                <div className="text-xs text-muted-foreground">Conversiones</div>
-                                <div className="text-lg font-bold">{report.conversions.toLocaleString()}</div>
-                            </div>
-                        )}
+                {metricsToShow.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {metricsToShow.map(metricKey => {
+                            const config = metricConfig[metricKey];
+                            if (!config) return null;
+                            const value = (report as any)[metricKey];
+                            return (
+                                <div key={metricKey}>
+                                    <div className="text-xs text-muted-foreground">{config.label}</div>
+                                    <div className="text-lg font-bold">{config.format(value)}</div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
 

@@ -1,6 +1,13 @@
-'use client';
-
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Chrome } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { MetaAdsInsights } from './MetaAdsInsights';
+import { AdReportForm } from './AdReportForm';
+import { AdReportCard } from './AdReportCard';
+import { AdReportView } from './AdReportView';
+import { format, parseISO } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Chrome } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +39,18 @@ export function AdsTab({ projectId, metaAdAccountId, adReports, currentUser }: A
     const handleCloseReport = () => {
         setSelectedReportId(null);
     };
+
+    // Group reports by creation day
+    const groupedReports = useMemo(() => {
+        const groups: Record<string, typeof adReports> = {};
+        adReports.forEach(report => {
+            const day = format(new Date(report.createdAt), 'yyyy-MM-dd');
+            if (!groups[day]) groups[day] = [];
+            groups[day].push(report);
+        });
+        // Sort by date desc
+        return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
+    }, [adReports]);
 
     return (
         <div className="space-y-6">
@@ -84,14 +103,23 @@ export function AdsTab({ projectId, metaAdAccountId, adReports, currentUser }: A
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="space-y-4">
-                        {adReports.map((report) => (
-                            <AdReportCard
-                                key={report.id}
-                                report={report}
-                                projectId={projectId}
-                                onViewReport={handleViewReport}
-                            />
+                    <div className="space-y-6">
+                        {groupedReports.map(([day, reports]) => (
+                            <div key={day} className="space-y-3">
+                                <h5 className="text-sm font-medium text-muted-foreground capitalize">
+                                    {format(parseISO(day), "EEEE, d 'de' MMMM", { locale: es })}
+                                </h5>
+                                <div className="space-y-3">
+                                    {reports.map((report) => (
+                                        <AdReportCard
+                                            key={report.id}
+                                            report={report}
+                                            projectId={projectId}
+                                            onViewReport={handleViewReport}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
                         ))}
                     </div>
                 )}
