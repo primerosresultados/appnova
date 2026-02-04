@@ -27,8 +27,10 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [orgSettings, setOrgSettings] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     getUserSession().then(setUser);
     getOrganizationSettings().then((res) => {
       if (res.success) setOrgSettings(res.data);
@@ -46,7 +48,6 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
       )}
 
       {/* Sidebar */}
-      <aside
         suppressHydrationWarning
         className={cn(
           "fixed left-0 top-0 z-50 h-screen w-72 border-r bg-sidebar/95 backdrop-blur-3xl border-border transition-transform duration-300 shadow-2xl md:shadow-none flex flex-col justify-between",
@@ -56,7 +57,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
         <div>
           <div className="flex h-24 items-center px-6 border-b border-border/50 justify-between">
             <div className="flex items-center gap-3">
-              {orgSettings?.logoUrl ? (
+              {mounted && orgSettings?.logoUrl ? (
                 <div className="h-12 w-auto max-w-[150px] flex items-center justify-start overflow-hidden">
                   {/* Simple dark/light mode logic for logo handled via CSS or just rendering one if universal */}
                   <img
