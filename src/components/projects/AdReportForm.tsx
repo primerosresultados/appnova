@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card } from '@/components/ui/card';
 import { Calendar as CalendarIcon, Plus } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -33,11 +34,10 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
     const [title, setTitle] = useState('');
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-    const [reach, setReach] = useState('');
-    const [impressions, setImpressions] = useState('');
-    const [clicks, setClicks] = useState('');
-    const [spend, setSpend] = useState('');
-    const [conversions, setConversions] = useState('');
+    // Dynamic metrics state
+    const [selectedMetrics, setSelectedMetrics] = useState<
+        { key: string; label: string; value: string; type: 'number' | 'currency' | 'percentage' }[]
+    >([]);
 
     // Blocks state
     const [blocks, setBlocks] = useState<ReportBlock[]>([
@@ -72,18 +72,25 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
 
         setIsSubmitting(true);
 
+        // Map selected metrics to report fields
+        const metricsData: any = {};
+        selectedMetrics.forEach(metric => {
+            if (metric.value) {
+                const numValue = metric.type === 'currency' || metric.type === 'percentage'
+                    ? parseFloat(metric.value)
+                    : parseInt(metric.value);
+                metricsData[metric.key] = numValue;
+            }
+        });
+
         const result = await createAdReport({
             projectId,
             platform,
             startDate,
             endDate,
             title,
-            reach: reach ? parseInt(reach) : undefined,
-            impressions: impressions ? parseInt(impressions) : undefined,
-            clicks: clicks ? parseInt(clicks) : undefined,
-            spend: spend ? parseFloat(spend) : undefined,
-            conversions: conversions ? parseInt(conversions) : undefined,
-            blocks: blocks.filter(b => b.title.trim() || b.description.trim()), // Only save non-empty blocks
+            ...metricsData, // Spread dynamic metrics
+            blocks: blocks.filter(b => b.title.trim() || b.description.trim()),
             createdById: currentUserId,
         });
 
@@ -104,11 +111,7 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
         setTitle('');
         setStartDate(undefined);
         setEndDate(undefined);
-        setReach('');
-        setImpressions('');
-        setClicks('');
-        setSpend('');
-        setConversions('');
+        setSelectedMetrics([]);
         setBlocks([{
             id: uuidv4(),
             title: '',
@@ -237,61 +240,102 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
 
                         <Separator />
 
-                        {/* Metrics */}
+                        {/* Dynamic Metrics */}
                         <div className="space-y-4">
-                            <h4 className="font-medium">Métricas (Opcionales)</h4>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Alcance</Label>
-                                    <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={reach}
-                                        onChange={(e) => setReach(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Impresiones</Label>
-                                    <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={impressions}
-                                        onChange={(e) => setImpressions(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Clics</Label>
-                                    <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={clicks}
-                                        onChange={(e) => setClicks(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Gasto</Label>
-                                    <Input
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        value={spend}
-                                        onChange={(e) => setSpend(e.target.value)}
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Conversiones</Label>
-                                    <Input
-                                        type="number"
-                                        placeholder="0"
-                                        value={conversions}
-                                        onChange={(e) => setConversions(e.target.value)}
-                                    />
-                                </div>
+                            <div className="flex items-center justify-between">
+                                <h4 className="font-medium">Métricas (Opcionales)</h4>
+                                <span className="text-xs text-muted-foreground">{selectedMetrics.length}/4</span>
                             </div>
+
+                            {/* Selected Metrics */}
+                            {selectedMetrics.length > 0 && (
+                                <div className="grid grid-cols-2 gap-3">
+                                    {selectedMetrics.map((metric, index) => (
+                                        <Card key={metric.key} className="p-3">
+                                            <div className="flex items-center justify-between gap-2 mb-2">
+                                                <Label className="text-sm font-medium">{metric.label}</Label>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6"
+                                                    onClick={() => {
+                                                        setSelectedMetrics(selectedMetrics.filter((_, i) => i !== index));
+                                                    }}
+                                                >
+                                                    <Plus className="h-3 w-3 rotate-45" />
+                                                </Button>
+                                            </div>
+                                            <Input
+                                                type="number"
+                                                step={metric.type === 'currency' || metric.type === 'percentage' ? "0.01" : "1"}
+                                                placeholder={
+                                                    metric.type === 'currency' ? '$0.00' :
+                                                        metric.type === 'percentage' ? '0.00%' :
+                                                            '0'
+                                                }
+                                                value={metric.value}
+                                                onChange={(e) => {
+                                                    const newMetrics = [...selectedMetrics];
+                                                    newMetrics[index].value = e.target.value;
+                                                    setSelectedMetrics(newMetrics);
+                                                }}
+                                            />
+                                        </Card>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Add Metric Button */}
+                            {selectedMetrics.length < 4 && (
+                                <Select
+                                    value=""
+                                    onValueChange={(value) => {
+                                        const availableMetrics = [
+                                            { key: 'reach', label: 'Alcance', type: 'number' as const },
+                                            { key: 'impressions', label: 'Impresiones', type: 'number' as const },
+                                            { key: 'clicks', label: 'Clics', type: 'number' as const },
+                                            { key: 'spend', label: 'Gasto', type: 'currency' as const },
+                                            { key: 'conversions', label: 'Conversiones', type: 'number' as const },
+                                            { key: 'ctr', label: 'CTR', type: 'percentage' as const },
+                                            { key: 'cpc', label: 'CPC', type: 'currency' as const },
+                                            { key: 'cpm', label: 'CPM', type: 'currency' as const },
+                                            { key: 'engagement', label: 'Engagement', type: 'number' as const },
+                                            { key: 'videoViews', label: 'Video Views', type: 'number' as const },
+                                        ];
+
+                                        const metric = availableMetrics.find(m => m.key === value);
+                                        if (metric && !selectedMetrics.find(m => m.key === metric.key)) {
+                                            setSelectedMetrics([...selectedMetrics, { ...metric, value: '' }]);
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger className="w-full">
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        <SelectValue placeholder="Agregar Métrica" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {[
+                                            { key: 'reach', label: 'Alcance' },
+                                            { key: 'impressions', label: 'Impresiones' },
+                                            { key: 'clicks', label: 'Clics' },
+                                            { key: 'spend', label: 'Gasto ($)' },
+                                            { key: 'conversions', label: 'Conversiones' },
+                                            { key: 'ctr', label: 'CTR (%)' },
+                                            { key: 'cpc', label: 'CPC ($)' },
+                                            { key: 'cpm', label: 'CPM ($)' },
+                                            { key: 'engagement', label: 'Engagement' },
+                                            { key: 'videoViews', label: 'Video Views' },
+                                        ]
+                                            .filter(m => !selectedMetrics.find(sm => sm.key === m.key))
+                                            .map(metric => (
+                                                <SelectItem key={metric.key} value={metric.key}>
+                                                    {metric.label}
+                                                </SelectItem>
+                                            ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
                         </div>
 
                         <Separator />
