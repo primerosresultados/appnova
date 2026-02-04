@@ -84,12 +84,59 @@ export async function updateAdReport(
         spend?: number;
         conversions?: number;
         content?: string;
+        selectedMetrics?: string[] | null;
+        blocks?: {
+            title: string;
+            description: string;
+            images: string[];
+            files: { name: string; url: string; size: number; type: string }[];
+        }[];
     }
 ) {
     try {
-        const report = await db.adReport.update({
-            where: { id: reportId },
-            data,
+        // Use transaction to ensure data consistency
+        const report = await db.$transaction(async (tx) => {
+            // 1. Update basic fields
+            const updatedReport = await tx.adReport.update({
+                where: { id: reportId },
+                data: {
+                    platform: data.platform,
+                    startDate: data.startDate,
+                    endDate: data.endDate,
+                    title: data.title,
+                    reach: data.reach,
+                    impressions: data.impressions,
+                    clicks: data.clicks,
+                    spend: data.spend,
+                    conversions: data.conversions,
+                    selectedMetrics: data.selectedMetrics,
+                    // content field is deprecated in favor of blocks
+                },
+            });
+
+            // 2. Handle blocks if provided
+            if (data.blocks) {
+                // Delete existing blocks
+                await tx.adReportBlock.deleteMany({
+                    where: { reportId },
+                });
+
+                // Create new blocks
+                if (data.blocks.length > 0) {
+                    await tx.adReportBlock.createMany({
+                        data: data.blocks.map((block, index) => ({
+                            reportId,
+                            order: index,
+                            title: block.title,
+                            description: block.description,
+                            images: block.images,
+                            files: block.files, // JSON field
+                        })),
+                    });
+                }
+            }
+
+            return updatedReport;
         });
 
         // Get project ID for revalidation

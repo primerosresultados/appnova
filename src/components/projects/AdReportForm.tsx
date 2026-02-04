@@ -12,21 +12,46 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { createAdReport } from '@/app/actions/ad-report-actions';
+import { createAdReport, updateAdReport } from '@/app/actions/ad-report-actions';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { BlockEditor, ReportBlock } from './BlockEditor';
 import { v4 as uuidv4 } from 'uuid';
 import { Separator } from '@/components/ui/separator';
+import { useEffect } from 'react';
 
 interface AdReportFormProps {
     projectId: string;
     currentUserId?: string;
+    initialData?: {
+        id: string;
+        platform: string;
+        title: string;
+        startDate: Date;
+        endDate: Date;
+        selectedMetrics?: any[]; // Allow any for now to map from JSON/DB
+        reach?: number | null;
+        impressions?: number | null;
+        clicks?: number | null;
+        spend?: number | null;
+        conversions?: number | null;
+        blocks?: any[];
+    } | null;
+    onSuccess?: () => void;
+    open?: boolean; // Controlled open state
+    onOpenChange?: (open: boolean) => void; // Controlled open change handler
 }
 
-export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
+export function AdReportForm({ projectId, currentUserId, initialData, onSuccess, open: controlledOpen, onOpenChange }: AdReportFormProps) {
     const router = useRouter();
-    const [open, setOpen] = useState(false);
+    // Use controlled state if provided, otherwise local state
+    const [internalOpen, setInternalOpen] = useState(false);
+
+    // Determine which state to use
+    const isControlled = typeof controlledOpen !== 'undefined';
+    const isOpen = isControlled ? controlledOpen : internalOpen;
+    const setIsOpen = isControlled && onOpenChange ? onOpenChange : setInternalOpen;
+
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Form state
@@ -50,6 +75,52 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
         },
     ]);
 
+    // Load initial data if provided
+    useEffect(() => {
+        if (initialData) {
+            setPlatform(initialData.platform as 'META_ADS' | 'GOOGLE_ADS' | 'OTHER');
+            setTitle(initialData.title);
+            setStartDate(new Date(initialData.startDate));
+            setEndDate(new Date(initialData.endDate));
+
+            // Map blocks
+            if (initialData.blocks && initialData.blocks.length > 0) {
+                setBlocks(initialData.blocks.map((b: any) => ({
+                    id: b.id || uuidv4(),
+                    title: b.title,
+                    description: b.description,
+                    images: b.images || [],
+                    files: b.files || [],
+                })));
+            }
+
+            // Map metrics
+            const loadedMetrics: typeof selectedMetrics = [];
+            const availableMetrics = [
+                { key: 'reach', label: 'Alcance', type: 'number' as const, description: 'Personas alcanzadas' },
+                { key: 'impressions', label: 'Impresiones', type: 'number' as const, description: 'Veces que se mostró el anuncio' },
+                { key: 'clicks', label: 'Clics', type: 'number' as const, description: 'Clics en el anuncio' },
+                { key: 'spend', label: 'Gasto', type: 'currency' as const, description: 'Inversión total' },
+                { key: 'conversions', label: 'Conversiones', type: 'number' as const, description: 'Oportunidades de venta generadas' },
+                // Add others if needed
+            ];
+
+            // Check standard metrics fields
+            if (initialData.reach) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'reach')!, value: initialData.reach.toString() });
+            if (initialData.impressions) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'impressions')!, value: initialData.impressions.toString() });
+            if (initialData.clicks) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'clicks')!, value: initialData.clicks.toString() });
+            if (initialData.spend) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'spend')!, value: initialData.spend.toString() });
+            if (initialData.conversions) loadedMetrics.push({ ...availableMetrics.find(m => m.key === 'conversions')!, value: initialData.conversions.toString() });
+
+            // Ensure unique
+            const uniqueMetrics = loadedMetrics.filter((v, i, a) => a.findIndex(t => t.key === v.key) === i);
+            setSelectedMetrics(uniqueMetrics);
+        } else {
+            // Reset form if initialData is null (for create mode)
+            // We can optionally reset here or when dialog opens/closes
+        }
+    }, [initialData]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -72,7 +143,7 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
 
         setIsSubmitting(true);
 
-        // Map selected metrics to report fields
+        // Map selected metrics
         const metricsData: any = {};
         selectedMetrics.forEach(metric => {
             if (metric.value) {
@@ -83,27 +154,44 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
             }
         });
 
-        const result = await createAdReport({
-            projectId,
-            platform,
-            startDate,
-            endDate,
-            title,
-            ...metricsData, // Spread dynamic metrics
-            selectedMetrics: selectedMetrics.map(m => m.key), // Save metric keys
-            blocks: blocks.filter(b => b.title.trim() || b.description.trim()),
-            createdById: currentUserId,
-        });
+        let result;
+
+        if (initialData?.id) {
+            // Update mode
+            result = await updateAdReport(initialData.id, {
+                platform,
+                startDate,
+                endDate,
+                title,
+                ...metricsData, // Spread dynamic metrics
+                selectedMetrics: selectedMetrics.map(m => m.key),
+                blocks: blocks.filter(b => b.title.trim() || b.description.trim()),
+            });
+        } else {
+            // Create mode
+            result = await createAdReport({
+                projectId,
+                platform,
+                startDate,
+                endDate,
+                title,
+                ...metricsData, // Spread dynamic metrics
+                selectedMetrics: selectedMetrics.map(m => m.key), // Save metric keys
+                blocks: blocks.filter(b => b.title.trim() || b.description.trim()),
+                createdById: currentUserId,
+            });
+        }
 
         setIsSubmitting(false);
 
         if (result.success) {
-            toast.success('Reporte creado exitosamente');
-            setOpen(false);
-            resetForm();
+            toast.success(initialData ? 'Reporte actualizado' : 'Reporte creado');
+            setIsOpen(false);
+            if (!initialData) resetForm(); // Only reset on create
+            if (onSuccess) onSuccess();
             router.refresh();
         } else {
-            toast.error(result.error || 'Error al crear reporte');
+            toast.error(result.error || 'Error al guardar reporte');
         }
     };
 
@@ -147,17 +235,19 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
     };
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nuevo Reporte
-                </Button>
-            </DialogTrigger>
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            {!isControlled && (
+                <DialogTrigger asChild>
+                    <Button>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Nuevo Reporte
+                    </Button>
+                </DialogTrigger>
+            )}
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
-                        <DialogTitle>Nuevo Reporte de Campaña</DialogTitle>
+                        <DialogTitle>{initialData ? 'Editar Reporte' : 'Nuevo Reporte de Campaña'}</DialogTitle>
                         <DialogDescription>
                             Documenta análisis detallados con múltiples elementos organizados
                         </DialogDescription>

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Facebook, Chrome, TrendingUp, Trash2, Download, FileText, File } from 'lucide-react';
+import { Facebook, Chrome, TrendingUp, Trash2, Download, FileText, File, Users, Eye, MousePointerClick, DollarSign, Target } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { CommentSection } from './CommentSection';
@@ -169,32 +169,47 @@ export function AdReportView({ report, projectId, currentUser, onClose, onEdit }
                             <CardContent>
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {report.reach !== null && report.reach !== undefined && (
-                                        <div>
-                                            <div className="text-xs text-muted-foreground">Alcance</div>
+                                        <div className="flex flex-col gap-1 p-3 rounded-lg border bg-muted/20">
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground w-full">
+                                                <Users className="h-3.5 w-3.5" />
+                                                Alcance
+                                            </div>
                                             <div className="text-2xl font-bold">{report.reach.toLocaleString('es-CL')}</div>
                                         </div>
                                     )}
                                     {report.impressions !== null && report.impressions !== undefined && (
-                                        <div>
-                                            <div className="text-xs text-muted-foreground">Impresiones</div>
+                                        <div className="flex flex-col gap-1 p-3 rounded-lg border bg-muted/20">
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <Eye className="h-3.5 w-3.5" />
+                                                Impresiones
+                                            </div>
                                             <div className="text-2xl font-bold">{report.impressions.toLocaleString('es-CL')}</div>
                                         </div>
                                     )}
                                     {report.clicks !== null && report.clicks !== undefined && (
-                                        <div>
-                                            <div className="text-xs text-muted-foreground">Clics</div>
+                                        <div className="flex flex-col gap-1 p-3 rounded-lg border bg-muted/20">
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <MousePointerClick className="h-3.5 w-3.5" />
+                                                Clics
+                                            </div>
                                             <div className="text-2xl font-bold">{report.clicks.toLocaleString('es-CL')}</div>
                                         </div>
                                     )}
                                     {report.spend !== null && report.spend !== undefined && (
-                                        <div>
-                                            <div className="text-xs text-muted-foreground">Gasto</div>
+                                        <div className="flex flex-col gap-1 p-3 rounded-lg border bg-muted/20">
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <DollarSign className="h-3.5 w-3.5" />
+                                                Gasto
+                                            </div>
                                             <div className="text-2xl font-bold">${Math.round(report.spend).toLocaleString('es-CL')}</div>
                                         </div>
                                     )}
                                     {report.conversions !== null && report.conversions !== undefined && (
-                                        <div>
-                                            <div className="text-xs text-muted-foreground">Conversiones</div>
+                                        <div className="flex flex-col gap-1 p-3 rounded-lg border bg-muted/20">
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <Target className="h-3.5 w-3.5" />
+                                                Conversiones
+                                            </div>
                                             <div className="text-2xl font-bold">{report.conversions.toLocaleString('es-CL')}</div>
                                         </div>
                                     )}

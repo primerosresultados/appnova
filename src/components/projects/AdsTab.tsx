@@ -21,6 +21,7 @@ interface AdsTabProps {
 export function AdsTab({ projectId, metaAdAccountId, adReports, currentUser }: AdsTabProps) {
     const isClient = currentUser?.role === 'CLIENTE';
     const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
+    const [editingReportId, setEditingReportId] = useState<string | null>(null);
 
     // Find the selected report
     const selectedReport = selectedReportId
@@ -126,8 +127,22 @@ export function AdsTab({ projectId, metaAdAccountId, adReports, currentUser }: A
                 projectId={projectId}
                 currentUser={currentUser}
                 onClose={handleCloseReport}
-                onEdit={(reportId) => alert(`Funcionalidad de edición próximamente para ${reportId}`)}
+                onEdit={(reportId) => setEditingReportId(reportId)}
             />
+
+            {/* Edit Report Dialog */}
+            {editingReportId && (
+                <AdReportForm
+                    projectId={projectId}
+                    currentUserId={currentUser?.id}
+                    initialData={adReports.find(r => r.id === editingReportId)}
+                    open={true}
+                    onOpenChange={(open) => {
+                        if (!open) setEditingReportId(null);
+                    }}
+                    onSuccess={() => setEditingReportId(null)}
+                />
+            )}
         </div>
     );
 }
