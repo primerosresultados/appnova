@@ -11,13 +11,13 @@ export async function createAdReport(data: {
     platform: 'META_ADS' | 'GOOGLE_ADS' | 'OTHER';
     startDate: Date;
     endDate: Date;
-    title?: string;
+    title: string;
     reach?: number;
     impressions?: number;
     clicks?: number;
     spend?: number;
     conversions?: number;
-    keyConsiderations?: string;
+    content?: string;
     createdById?: string;
 }) {
     try {
@@ -33,7 +33,7 @@ export async function createAdReport(data: {
                 clicks: data.clicks,
                 spend: data.spend,
                 conversions: data.conversions,
-                keyConsiderations: data.keyConsiderations,
+                content: data.content,
                 createdById: data.createdById,
             },
         });
@@ -68,7 +68,7 @@ export async function updateAdReport(
         clicks?: number;
         spend?: number;
         conversions?: number;
-        keyConsiderations?: string;
+        content?: string;
     }
 ) {
     try {

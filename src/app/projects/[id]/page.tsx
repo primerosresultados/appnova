@@ -73,6 +73,14 @@ async function getProject(id: string) {
                 include: {
                     createdBy: {
                         select: { id: true, name: true, avatar: true }
+                    },
+                    comments: {
+                        include: {
+                            user: {
+                                select: { id: true, name: true, avatar: true }
+                            }
+                        },
+                        orderBy: { createdAt: 'asc' }
                     }
                 }
             }

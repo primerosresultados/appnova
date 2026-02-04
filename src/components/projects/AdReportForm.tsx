@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     Sheet,
@@ -23,6 +22,7 @@ import { es } from 'date-fns/locale';
 import { createAdReport } from '@/app/actions/ad-report-actions';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 
 interface AdReportFormProps {
     projectId: string;
@@ -44,10 +44,15 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
     const [clicks, setClicks] = useState('');
     const [spend, setSpend] = useState('');
     const [conversions, setConversions] = useState('');
-    const [keyConsiderations, setKeyConsiderations] = useState('');
+    const [content, setContent] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!title.trim()) {
+            toast.error('El título es obligatorio');
+            return;
+        }
 
         if (!startDate || !endDate) {
             toast.error('Debes seleccionar un rango de fechas');
@@ -61,13 +66,13 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
             platform,
             startDate,
             endDate,
-            title: title || undefined,
+            title,
             reach: reach ? parseInt(reach) : undefined,
             impressions: impressions ? parseInt(impressions) : undefined,
             clicks: clicks ? parseInt(clicks) : undefined,
             spend: spend ? parseFloat(spend) : undefined,
             conversions: conversions ? parseInt(conversions) : undefined,
-            keyConsiderations: keyConsiderations || undefined,
+            content: content || undefined,
             createdById: currentUserId,
         });
 
@@ -93,7 +98,7 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
         setClicks('');
         setSpend('');
         setConversions('');
-        setKeyConsiderations('');
+        setContent('');
     };
 
     return (
@@ -104,12 +109,12 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
                     Nuevo Reporte
                 </Button>
             </SheetTrigger>
-            <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+            <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
                 <form onSubmit={handleSubmit}>
                     <SheetHeader>
                         <SheetTitle>Nuevo Reporte de Campaña</SheetTitle>
                         <SheetDescription>
-                            Anota manualmente los resultados de tus campañas publicitarias
+                            Documenta análisis detallados de las campañas publicitarias
                         </SheetDescription>
                     </SheetHeader>
 
@@ -132,11 +137,12 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Título (Opcional)</Label>
+                            <Label>Título *</Label>
                             <Input
-                                placeholder="Ej: Campaña Navidad 2024"
+                                placeholder="Ej: Estado de Cuenta - Pausa por Falta de Pago"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
+                                required
                             />
                         </div>
 
@@ -239,14 +245,17 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label>Consideraciones Clave</Label>
-                            <Textarea
-                                placeholder="Notas, insights, aprendizajes de la campaña..."
-                                value={keyConsiderations}
-                                onChange={(e) => setKeyConsiderations(e.target.value)}
-                                rows={4}
+                        <div className="space-y-2 border-t pt-4">
+                            <Label>Contenido del Reporte</Label>
+                            <RichTextEditor
+                                value={content}
+                                onChange={setContent}
+                                placeholder="Describe hallazgos, estrategias, análisis detallado... Usa formato para organizar mejor la información."
+                                className="min-h-[300px]"
                             />
+                            <p className="text-xs text-muted-foreground">
+                                Puedes usar negritas, cursivas, listas y colores para organizar tu reporte
+                            </p>
                         </div>
                     </div>
 

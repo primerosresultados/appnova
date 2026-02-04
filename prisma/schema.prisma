@@ -199,6 +199,7 @@ model User {
   pushSubscriptions PushSubscription[]
   votes             ResourceVote[]
   adReports         AdReport[]
+  adReportComments  AdReportComment[]
 }
 
 model PushSubscription {
@@ -468,17 +469,33 @@ model AdReport {
   spend       Float?
   conversions Int?
 
-  // Manual notes
-  title             String? // Optional report title
-  keyConsiderations String? // Key insights and notes
+  // Content - Rich HTML support
+  title   String // Required report title
+  content String? @db.Text // Rich HTML content (was keyConsiderations)
 
   // Audit
   createdById String?
-  createdBy   User?    @relation(fields: [createdById], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdBy   User?              @relation(fields: [createdById], references: [id])
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  comments    AdReportComment[]
 
   @@index([projectId])
   @@index([platform])
   @@index([startDate])
 }
+
+model AdReportComment {
+  id        String   @id @default(uuid())
+  reportId  String
+  report    AdReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([reportId])
+  @@index([userId])
+}
+
