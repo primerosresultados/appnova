@@ -115,7 +115,7 @@ export function AdReportView({ report, projectId, currentUser, onClose }: AdRepo
 
     return (
         <Dialog open={!!report} onOpenChange={onClose}>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
@@ -131,15 +131,25 @@ export function AdReportView({ report, projectId, currentUser, onClose }: AdRepo
                                 {format(new Date(report.endDate), 'dd MMM yyyy', { locale: es })}
                             </div>
                         </div>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleDelete}
-                            disabled={isDeleting}
-                            className="text-muted-foreground hover:text-destructive"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => alert('Editar funcionalidad próximamente')}
+                                className="text-muted-foreground hover:text-foreground"
+                            >
+                                Editar
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleDelete}
+                                disabled={isDeleting}
+                                className="text-muted-foreground hover:text-destructive"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 </DialogHeader>
 
