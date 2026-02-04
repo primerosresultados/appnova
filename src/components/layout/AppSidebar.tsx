@@ -47,8 +47,8 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
         />
       )}
 
-      {/* Sidebar */}
-        suppressHydrationWarning
+      <aside
+      <aside
         className={cn(
           "fixed left-0 top-0 z-50 h-screen w-72 border-r bg-sidebar/95 backdrop-blur-3xl border-border transition-transform duration-300 shadow-2xl md:shadow-none flex flex-col justify-between",
           "md:translate-x-0 md:z-40",
