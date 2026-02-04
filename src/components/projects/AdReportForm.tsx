@@ -266,6 +266,7 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
                                                     <Plus className="h-3 w-3 rotate-45" />
                                                 </Button>
                                             </div>
+                                            <p className="text-[10px] text-muted-foreground mb-2">{metric.description}</p>
                                             <Input
                                                 type="number"
                                                 step={metric.type === 'currency' || metric.type === 'percentage' ? "0.01" : "1"}
