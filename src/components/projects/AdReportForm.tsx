@@ -36,7 +36,7 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     // Dynamic metrics state
     const [selectedMetrics, setSelectedMetrics] = useState<
-        { key: string; label: string; value: string; type: 'number' | 'currency' | 'percentage' }[]
+        { key: string; label: string; value: string; type: 'number' | 'currency' | 'percentage'; description: string }[]
     >([]);
 
     // Blocks state
@@ -292,16 +292,17 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
                                     value=""
                                     onValueChange={(value) => {
                                         const availableMetrics = [
-                                            { key: 'reach', label: 'Alcance', type: 'number' as const },
-                                            { key: 'impressions', label: 'Impresiones', type: 'number' as const },
-                                            { key: 'clicks', label: 'Clics', type: 'number' as const },
-                                            { key: 'spend', label: 'Gasto', type: 'currency' as const },
-                                            { key: 'conversions', label: 'Conversiones', type: 'number' as const },
-                                            { key: 'ctr', label: 'CTR', type: 'percentage' as const },
-                                            { key: 'cpc', label: 'CPC', type: 'currency' as const },
-                                            { key: 'cpm', label: 'CPM', type: 'currency' as const },
-                                            { key: 'engagement', label: 'Engagement', type: 'number' as const },
-                                            { key: 'videoViews', label: 'Video Views', type: 'number' as const },
+                                            { key: 'reach', label: 'Alcance', type: 'number' as const, description: 'Personas alcanzadas' },
+                                            { key: 'impressions', label: 'Impresiones', type: 'number' as const, description: 'Veces que se mostró el anuncio' },
+                                            { key: 'clicks', label: 'Clics', type: 'number' as const, description: 'Clics en el anuncio' },
+                                            { key: 'spend', label: 'Gasto', type: 'currency' as const, description: 'Inversión total' },
+                                            { key: 'conversions', label: 'Conversiones', type: 'number' as const, description: 'Oportunidades de venta generadas' },
+                                            { key: 'ctr', label: 'CTR', type: 'percentage' as const, description: '% de personas que hicieron clic' },
+                                            { key: 'cpc', label: 'CPC', type: 'currency' as const, description: 'Costo promedio por clic' },
+                                            { key: 'cpm', label: 'CPM', type: 'currency' as const, description: 'Costo por mil impresiones' },
+                                            { key: 'cpa', label: 'CPA', type: 'currency' as const, description: 'Costo por conversión' },
+                                            { key: 'engagement', label: 'Engagement', type: 'number' as const, description: 'Interacciones totales' },
+                                            { key: 'videoViews', label: 'Video Views', type: 'number' as const, description: 'Reproducciones de video' },
                                         ];
 
                                         const metric = availableMetrics.find(m => m.key === value);
@@ -324,6 +325,7 @@ export function AdReportForm({ projectId, currentUserId }: AdReportFormProps) {
                                             { key: 'ctr', label: 'CTR (%)' },
                                             { key: 'cpc', label: 'CPC ($)' },
                                             { key: 'cpm', label: 'CPM ($)' },
+                                            { key: 'cpa', label: 'CPA ($)' },
                                             { key: 'engagement', label: 'Engagement' },
                                             { key: 'videoViews', label: 'Video Views' },
                                         ]
