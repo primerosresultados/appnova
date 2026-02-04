@@ -115,7 +115,7 @@ export function AdReportView({ report, projectId, currentUser, onClose }: AdRepo
 
     return (
         <Dialog open={!!report} onOpenChange={onClose}>
-            <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
@@ -155,31 +155,31 @@ export function AdReportView({ report, projectId, currentUser, onClose }: AdRepo
                                     {report.reach !== null && report.reach !== undefined && (
                                         <div>
                                             <div className="text-xs text-muted-foreground">Alcance</div>
-                                            <div className="text-2xl font-bold">{report.reach.toLocaleString()}</div>
+                                            <div className="text-2xl font-bold">{report.reach.toLocaleString('es-CL')}</div>
                                         </div>
                                     )}
                                     {report.impressions !== null && report.impressions !== undefined && (
                                         <div>
                                             <div className="text-xs text-muted-foreground">Impresiones</div>
-                                            <div className="text-2xl font-bold">{report.impressions.toLocaleString()}</div>
+                                            <div className="text-2xl font-bold">{report.impressions.toLocaleString('es-CL')}</div>
                                         </div>
                                     )}
                                     {report.clicks !== null && report.clicks !== undefined && (
                                         <div>
                                             <div className="text-xs text-muted-foreground">Clics</div>
-                                            <div className="text-2xl font-bold">{report.clicks.toLocaleString()}</div>
+                                            <div className="text-2xl font-bold">{report.clicks.toLocaleString('es-CL')}</div>
                                         </div>
                                     )}
                                     {report.spend !== null && report.spend !== undefined && (
                                         <div>
                                             <div className="text-xs text-muted-foreground">Gasto</div>
-                                            <div className="text-2xl font-bold">${report.spend.toFixed(2)}</div>
+                                            <div className="text-2xl font-bold">${Math.round(report.spend).toLocaleString('es-CL')}</div>
                                         </div>
                                     )}
                                     {report.conversions !== null && report.conversions !== undefined && (
                                         <div>
                                             <div className="text-xs text-muted-foreground">Conversiones</div>
-                                            <div className="text-2xl font-bold">{report.conversions.toLocaleString()}</div>
+                                            <div className="text-2xl font-bold">{report.conversions.toLocaleString('es-CL')}</div>
                                         </div>
                                     )}
                                 </div>
