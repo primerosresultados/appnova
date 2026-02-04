@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Chrome } from 'lucide-react';
@@ -8,13 +10,6 @@ import { AdReportCard } from './AdReportCard';
 import { AdReportView } from './AdReportView';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Chrome } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { MetaAdsInsights } from './MetaAdsInsights';
-import { AdReportForm } from './AdReportForm';
-import { AdReportCard } from './AdReportCard';
-import { AdReportView } from './AdReportView';
 
 interface AdsTabProps {
     projectId: string;
