@@ -188,7 +188,9 @@ export function CreativitiesTab({ projectId, resources, currentUser }: Creativit
                             )}
 
                             <DialogFooter>
-                                <Button type="submit">Guardar</Button>
+                                <Button type="submit" disabled={isPending}>
+                                    {isPending ? "Guardando..." : "Guardar"}
+                                </Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>

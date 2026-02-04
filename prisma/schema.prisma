@@ -55,6 +55,11 @@ model Project {
   startDate    DateTime?
   dueDate      DateTime?
   budget       Float?
+  
+  // Meta (Facebook) Ad Account Integration
+  metaAdAccountId   String? // Linked Meta ad account ID
+  metaAdAccountName String? // Display name of the ad account
+  
   tasks        Task[]
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
@@ -65,6 +70,7 @@ model Project {
   transactions Transaction[]
   contents     Content[]
   competitors  Competitor[]
+  adReports    AdReport[]
 
   @@index([clientId])
   @@index([status])
@@ -192,6 +198,7 @@ model User {
 
   pushSubscriptions PushSubscription[]
   votes             ResourceVote[]
+  adReports         AdReport[]
 }
 
 model PushSubscription {
@@ -406,6 +413,11 @@ model Organization {
   sidebarTextColor String? // Custom sidebar unselected text color
   borderRadius     String  @default("0.5rem") // Global border radius
 
+  // Meta (Facebook) Integration
+  metaAccessToken  String? // Long-lived access token (encrypted)
+  metaTokenExpiry  DateTime?
+  metaConnectedAt  DateTime?
+
   updatedAt DateTime @updatedAt
 }
 
@@ -438,4 +450,35 @@ model Competitor {
   updatedAt DateTime @updatedAt
 
   @@index([projectId])
+}
+model AdReport {
+  id        String  @id @default(uuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Report metadata
+  platform  String // META_ADS, GOOGLE_ADS, OTHER
+  startDate DateTime
+  endDate   DateTime
+
+  // Metrics (all optional, user can fill what they have)
+  reach       Int?
+  impressions Int?
+  clicks      Int?
+  spend       Float?
+  conversions Int?
+
+  // Manual notes
+  title             String? // Optional report title
+  keyConsiderations String? // Key insights and notes
+
+  // Audit
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([platform])
+  @@index([startDate])
 }

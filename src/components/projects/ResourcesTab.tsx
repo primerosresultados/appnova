@@ -14,6 +14,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Folder, Key, Link as LinkIcon, FileText, Plus, Trash2, ExternalLink, HardDrive, File as FileIcon } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { MetaAdAccountSelector } from "@/components/projects/MetaAdAccountSelector";
+import { getMetaConnectionStatus } from "@/app/actions/meta-actions";
 
 interface Resource {
     id: string;
@@ -34,10 +36,11 @@ const initialState = {
 };
 
 export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
-    const [state, formAction] = useActionState(createResource, initialState);
+    const [state, formAction, isPending] = useActionState(createResource, initialState);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedType, setSelectedType] = useState("LINK");
     const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
+    const [isMetaConnected, setIsMetaConnected] = useState(false);
 
     useEffect(() => {
         if (state.success) {
@@ -47,6 +50,17 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
             toast.error(state.message);
         }
     }, [state]);
+
+    useEffect(() => {
+        // Check Meta connection status
+        const checkMetaConnection = async () => {
+            const result = await getMetaConnectionStatus();
+            if (result.success && result.data) {
+                setIsMetaConnected(result.data.connected);
+            }
+        };
+        checkMetaConnection();
+    }, []);
 
     const confirmDelete = async () => {
         if (resourceToDelete) {
@@ -131,7 +145,9 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
                             )}
 
                             <DialogFooter>
-                                <Button type="submit" onClick={() => setIsDialogOpen(false)}>Guardar</Button>
+                                <Button type="submit" disabled={isPending}>
+                                    {isPending ? "Guardando..." : "Guardar"}
+                                </Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>
@@ -139,6 +155,9 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
+                {/* Meta Ad Account Integration */}
+                <MetaAdAccountSelector projectId={projectId} isMetaConnected={isMetaConnected} />
+
                 {/* Google Drive & Storage */}
                 <Card className="bg-card backdrop-blur-sm border-border/50">
                     <CardHeader className="pb-3">

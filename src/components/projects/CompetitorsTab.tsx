@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Target, Plus, Trash2, ExternalLink, Globe, X, Pencil } from "lucide-react";
+import { Target, Plus, Trash2, ExternalLink, Globe, X, Pencil, Loader2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { Badge } from "@/components/ui/badge";
 
@@ -37,8 +37,8 @@ const initialState = {
 };
 
 export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) {
-    const [createState, createAction] = useActionState(createCompetitor, initialState);
-    const [updateState, updateAction] = useActionState(updateCompetitor, initialState);
+    const [createState, createAction, isCreating] = useActionState(createCompetitor, initialState);
+    const [updateState, updateAction, isUpdating] = useActionState(updateCompetitor, initialState);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCompetitor, setEditingCompetitor] = useState<Competitor | null>(null);
 
@@ -123,6 +123,7 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
     };
 
     const currentAction = editingCompetitor ? updateAction : createAction;
+    const isPending = editingCompetitor ? isUpdating : isCreating;
 
     return (
         <div className="space-y-6">
@@ -348,7 +349,16 @@ export function CompetitorsTab({ projectId, competitors }: CompetitorsTabProps) 
                             </div>
 
                             <DialogFooter>
-                                <Button type="submit">{editingCompetitor ? "Actualizar" : "Guardar"} Competidor</Button>
+                                <Button type="submit" disabled={isPending}>
+                                    {isPending ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            {editingCompetitor ? "Actualizando..." : "Guardando..."}
+                                        </>
+                                    ) : (
+                                        <>{editingCompetitor ? "Actualizar" : "Guardar"} Competidor</>
+                                    )}
+                                </Button>
                             </DialogFooter>
                         </form>
                     </DialogContent>

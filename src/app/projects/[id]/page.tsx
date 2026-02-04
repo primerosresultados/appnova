@@ -67,6 +67,14 @@ async function getProject(id: string) {
                         }
                     }
                 }
+            },
+            adReports: {
+                orderBy: { startDate: 'desc' },
+                include: {
+                    createdBy: {
+                        select: { id: true, name: true, avatar: true }
+                    }
+                }
             }
         }
     });
