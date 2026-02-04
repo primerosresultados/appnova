@@ -3,19 +3,14 @@
 import { useState, useEffect } from "react";
 import { useActionState } from "react";
 import { createResource, deleteResource } from "@/app/projects/resource-actions";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Folder, Key, Link as LinkIcon, FileText, Plus, Trash2, ExternalLink, HardDrive, File as FileIcon } from "lucide-react";
+import { Folder, Key, Link as LinkIcon, FileText, Trash2, ExternalLink, HardDrive, File as FileIcon } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { MetaAdAccountSelector } from "@/components/projects/MetaAdAccountSelector";
 import { getMetaConnectionStatus } from "@/app/actions/meta-actions";
+import { AdsRecordModal } from './AdsRecordModal';
 
 interface Resource {
     id: string;
@@ -37,15 +32,12 @@ const initialState = {
 
 export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
     const [state, formAction, isPending] = useActionState(createResource, initialState);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [selectedType, setSelectedType] = useState("LINK");
     const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
     const [isMetaConnected, setIsMetaConnected] = useState(false);
 
     useEffect(() => {
         if (state.success) {
             toast.success("Recurso agregado correctamente");
-            setIsDialogOpen(false);
         } else if (state.message) {
             toast.error(state.message);
         }
@@ -91,67 +83,21 @@ export function ResourcesTab({ projectId, resources }: ResourcesTabProps) {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium">Recursos del Proyecto</h3>
-                <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button>
-                            <Plus className="h-4 w-4 mr-2" /> Nuevo Recurso
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Agregar Recurso</DialogTitle>
-                            <DialogDescription>Añade un enlace, archivo o credencial.</DialogDescription>
-                        </DialogHeader>
-                        <form action={formAction} className="space-y-4">
-                            <input type="hidden" name="projectId" value={projectId} />
+                <AdsRecordModal
+                    projectId={projectId}
+                    onSave={async (items) => {
+                        // Save each item as a separate resource
+                        for (const item of items) {
+                            const formData = new FormData();
+                            formData.append('projectId', projectId);
+                            formData.append('name', item.title);
+                            formData.append('type', 'ADS_RECORD');
+                            formData.append('content', item.description);
 
-                            <div className="space-y-2">
-                                <Label>Nombre</Label>
-                                <Input name="name" required placeholder="Ej: Carpeta de Diseño" />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label>Tipo</Label>
-                                <Select name="type" value={selectedType} onValueChange={setSelectedType}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="LINK">Enlace Web</SelectItem>
-                                        <SelectItem value="DRIVE">Google Drive</SelectItem>
-                                        <SelectItem value="FILE">Archivo Adjunto</SelectItem>
-                                        <SelectItem value="CREDENTIAL">Credencial / Acceso</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {selectedType === 'FILE' ? (
-                                <div className="space-y-2">
-                                    <Label>Archivo</Label>
-                                    <Input type="file" name="file" required />
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                    <Label>URL</Label>
-                                    <Input name="url" placeholder="https://..." />
-                                </div>
-                            )}
-
-                            {selectedType === 'CREDENTIAL' && (
-                                <div className="space-y-2">
-                                    <Label>Detalles (Usuario/Contraseña/Notas)</Label>
-                                    <Textarea name="content" placeholder="Usuario: admin..." />
-                                </div>
-                            )}
-
-                            <DialogFooter>
-                                <Button type="submit" disabled={isPending}>
-                                    {isPending ? "Guardando..." : "Guardar"}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                            await createResource(null, formData);
+                        }
+                    }}
+                />
             </div>
 
             <div className="grid gap-4 md:grid-cols-2">
