@@ -126,6 +126,7 @@ export function AdsTab({ projectId, metaAdAccountId, adReports, currentUser }: A
                 projectId={projectId}
                 currentUser={currentUser}
                 onClose={handleCloseReport}
+                onEdit={(reportId) => alert(`Funcionalidad de edición próximamente para ${reportId}`)}
             />
         </div>
     );
