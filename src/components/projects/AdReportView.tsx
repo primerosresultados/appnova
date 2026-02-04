@@ -151,7 +151,7 @@ export function AdReportView({ report, projectId, currentUser, onClose }: AdRepo
                                 <CardTitle className="text-base">Métricas</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                     {report.reach !== null && report.reach !== undefined && (
                                         <div>
                                             <div className="text-xs text-muted-foreground">Alcance</div>
