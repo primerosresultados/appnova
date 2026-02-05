@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Calendar, CheckCircle2, Circle, Clock, Search } from "lucide-react";
+import { Calendar, CheckCircle2, Circle, Clock, Search, Bell, User } from "lucide-react";
 import Link from "next/link";
 import { ProjectActions } from "@/components/projects/ProjectActions";
 import { NewProjectSheet } from "@/components/projects/NewProjectSheet";
@@ -31,11 +31,17 @@ interface Project {
     _count: {
         tasks: number;
     };
+    actionLogs?: {
+        content: string;
+        createdAt: Date;
+        user: { name: string | null } | null;
+    }[];
 }
 
 interface ProjectsListClientProps {
     projects: Project[];
 }
+
 
 export function ProjectsListClient({ projects }: ProjectsListClientProps) {
     const [searchQuery, setSearchQuery] = useState("");
@@ -96,28 +102,57 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
                     {filteredProjects.map((project) => {
                         const status = statusMap[project.status] || statusMap.PLANNING;
                         const StatusIcon = status.icon;
+                        const latestLog = project.actionLogs?.[0]; // Get the latest log
 
                         return (
-                            <div key={project.id} className="group border-b border-border/40 last:border-0 md:border md:rounded-xl md:bg-card md:backdrop-blur-sm md:border-border/50 hover:border-primary/50 transition-colors">
-                                <div className="p-3 md:p-4 flex flex-col gap-1 md:gap-4">
+                            <div key={project.id} className="group border-b border-border/40 last:border-0 md:border md:rounded-xl md:bg-card md:backdrop-blur-sm md:border-border/50 hover:border-primary/50 transition-all duration-200 shadow-sm hover:shadow-md">
+                                <div className="p-4 md:p-5 flex flex-col gap-3 md:gap-4">
                                     {/* Header: Name and Actions */}
-                                    <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-start justify-between gap-3">
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-0.5">
+                                            <div className="flex items-center gap-3 mb-1">
                                                 <Link href={`/projects/${project.id}`} className="block group-hover:text-primary transition-colors">
-                                                    <h3 className="text-base md:text-lg font-bold leading-none truncate">
+                                                    <h3 className="text-lg md:text-xl font-bold leading-tight truncate">
                                                         {project.name}
                                                     </h3>
                                                 </Link>
+                                                {/* Notification Bell */}
+                                                {latestLog && (
+                                                    <div className="relative group/bell">
+                                                        <div className="bg-red-500/10 text-red-500 p-1 rounded-full animate-pulse md:animate-none md:hover:animate-pulse cursor-help">
+                                                            <Bell className="h-3.5 w-3.5" />
+                                                            <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full border-2 border-background"></span>
+                                                        </div>
+                                                        {/* Tooltip for Bell */}
+                                                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover/bell:block bg-popover text-popover-foreground text-xs p-2 rounded border shadow-lg w-64 z-10">
+                                                            <p className="font-semibold mb-1">Última actividad:</p>
+                                                            <p className="line-clamp-2">{latestLog.content}</p>
+                                                            <p className="text-muted-foreground mt-1 text-[10px]">{format(new Date(latestLog.createdAt), 'd MMM HH:mm')} por {latestLog.user?.name || 'Sistema'}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+
                                                 {/* Mobile Status Dot */}
-                                                <div className={`md:hidden h-2 w-2 rounded-full ${status.color.split(' ')[1] ? status.color.split(' ')[1].replace('text-', 'bg-') : 'bg-gray-500'}`} />
+                                                <div className={`md:hidden h-2.5 w-2.5 rounded-full ${status.color.split(' ')[1] ? status.color.split(' ')[1].replace('text-', 'bg-') : 'bg-gray-500'}`} />
                                             </div>
-                                            <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground truncate">
-                                                <span className="truncate">{project.client.name}</span>
-                                                <span className="md:hidden text-muted-foreground/40">•</span>
-                                                <span className="md:hidden">{project._count.tasks} Tareas</span>
+
+                                            <div className="flex flex-col gap-1">
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground truncate">
+                                                    <User className="h-3.5 w-3.5 opacity-70" />
+                                                    <span className="font-medium">{project.client.name}</span>
+                                                </div>
+
+                                                {/* Latest Change Text (Visible directly) */}
+                                                {latestLog && (
+                                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80 mt-1 bg-muted/30 p-1.5 rounded w-fit max-w-full">
+                                                        <Bell className="h-3 w-3 text-primary/70 shrink-0" />
+                                                        <span className="font-medium text-primary/90 shrink-0">Últimos Cambios:</span>
+                                                        <span className="truncate">{latestLog.content}</span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
+
                                         <div className="flex items-center gap-2">
                                             <div className="md:hidden">
                                                 {project.dueDate && (
@@ -131,9 +166,13 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
                                     </div>
 
                                     {/* Desktop: Horizontal Layout (Hidden on Mobile) */}
-                                    <div className="hidden md:flex items-center justify-between mt-0 pt-2 border-t border-border/40">
-                                        <div className="text-sm text-muted-foreground truncate max-w-[40%]">
-                                            {project.description}
+                                    <div className="hidden md:flex items-center justify-between mt-0 pt-3 border-t border-border/40">
+                                        <div className="text-sm text-muted-foreground truncate max-w-[40%] flex items-center gap-2">
+                                            {project.description ? (
+                                                <span>{project.description}</span>
+                                            ) : (
+                                                <span className="italic opacity-50">Sin descripción</span>
+                                            )}
                                         </div>
                                         <div className="flex items-center gap-6">
                                             <Badge variant="outline" className={`${status.color} border font-medium px-2.5 py-0.5 text-xs`}>
@@ -141,7 +180,7 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
                                                 {status.label}
                                             </Badge>
                                             {project.dueDate && (
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground" title="Fecha de entrega">
                                                     <Calendar className="h-4 w-4 opacity-70" />
                                                     <span>{format(new Date(project.dueDate), 'd MMM')}</span>
                                                 </div>
@@ -161,3 +200,4 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
         </div>
     );
 }
+

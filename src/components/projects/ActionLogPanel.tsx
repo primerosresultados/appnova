@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useOptimistic } from "react";
 import { addActionLog } from "@/app/projects/log-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import toast from "react-hot-toast";
+import { useFormStatus } from "react-dom";
 
 interface ActionLog {
     id: string;
@@ -66,6 +67,21 @@ const typeColors: Record<string, string> = {
     WARNING: "bg-amber-500/20 text-amber-400 border-amber-500/30",
 };
 
+function SubmitButton() {
+    const { pending } = useFormStatus();
+
+    return (
+        <Button
+            type="submit"
+            size="icon"
+            className="shrink-0 transition-all"
+            disabled={pending}
+        >
+            {pending ? <Clock className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        </Button>
+    );
+}
+
 export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelProps) {
     const [state, formAction] = useActionState(addActionLog, initialState);
     const formRef = useRef<HTMLFormElement>(null);
@@ -83,6 +99,12 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
         return log.isPublic || (currentUser && log.userId === currentUser.id);
     });
 
+    // Optimistic UI merge
+    const [optimisticLogs, addOptimisticLog] = useOptimistic(
+        visibleLogs,
+        (state, newLog: ActionLog) => [...state, newLog]
+    );
+
     // Auto-scroll to bottom
     useEffect(() => {
         if (scrollRef.current) {
@@ -91,7 +113,7 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
                 scrollContainer.scrollTop = scrollContainer.scrollHeight;
             }
         }
-    }, [visibleLogs]); // Depend on visibleLogs instead of logs
+    }, [optimisticLogs]); // Depend on optimisticLogs now
 
     useEffect(() => {
         if (state?.success && formRef.current) {
@@ -100,6 +122,33 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
             if (!isClient) setIsPublic(false); // Reset to private for admins
         }
     }, [state, isClient]);
+
+    async function handleAction(formData: FormData) {
+        const content = formData.get("content") as string;
+        const type = formData.get("type") as string || "NOTE";
+        const isPublicStr = formData.get("isPublic") as string;
+
+        // Optimistically add log
+        // Note: ID is temporary, createdAt is now
+        addOptimisticLog({
+            id: 'optimistic-' + Date.now(),
+            content,
+            type,
+            createdAt: new Date(),
+            user: currentUser ? { name: currentUser.name || "Yo", id: currentUser.id } : { name: "Usuario", id: "me" },
+            userId: currentUser?.id,
+            isPublic: isPublicStr === "true"
+        });
+
+        // Trigger safe reset immediately for UX?
+        // Actually better to wait for server confirmation to clear form, 
+        // BUT useFormStatus will handle the pending state on the button.
+        // We can manually reset the form content field if we want it to clear instantly too.
+        // But `formAction` might be blocked.
+        // Let's just call `formAction` which is the server action wrapper.
+
+        await formAction(formData);
+    }
 
     return (
         <div className="flex flex-col h-full bg-card backdrop-blur-sm">
@@ -112,18 +161,20 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
 
             <ScrollArea className="flex-1 p-4" ref={scrollRef}>
                 <div className="space-y-4">
-                    {visibleLogs.length === 0 ? (
+                    {optimisticLogs.length === 0 ? (
                         <p className="text-sm text-muted-foreground text-center py-8">
                             No hay registros visibles.
                         </p>
                     ) : (
-                        visibleLogs.map((log) => {
-                            const Icon = typeIcons[log.type] || FileText;
-                            const colorClass = typeColors[log.type] || "bg-accent/50 text-muted-foreground border-border/30";
-                            const isOwnMessage = currentUser && log.userId === currentUser.id;
+                        optimisticLogs.map((log) => {
+                            const Icon = log.type && typeIcons[log.type] ? typeIcons[log.type] : FileText;
+                            const colorClass = log.type && typeColors[log.type] ? typeColors[log.type] : "bg-accent/50 text-muted-foreground border-border/30";
+                            // Handle optimistic temporary entries visually? maybe opacity-70?
+                            const isOptimistic = log.id.startsWith('optimistic-');
+                            const isOwnMessage = (currentUser && log.userId === currentUser.id) || isOptimistic;
 
                             return (
-                                <div key={log.id} className="flex flex-col gap-1 relative group">
+                                <div key={log.id} className={`flex flex-col gap-1 relative group ${isOptimistic ? 'opacity-70' : ''}`}>
                                     <div className={`p-3 rounded-lg border text-sm ${colorClass} ${isOwnMessage ? 'rounded-tr-none' : 'rounded-tl-none'}`}>
                                         <div className="flex items-center justify-between mb-1">
                                             <div className="flex items-center gap-2">
@@ -136,7 +187,7 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                {!isClient && (
+                                                {!isClient && !isOptimistic && (
                                                     <button
                                                         type="button"
                                                         title={log.isPublic ? "Visible para cliente (Click para ocultar)" : "Privado (Click para hacer público)"}
@@ -168,7 +219,7 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
                                                         )}
                                                     </button>
                                                 )}
-                                                {(isOwnMessage || !isClient) && (
+                                                {(isOwnMessage || !isClient) && !isOptimistic && (
                                                     <button
                                                         onClick={async () => {
                                                             if (confirm("¿Estás seguro de eliminar este registro?")) {
@@ -200,6 +251,7 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
                                     <div className={`flex items-center ${isOwnMessage ? 'justify-end mr-1' : 'ml-1'}`}>
                                         <span className="text-[10px] text-muted-foreground">
                                             {format(new Date(log.createdAt), 'd MMM, HH:mm')}
+                                            {isOptimistic && " (Enviando...)"}
                                         </span>
                                     </div>
                                 </div>
@@ -210,7 +262,7 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
             </ScrollArea>
 
             <div className="p-4 border-t border-border/50 bg-card space-y-2">
-                <form action={formAction} ref={formRef} className="flex flex-col gap-2">
+                <form action={handleAction} ref={formRef} className="flex flex-col gap-2">
                     <input type="hidden" name="projectId" value={projectId} />
 
                     {/* For clients, always public. For admins, controlled by state */}
@@ -253,9 +305,7 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
                             autoComplete="off"
                             className="bg-background/50 border-border/50 focus-visible:ring-primary/20"
                         />
-                        <Button type="submit" size="icon" className="shrink-0">
-                            <Send className="h-4 w-4" />
-                        </Button>
+                        <SubmitButton />
                     </div>
                 </form>
             </div>

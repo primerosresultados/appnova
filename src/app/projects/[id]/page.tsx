@@ -1,95 +1,29 @@
 
-import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { ProjectDetailsView } from "@/components/projects/ProjectDetailsView";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getWorkflows } from "@/app/workflows/actions";
 import { getUserSession } from "@/app/actions/auth-actions";
+import { getProjectCore } from "@/app/projects/actions-fetchers";
 
+// Import Tab Server Components
+import TasksTab from "./tabs/TasksTab";
+import PlanningTab from "./tabs/PlanningTab";
+import ResourcesTab from "./tabs/ResourcesTab";
+import CreativityTab from "./tabs/CreativityTab";
+import CompetitorsTab from "./tabs/CompetitorsTab";
+import AdsTab from "./tabs/AdsTab";
+import ContentTab from "./tabs/ContentTab";
+import WorkflowsTab from "./tabs/WorkflowsTab";
+import ActionLogSlot from "./tabs/ActionLogSlot";
+
+// Client-side component for rendering tasks (used for Client role)
+import { TaskItem } from "@/components/projects/TaskItem";
 
 interface PageProps {
     params: Promise<{
         id: string;
     }>;
-}
-
-// Separate data fetching for better granularity if needed later
-// For now, we still fetch the big object but we can parallelize with workflows
-async function getProject(id: string) {
-    const project = await db.project.findUnique({
-        where: { id },
-        include: {
-            client: {
-                select: { id: true, name: true }
-            },
-            tasks: {
-                orderBy: { createdAt: 'desc' },
-                include: {
-                    assignee: {
-                        select: { id: true, name: true, avatar: true }
-                    }
-                    // Removed actionLogs for performance, fetched on task detail only
-                }
-            },
-            milestones: {
-                orderBy: { date: 'asc' }
-            },
-            resources: {
-                orderBy: { createdAt: 'desc' },
-                include: {
-                    votes: true
-                }
-            },
-            actionLogs: {
-                orderBy: { createdAt: 'desc' },
-                take: 50, // Optimize: Fetch only last 50 logs
-                include: {
-                    user: {
-                        select: { id: true, name: true, avatar: true }
-                    }
-                }
-            },
-            contents: {
-                orderBy: { publishDate: 'asc' }
-            },
-            competitors: {
-                orderBy: { createdAt: 'desc' }
-            },
-            workflows: {
-                include: {
-                    workflow: {
-                        include: {
-                            stages: {
-                                include: { tasks: true },
-                                orderBy: { order: 'asc' }
-                            }
-                        }
-                    }
-                }
-            },
-            adReports: {
-                orderBy: { startDate: 'desc' },
-                include: {
-                    createdBy: {
-                        select: { id: true, name: true, avatar: true }
-                    },
-                    blocks: {
-                        orderBy: { order: 'asc' }
-                    },
-                    comments: {
-                        include: {
-                            user: {
-                                select: { id: true, name: true, avatar: true }
-                            }
-                        },
-                        orderBy: { createdAt: 'asc' }
-                    }
-                }
-            }
-        }
-    });
-    return project;
 }
 
 function ProjectDetailsSkeleton() {
@@ -123,57 +57,135 @@ function ProjectDetailsSkeleton() {
     )
 }
 
-async function ProjectDetailsContent({ id, currentUser }: { id: string; currentUser: any }) {
+function TabSkeleton() {
+    return (
+        <div className="space-y-4 pt-4">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+        </div>
+    );
+}
+
+// Helper to wrap tasks for Client view
+function ClientTasksWrapper({ tasks }: { tasks: any[] }) {
+    const priorityMap: Record<string, { label: string; color: string }> = {
+        LOW: { label: "Baja", color: "text-slate-500 bg-slate-500/10" },
+        MEDIUM: { label: "Media", color: "text-amber-500 bg-amber-500/10" },
+        HIGH: { label: "Alta", color: "text-red-500 bg-red-500/10" },
+    };
+
+    if (!tasks || tasks.length === 0) return <div className="p-8 text-center text-muted-foreground">No hay tareas visibles.</div>;
+
+    return (
+        <div className="grid gap-2">
+            {tasks.map((task: any) => (
+                <TaskItem key={task.id} task={task} priorityMap={priorityMap} />
+            ))}
+        </div>
+    );
+}
+
+
+async function ProjectDetailsContent({ id }: { id: string }) {
+    // 1. Fetch User Session first (needed for permission routing)
+    const currentUser = await getUserSession();
+
     let project = null;
-    let allWorkflows: any[] = [];
-    let error = null;
 
     try {
         if (currentUser?.role === 'CLIENTE') {
             const { getClientProjectDetails } = await import('@/app/actions/client-actions');
-            // Clients don't need valid workflows list to add new ones
-            [project] = await Promise.all([
-                getClientProjectDetails(id)
-            ]);
-        } else {
-            // Parallelize the heavy lifting
-            [project, allWorkflows] = await Promise.all([
-                getProject(id),
-                getWorkflows()
-            ]);
+            const clientProject = await getClientProjectDetails(id);
+
+            if (clientProject) {
+                return (
+                    <ProjectDetailsView
+                        project={clientProject}
+                        currentUser={currentUser}
+                        tasksSlot={<ClientTasksWrapper tasks={clientProject.tasks} />}
+                    />
+                );
+            }
         }
+
+        // ADMIN / REGULAR USER FLOW
+        project = await getProjectCore(id);
+
+        if (!project) notFound();
+
+        return (
+            <ProjectDetailsView
+                project={project}
+                currentUser={currentUser}
+                tasksSlot={
+                    <Suspense fallback={<TabSkeleton />}>
+                        <TasksTab projectId={id} isClient={false} />
+                    </Suspense>
+                }
+                planningSlot={
+                    <Suspense fallback={<TabSkeleton />}>
+                        <PlanningTab projectId={id} isClient={false} />
+                    </Suspense>
+                }
+                resourcesSlot={
+                    <Suspense fallback={<TabSkeleton />}>
+                        <ResourcesTab projectId={id} />
+                    </Suspense>
+                }
+                creativitySlot={
+                    <Suspense fallback={<TabSkeleton />}>
+                        <CreativityTab projectId={id} currentUser={currentUser} />
+                    </Suspense>
+                }
+                competitorsSlot={
+                    <Suspense fallback={<TabSkeleton />}>
+                        <CompetitorsTab projectId={id} />
+                    </Suspense>
+                }
+                adsSlot={
+                    <Suspense fallback={<TabSkeleton />}>
+                        <AdsTab projectId={id} currentUser={currentUser} />
+                    </Suspense>
+                }
+                contentSlot={
+                    <Suspense fallback={<TabSkeleton />}>
+                        <ContentTab projectId={id} isClient={false} />
+                    </Suspense>
+                }
+                workflowsSlot={
+                    <Suspense fallback={<TabSkeleton />}>
+                        <WorkflowsTab projectId={id} isClient={false} />
+                    </Suspense>
+                }
+                actionLogSlot={
+                    <Suspense fallback={<div className="p-4 space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-20 w-full" /></div>}>
+                        <ActionLogSlot projectId={id} currentUser={currentUser} />
+                    </Suspense>
+                }
+            />
+        );
+
     } catch (e: any) {
         console.error("Error fetching project details:", e);
-        error = e.message;
-    }
-
-    if (error) {
         return (
             <div className="p-8">
                 <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-6 rounded-lg">
                     <h3 className="text-lg font-bold mb-2">Error de Conexión</h3>
-                    <p>No se pudo cargar el proyecto. Verifica la conexión a la base de datos.</p>
-                    <code className="block mt-4 text-xs bg-black/20 p-2 rounded">{error}</code>
+                    <p>No se pudo cargar el proyecto.</p>
                 </div>
             </div>
         );
     }
-
-    if (!project) {
-        notFound();
-    }
-
-    return <ProjectDetailsView project={project} allWorkflows={allWorkflows} currentUser={currentUser} />;
 }
 
 
 export default async function ProjectDetailsPage({ params }: PageProps) {
     const { id } = await params;
-    const user = await getUserSession();
 
     return (
         <Suspense fallback={<ProjectDetailsSkeleton />}>
-            <ProjectDetailsContent id={id} currentUser={user} />
+            <ProjectDetailsContent id={id} />
         </Suspense>
     );
 }

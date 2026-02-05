@@ -51,7 +51,7 @@ export async function addActionLog(prevState: any, formData: FormData) {
     }
 
     revalidatePath(`/projects/${projectId}`);
-    revalidatePath('/dashboard'); // Refresh dashboard activity feed
+    // revalidatePath('/dashboard'); // Removed to improve performance
     return { message: "Log added", success: true };
 }
 

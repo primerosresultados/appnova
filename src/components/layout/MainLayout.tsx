@@ -72,7 +72,10 @@ export function MainLayout({ children, initialIsClient = false }: MainLayoutProp
               after the specific client environment is ready.
             */}
             {mounted && !isClient && <AppSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />}
-            <div className={`flex-1 flex flex-col ${!isClient ? 'md:pl-72' : ''} transition-all duration-300`}>
+            <div
+                className={`flex-1 flex flex-col ${!isClient ? 'md:pl-72' : ''} transition-all duration-300`}
+                suppressHydrationWarning
+            >
                 <Header onMenuClick={() => setSidebarOpen(true)} isClient={isClient} />
                 <main className={`flex-1 overflow-y-auto ${isProjectDetail ? 'p-0' : 'p-6 md:p-8 lg:p-10'}`}>
                     {children}

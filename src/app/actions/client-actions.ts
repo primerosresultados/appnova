@@ -89,6 +89,17 @@ export async function getClientProjectDetails(id: string) {
                             }
                         }
                     }
+                },
+                adReports: {
+                    orderBy: { startDate: 'desc' },
+                    include: {
+                        createdBy: { select: { id: true, name: true, avatar: true } },
+                        blocks: { orderBy: { order: 'asc' } },
+                        comments: {
+                            include: { user: { select: { id: true, name: true, avatar: true } } },
+                            orderBy: { createdAt: 'asc' }
+                        }
+                    }
                 }
             }
         });

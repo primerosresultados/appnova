@@ -21,6 +21,17 @@ async function getProjects() {
                 },
                 _count: {
                     select: { tasks: true }
+                },
+                actionLogs: {
+                    take: 1,
+                    orderBy: { createdAt: 'desc' },
+                    select: {
+                        content: true,
+                        createdAt: true,
+                        user: {
+                            select: { name: true }
+                        }
+                    }
                 }
             }
         });

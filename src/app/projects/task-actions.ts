@@ -15,6 +15,8 @@ const taskSchema = z.object({
     links: z.string().optional(), // Accepting comma-separated string for simplicity
 });
 
+import { getUserSession } from "@/app/actions/auth-actions";
+
 export async function createTask(prevState: any, formData: FormData) {
     const validatedFields = taskSchema.safeParse({
         title: formData.get("title"),
@@ -38,7 +40,9 @@ export async function createTask(prevState: any, formData: FormData) {
     const { title, description, projectId, status, priority, dueDate, assigneeId, links } = validatedFields.data;
 
     try {
-        await db.task.create({
+        const user = await getUserSession();
+
+        const newTask = await db.task.create({
             data: {
                 title,
                 description,
@@ -50,6 +54,18 @@ export async function createTask(prevState: any, formData: FormData) {
                 links: links || null,
             },
         });
+
+        // Create Action Log
+        await db.actionLog.create({
+            data: {
+                projectId,
+                content: `Nueva tarea creada: ${title}`,
+                type: "TASK",
+                userId: user?.id,
+                taskId: newTask.id,
+            }
+        });
+
     } catch (error) {
         console.error("Database Error:", error);
         return {
@@ -82,6 +98,7 @@ export async function updateTask(taskId: string, prevState: any, formData: FormD
     }
 
     try {
+        const user = await getUserSession();
         const data: any = { ...validatedFields.data };
         if (data.dueDate) data.dueDate = new Date(data.dueDate);
         if (data.assigneeId === undefined) data.assigneeId = null;
@@ -89,6 +106,20 @@ export async function updateTask(taskId: string, prevState: any, formData: FormD
         const updatedTask = await db.task.update({
             where: { id: taskId },
             data,
+        });
+
+        // Create Action Log for significant changes
+        let logContent = `Tarea actualizada: ${updatedTask.title}`;
+        if (data.status) logContent = `Estado de tarea "${updatedTask.title}" cambiado a ${data.status}`;
+
+        await db.actionLog.create({
+            data: {
+                projectId: updatedTask.projectId,
+                content: logContent,
+                type: "TASK",
+                userId: user?.id,
+                taskId: updatedTask.id,
+            }
         });
 
         revalidatePath(`/tasks/${taskId}`);

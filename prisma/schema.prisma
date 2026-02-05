@@ -74,6 +74,8 @@ model Project {
 
   @@index([clientId])
   @@index([status])
+  @@index([updatedAt])
+  @@index([dueDate])
 }
 
 model Task {
@@ -98,6 +100,8 @@ model Task {
   @@index([projectId])
   @@index([assigneeId])
   @@index([status])
+  @@index([dueDate])
+  @@index([createdAt])
 }
 
 model ActionLog {
@@ -245,6 +249,7 @@ model Milestone {
   updatedAt   DateTime @updatedAt
 
   @@index([projectId])
+  @@index([date])
 }
 
 model Resource {
@@ -297,6 +302,7 @@ model FinancialRecord {
 
   @@index([clientId])
   @@index([status])
+  @@index([date])
 }
 
 model ClientNote {
@@ -353,6 +359,7 @@ model Transaction {
   @@index([accountId])
   @@index([projectId])
   @@index([clientId])
+  @@index([date])
 }
 
 model Contract {
@@ -376,6 +383,7 @@ model Contract {
 
   @@index([clientId])
   @@index([status])
+  @@index([startDate])
 }
 
 model Content {
@@ -403,6 +411,7 @@ model Content {
 
   @@index([projectId])
   @@index([status])
+  @@index([publishDate])
 }
 
 model Employee {
