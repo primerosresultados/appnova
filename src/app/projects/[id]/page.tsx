@@ -190,5 +190,4 @@ export default async function ProjectDetailsPage({ params }: PageProps) {
     );
 }
 
-// Force dynamic to ensure fresh data
-export const dynamic = 'force-dynamic';
+

@@ -1,4 +1,4 @@
-export const dynamic = 'force-dynamic';
+
 import { Suspense } from "react";
 import { ProjectsList } from "@/components/projects/ProjectsList";
 import { Skeleton } from "@/components/ui/skeleton";

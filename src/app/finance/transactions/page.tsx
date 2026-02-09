@@ -5,17 +5,24 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { unstable_cache } from "next/cache";
 
-// Force dynamic to ensure fresh data
-export const dynamic = 'force-dynamic';
+const getCachedTransactions = unstable_cache(
+    async () => {
+        return db.transaction.findMany({
+            orderBy: { date: 'desc' },
+            include: { account: true },
+            take: 200,
+        });
+    },
+    ['transactions-list'],
+    { revalidate: 30 }
+);
 
 async function getTransactions() {
-    const transactions = await db.transaction.findMany({
-        orderBy: { date: 'desc' },
-        include: { account: true }
-    });
-    return transactions;
+    return getCachedTransactions();
 }
+
 
 export default async function TransactionsPage() {
     const transactions = await getTransactions();

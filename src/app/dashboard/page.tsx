@@ -21,7 +21,6 @@ import {
   IncomeChartSkeleton
 } from "@/components/dashboard/DashboardSkeletons";
 
-export const dynamic = 'force-dynamic';
 
 interface SearchParamsProps {
   searchParams: Promise<{
@@ -66,12 +65,10 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
         <CalendarWidget />
       </Suspense>
 
-      {/* MOBILE SPECIFIC ORDERING: Attention Center immediately after Calendar */}
-      <div className="md:hidden space-y-4 my-4">
-        <Suspense fallback={<AttentionSkeleton />}>
-          <AttentionWidget />
-        </Suspense>
-      </div>
+      {/* AttentionWidget: renders ONCE, CSS controls mobile/desktop placement */}
+      <Suspense fallback={<AttentionSkeleton />}>
+        <AttentionWidget />
+      </Suspense>
 
       <Suspense fallback={<StatsSkeleton />}>
         <StatsCards period={period} />
@@ -83,13 +80,6 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
         </Suspense>
 
         <div className="lg:col-span-3 space-y-4">
-          {/* DESKTOP ONLY: Attention Center */}
-          <div className="hidden md:block">
-            <Suspense fallback={<AttentionSkeleton />}>
-              <AttentionWidget />
-            </Suspense>
-          </div>
-
           <Suspense fallback={<ActivitySkeleton />}>
             <ActivityWidget />
           </Suspense>
@@ -98,3 +88,4 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
     </div>
   );
 }
+

@@ -1,5 +1,4 @@
 
-export const dynamic = 'force-dynamic';
 import { db } from "@/lib/db";
 import { getUserSession } from "@/app/actions/auth-actions";
 import { ClientTaskList } from "@/components/tasks/ClientTaskList";
