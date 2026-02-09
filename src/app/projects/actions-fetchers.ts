@@ -3,97 +3,174 @@ import { db } from "@/lib/db";
 import { ProjectDetailsView } from "@/components/projects/ProjectDetailsView";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { unstable_cache } from "next/cache";
+
+// Cache project core data for 60 seconds
+const getCachedProjectCore = unstable_cache(
+    async (id: string) => {
+        return db.project.findUnique({
+            where: { id },
+            include: {
+                client: { select: { id: true, name: true } }
+            }
+        });
+    },
+    ['project-core'],
+    { revalidate: 60 }
+);
 
 // Fetchers for independent sections
 export async function getProjectCore(id: string) {
-    console.time(`getProjectCore-${id}`);
-    const project = await db.project.findUnique({
-        where: { id },
-        include: {
-            client: { select: { id: true, name: true } }
-        }
-    });
-    console.timeEnd(`getProjectCore-${id}`);
-    return project;
+    return getCachedProjectCore(id);
 }
+
+// Cache all tab fetchers for 30 seconds to avoid redundant DB hits on rapid navigation
+const getCachedProjectTasks = unstable_cache(
+    async (id: string) => {
+        return db.task.findMany({
+            where: { projectId: id },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                assignee: { select: { id: true, name: true, avatar: true } }
+            }
+        });
+    },
+    ['project-tasks'],
+    { revalidate: 30 }
+);
 
 export async function getProjectTasks(id: string) {
-    return db.task.findMany({
-        where: { projectId: id },
-        orderBy: { createdAt: 'desc' },
-        include: {
-            assignee: { select: { id: true, name: true, avatar: true } }
-        }
-    });
+    return getCachedProjectTasks(id);
 }
+
+const getCachedProjectMilestones = unstable_cache(
+    async (id: string) => {
+        return db.milestone.findMany({
+            where: { projectId: id },
+            orderBy: { date: 'asc' }
+        });
+    },
+    ['project-milestones'],
+    { revalidate: 30 }
+);
 
 export async function getProjectMilestones(id: string) {
-    return db.milestone.findMany({
-        where: { projectId: id },
-        orderBy: { date: 'asc' }
-    });
+    return getCachedProjectMilestones(id);
 }
+
+const getCachedProjectResources = unstable_cache(
+    async (id: string) => {
+        return db.resource.findMany({
+            where: { projectId: id },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                votes: {
+                    select: { id: true, userId: true }
+                }
+            }
+        });
+    },
+    ['project-resources'],
+    { revalidate: 30 }
+);
 
 export async function getProjectResources(id: string) {
-    return db.resource.findMany({
-        where: { projectId: id },
-        orderBy: { createdAt: 'desc' },
-        include: { votes: true }
-    });
+    return getCachedProjectResources(id);
 }
+
+const getCachedProjectLogs = unstable_cache(
+    async (id: string) => {
+        return db.actionLog.findMany({
+            where: { projectId: id },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+            include: {
+                user: { select: { id: true, name: true, avatar: true } }
+            }
+        });
+    },
+    ['project-logs'],
+    { revalidate: 30 }
+);
 
 export async function getProjectLogs(id: string) {
-    return db.actionLog.findMany({
-        where: { projectId: id },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-        include: {
-            user: { select: { id: true, name: true, avatar: true } }
-        }
-    });
+    return getCachedProjectLogs(id);
 }
+
+const getCachedProjectContents = unstable_cache(
+    async (id: string) => {
+        return db.content.findMany({
+            where: { projectId: id },
+            orderBy: { publishDate: 'asc' }
+        });
+    },
+    ['project-contents'],
+    { revalidate: 30 }
+);
 
 export async function getProjectContents(id: string) {
-    return db.content.findMany({
-        where: { projectId: id },
-        orderBy: { publishDate: 'asc' }
-    });
+    return getCachedProjectContents(id);
 }
+
+const getCachedProjectCompetitors = unstable_cache(
+    async (id: string) => {
+        return db.competitor.findMany({
+            where: { projectId: id },
+            orderBy: { createdAt: 'desc' }
+        });
+    },
+    ['project-competitors'],
+    { revalidate: 30 }
+);
 
 export async function getProjectCompetitors(id: string) {
-    return db.competitor.findMany({
-        where: { projectId: id },
-        orderBy: { createdAt: 'desc' }
-    });
+    return getCachedProjectCompetitors(id);
 }
 
-export async function getProjectWorkflows(id: string) {
-    return db.projectWorkflow.findMany({
-        where: { projectId: id },
-        include: {
-            workflow: {
-                include: {
-                    stages: {
-                        include: { tasks: true },
-                        orderBy: { order: 'asc' }
+const getCachedProjectWorkflows = unstable_cache(
+    async (id: string) => {
+        return db.projectWorkflow.findMany({
+            where: { projectId: id },
+            include: {
+                workflow: {
+                    include: {
+                        stages: {
+                            include: { tasks: true },
+                            orderBy: { order: 'asc' }
+                        }
                     }
                 }
             }
-        }
-    });
+        });
+    },
+    ['project-workflows'],
+    { revalidate: 30 }
+);
+
+export async function getProjectWorkflows(id: string) {
+    return getCachedProjectWorkflows(id);
 }
 
-export async function getProjectAdReports(id: string) {
-    return db.adReport.findMany({
-        where: { projectId: id },
-        orderBy: { startDate: 'desc' },
-        include: {
-            createdBy: { select: { id: true, name: true, avatar: true } },
-            blocks: { orderBy: { order: 'asc' } },
-            comments: {
-                include: { user: { select: { id: true, name: true, avatar: true } } },
-                orderBy: { createdAt: 'asc' }
+const getCachedProjectAdReports = unstable_cache(
+    async (id: string) => {
+        return db.adReport.findMany({
+            where: { projectId: id },
+            orderBy: { startDate: 'desc' },
+            include: {
+                createdBy: { select: { id: true, name: true, avatar: true } },
+                blocks: { orderBy: { order: 'asc' } },
+                comments: {
+                    include: { user: { select: { id: true, name: true, avatar: true } } },
+                    orderBy: { createdAt: 'asc' }
+                }
             }
-        }
-    });
+        });
+    },
+    ['project-ad-reports'],
+    { revalidate: 30 }
+);
+
+export async function getProjectAdReports(id: string) {
+    return getCachedProjectAdReports(id);
 }
+

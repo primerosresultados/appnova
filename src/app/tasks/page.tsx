@@ -3,7 +3,59 @@ export const dynamic = 'force-dynamic';
 import { db } from "@/lib/db";
 import { getUserSession } from "@/app/actions/auth-actions";
 import { ClientTaskList } from "@/components/tasks/ClientTaskList";
-import { CheckCircle2 } from "lucide-react";
+import { unstable_cache } from "next/cache";
+
+// Cache tasks for 30 seconds to reduce DB load
+const getCachedTasks = unstable_cache(
+    async (userId: string | null, isAdmin: boolean) => {
+        if (isAdmin) {
+            return db.task.findMany({
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    project: {
+                        select: {
+                            id: true,
+                            name: true,
+                            client: { select: { id: true, name: true } }
+                        }
+                    },
+                    assignee: { select: { id: true, name: true, avatar: true, role: true } }
+                },
+                take: 100
+            });
+        } else {
+            return db.task.findMany({
+                where: { assigneeId: userId! },
+                orderBy: { createdAt: 'desc' },
+                take: 100,
+                include: {
+                    project: {
+                        select: {
+                            id: true,
+                            name: true,
+                            client: { select: { id: true, name: true } }
+                        }
+                    },
+                    assignee: { select: { id: true, name: true, avatar: true, role: true } }
+                }
+            });
+        }
+    },
+    ['tasks-list'],
+    { revalidate: 30 }
+);
+
+// Cache users list for 5 minutes
+const getCachedUsers = unstable_cache(
+    async () => {
+        return db.user.findMany({
+            select: { id: true, name: true, role: true },
+            orderBy: { name: 'asc' }
+        });
+    },
+    ['users-list'],
+    { revalidate: 300 }
+);
 
 export default async function TasksPage() {
     let tasks: any[] = [];
@@ -15,44 +67,19 @@ export default async function TasksPage() {
         currentUser = await getUserSession();
 
         if (!currentUser) {
-            // Handle unauthenticated case appropriately (redirect or show error)
             return <div className="p-8">Acceso denegado. Por favor inicia sesión.</div>;
         }
 
         const isAdminOrKAM = (currentUser.role as string) === 'SUPERADMIN' || (currentUser.role as string) === 'ADMIN' || (currentUser.role as string) === 'KAM';
 
+        // Use cached queries
         if (isAdminOrKAM) {
-            // Fetch ALL tasks and ALL users for filter
             [tasks, users] = await Promise.all([
-                db.task.findMany({
-                    orderBy: { createdAt: 'desc' },
-                    include: {
-                        project: {
-                            include: { client: true }
-                        },
-                        assignee: true
-                    },
-                    take: 100 // Limit for performance
-                }),
-                db.user.findMany({
-                    select: { id: true, name: true, role: true },
-                    orderBy: { name: 'asc' }
-                })
+                getCachedTasks(null, true),
+                getCachedUsers()
             ]);
         } else {
-            // Fetch ONLY assigned tasks
-            tasks = await db.task.findMany({
-                where: { assigneeId: currentUser.id },
-                orderBy: { createdAt: 'desc' },
-                take: 100, // Limit for performance
-                include: {
-                    project: {
-                        include: { client: true }
-                    },
-                    assignee: true
-                }
-            });
-            // No need to fetch other users
+            tasks = await getCachedTasks(currentUser.id, false);
             users = [];
         }
 
@@ -82,3 +109,4 @@ export default async function TasksPage() {
         </div>
     );
 }
+

@@ -50,7 +50,7 @@ export async function getClientProjectDetails(id: string) {
         const project = await db.project.findUnique({
             where,
             include: {
-                client: true,
+                client: { select: { id: true, name: true, email: true, phone: true } },
                 tasks: {
                     orderBy: { createdAt: 'desc' },
                     include: {
@@ -68,13 +68,28 @@ export async function getClientProjectDetails(id: string) {
                         ]
                     },
                     orderBy: { createdAt: 'asc' },
+                    take: 100,
                     include: {
                         user: { select: { id: true, name: true, avatar: true } }
                     }
                 },
                 contents: {
                     orderBy: { publishDate: 'asc' },
-                    include: {
+                    take: 50,
+                    select: {
+                        id: true,
+                        title: true,
+                        type: true,
+                        status: true,
+                        description: true,
+                        mediaUrl: true,
+                        fileUrl: true,
+                        links: true,
+                        publishDate: true,
+                        projectId: true,
+                        creatorId: true,
+                        createdAt: true,
+                        updatedAt: true,
                         project: { select: { name: true } }
                     }
                 },
@@ -92,6 +107,7 @@ export async function getClientProjectDetails(id: string) {
                 },
                 adReports: {
                     orderBy: { startDate: 'desc' },
+                    take: 20,
                     include: {
                         createdBy: { select: { id: true, name: true, avatar: true } },
                         blocks: { orderBy: { order: 'asc' } },

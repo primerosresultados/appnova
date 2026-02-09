@@ -2,9 +2,11 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { unstable_cache } from "next/cache";
 
-export async function getOrganizationSettings() {
-    try {
+// Cache org settings for 5 minutes - rarely changes, called on every page via DynamicBrand
+const getCachedOrgSettings = unstable_cache(
+    async () => {
         let org = await db.organization.findUnique({
             where: { id: "default" }
         });
@@ -17,7 +19,16 @@ export async function getOrganizationSettings() {
                 }
             });
         }
-        return { success: true, data: org };
+        return org;
+    },
+    ['organization-settings'],
+    { revalidate: 300 }
+);
+
+export async function getOrganizationSettings() {
+    try {
+        const data = await getCachedOrgSettings();
+        return { success: true, data };
     } catch (error) {
         console.error("Error fetching organization settings:", error);
         return { success: false, error: "Failed to fetch settings" };

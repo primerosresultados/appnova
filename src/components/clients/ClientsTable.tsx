@@ -6,9 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, ChevronRight, Copy } from "lucide-react";
 import { ClientActions } from "@/components/clients/ClientActions";
 import { CopyRutButton } from "@/components/clients/CopyRutButton";
+import { unstable_cache } from "next/cache";
 
-async function getClients() {
-    try {
+// Cache clients list for 60 seconds
+const getCachedClients = unstable_cache(
+    async () => {
         const clients = await db.client.findMany({
             orderBy: { createdAt: "desc" },
             include: {
@@ -18,6 +20,14 @@ async function getClients() {
             }
         });
         return clients;
+    },
+    ['clients-list'],
+    { revalidate: 60 }
+);
+
+async function getClients() {
+    try {
+        return await getCachedClients();
     } catch (error) {
         console.error("Error fetching clients:", error);
         return [];

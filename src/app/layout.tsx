@@ -26,14 +26,20 @@ export const metadata: Metadata = {
 };
 
 import { getUserSession } from "@/app/actions/auth-actions";
+import { getOrganizationSettings } from "@/app/actions/organization-actions";
 
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await getUserSession();
+  // Fetch user and org settings in parallel (both are cached)
+  const [user, orgResult] = await Promise.all([
+    getUserSession(),
+    getOrganizationSettings()
+  ]);
   const isClient = user?.role === 'CLIENTE';
+  const orgData = orgResult.success ? orgResult.data : null;
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -49,7 +55,12 @@ export default async function RootLayout({
         >
           {/* <PWAInit /> */}
           <MainLayout initialIsClient={isClient}>
-            <DynamicBrand />
+            <DynamicBrand
+              primaryColor={orgData?.primaryColor}
+              sidebarColor={orgData?.sidebarColor}
+              sidebarTextColor={orgData?.sidebarTextColor}
+              borderRadius={orgData?.borderRadius}
+            />
             {children}
           </MainLayout>
           <Toaster position="bottom-right" />
@@ -58,3 +69,4 @@ export default async function RootLayout({
     </html >
   );
 }
+

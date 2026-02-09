@@ -149,8 +149,9 @@ export async function getDashboardStats(period: string = '30d') {
     return getCachedDashboardStats(period);
 }
 
-export async function getAttentionItems() {
-    try {
+// Cache attention items for 30 seconds
+const getCachedAttentionItems = unstable_cache(
+    async () => {
         const now = new Date();
         const threeDaysFromNow = new Date();
         threeDaysFromNow.setDate(now.getDate() + 3);
@@ -199,6 +200,14 @@ export async function getAttentionItems() {
             pendingInvoices,
             urgentProjects
         };
+    },
+    ['attention-items'],
+    { revalidate: 30 }
+);
+
+export async function getAttentionItems() {
+    try {
+        return await getCachedAttentionItems();
     } catch (error) {
         console.error("Attention Items Error:", error);
         return {
@@ -209,14 +218,14 @@ export async function getAttentionItems() {
     }
 }
 
-export async function getCalendarEvents() {
-    try {
+// Cache calendar events for 60 seconds
+const getCachedCalendarEvents = unstable_cache(
+    async () => {
         const now = new Date();
         const startFilter = new Date(now);
-        startFilter.setMonth(now.getMonth() - 6); // Optimize: fetch only last 6 months + future
+        startFilter.setMonth(now.getMonth() - 6);
 
         const [tasks, projects, contracts, contents, milestones, users] = await Promise.all([
-            // Tasks with due dates
             db.task.findMany({
                 where: {
                     dueDate: {
@@ -233,7 +242,6 @@ export async function getCalendarEvents() {
                     project: { select: { name: true } }
                 }
             }),
-            // Projects with due dates
             db.project.findMany({
                 where: {
                     dueDate: {
@@ -249,7 +257,6 @@ export async function getCalendarEvents() {
                     client: { select: { name: true } }
                 }
             }),
-            // Contracts/Agreements
             db.contract.findMany({
                 where: {
                     startDate: { gte: startFilter }
@@ -263,7 +270,6 @@ export async function getCalendarEvents() {
                     client: { select: { name: true } }
                 }
             }),
-            // Content with publish dates
             db.content.findMany({
                 where: {
                     publishDate: {
@@ -280,7 +286,6 @@ export async function getCalendarEvents() {
                     project: { select: { name: true } }
                 }
             }),
-            // Milestones
             db.milestone.findMany({
                 where: {
                     date: { gte: startFilter }
@@ -293,13 +298,11 @@ export async function getCalendarEvents() {
                     project: { select: { name: true } }
                 }
             }),
-            // Users for filter
             db.user.findMany({
                 select: { id: true, name: true }
             })
         ]);
 
-        // Transform to unified event format
         const events = [
             ...tasks.map(t => ({
                 id: t.id,
@@ -344,6 +347,14 @@ export async function getCalendarEvents() {
         ];
 
         return { events, users };
+    },
+    ['calendar-events'],
+    { revalidate: 60 }
+);
+
+export async function getCalendarEvents() {
+    try {
+        return await getCachedCalendarEvents();
     } catch (error) {
         console.error("Calendar Events Error:", error);
         return { events: [], users: [] };

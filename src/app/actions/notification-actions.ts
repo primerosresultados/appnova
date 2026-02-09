@@ -3,40 +3,60 @@
 import { db } from "@/lib/db";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { unstable_cache } from "next/cache";
 
-export async function getDashboardNotifications() {
-    try {
-        // 1. Pending tasks with close deadlines (next 7 days)
+// Cache notifications for 60 seconds
+const getCachedNotifications = unstable_cache(
+    async () => {
         const now = new Date();
         const nextWeek = new Date();
         nextWeek.setDate(now.getDate() + 7);
 
-        const urgentTasks = await db.task.findMany({
-            where: {
-                status: { not: 'DONE' },
-                dueDate: {
-                    lte: nextWeek,
-                    gte: now
-                }
-            },
-            include: {
-                project: true
-            },
-            take: 3,
-            orderBy: { dueDate: 'asc' }
-        });
+        const [urgentTasks, recentPayments] = await Promise.all([
+            db.task.findMany({
+                where: {
+                    status: { not: 'DONE' },
+                    dueDate: {
+                        lte: nextWeek,
+                        gte: now
+                    }
+                },
+                select: {
+                    id: true,
+                    title: true,
+                    dueDate: true,
+                    priority: true,
+                    projectId: true,
+                    project: { select: { name: true } }
+                },
+                take: 3,
+                orderBy: { dueDate: 'asc' }
+            }),
+            db.transaction.findMany({
+                where: {
+                    type: 'INCOME',
+                    status: 'COMPLETED'
+                },
+                select: {
+                    id: true,
+                    amount: true,
+                    description: true,
+                },
+                take: 3,
+                orderBy: { date: 'desc' }
+            })
+        ]);
 
-        // 2. Recent payments (last 5 transactions of type INCOME)
-        const recentPayments = await db.transaction.findMany({
-            where: {
-                type: 'INCOME',
-                status: 'COMPLETED'
-            },
-            take: 3,
-            orderBy: { date: 'desc' }
-        });
+        return { urgentTasks, recentPayments };
+    },
+    ['dashboard-notifications'],
+    { revalidate: 60 }
+);
 
-        // Map to a common format
+export async function getDashboardNotifications() {
+    try {
+        const { urgentTasks, recentPayments } = await getCachedNotifications();
+
         const notifications = [
             ...urgentTasks.map(t => ({
                 id: `task-${t.id}`,
@@ -44,7 +64,7 @@ export async function getDashboardNotifications() {
                 title: `Tarea próxima: ${t.title}`,
                 description: `${t.project.name} - Vence ${formatDistanceToNow(new Date(t.dueDate!), { addSuffix: true, locale: es })}`,
                 priority: t.priority,
-                href: `/projects/${t.projectId}` // Navigate to project context
+                href: `/projects/${t.projectId}`
             })),
             ...recentPayments.map(p => ({
                 id: `payment-${p.id}`,
@@ -62,3 +82,4 @@ export async function getDashboardNotifications() {
         return { success: false, notifications: [] };
     }
 }
+

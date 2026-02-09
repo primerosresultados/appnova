@@ -44,7 +44,3 @@ export default function FinancePage() {
         </Suspense>
     );
 }
-
-// Force dynamic needed to ensure we always fetch latest financial data
-export const dynamic = 'force-dynamic';
-

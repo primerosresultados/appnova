@@ -54,14 +54,16 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
         }
     }, [isEditOpen, task.description]);
 
-    // Form Action for Edit
-    const [editState, editAction] = useActionState(async (prevState: any, formData: FormData) => {
-        const result = await updateTask(task.id, prevState, formData);
-        if (result.success) {
+    // Form Action for Edit - bind taskId to the server action
+    const updateTaskWithId = updateTask.bind(null, task.id);
+    const [editState, editAction] = useActionState(updateTaskWithId, { message: "", success: false });
+
+    // Close dialog on successful edit
+    useEffect(() => {
+        if (editState.success) {
             setIsEditOpen(false);
         }
-        return result;
-    }, { message: "", success: false });
+    }, [editState.success]);
 
     // Upload State
     const [isUploadOpen, setIsUploadOpen] = useState(false);

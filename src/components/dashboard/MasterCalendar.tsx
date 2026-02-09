@@ -192,7 +192,7 @@ export function MasterCalendar({ events, users }: MasterCalendarProps) {
                     </div>
 
                     {/* Events List */}
-                    <div className="w-full lg:w-[350px] p-5 md:p-6">
+                    <div className="w-full lg:w-[350px] lg:max-w-[350px] p-5 md:p-6 overflow-hidden">
                         <h4 className="text-sm font-bold mb-4">
                             {selectedDate
                                 ? format(selectedDate, "d 'de' MMMM", { locale: es })
@@ -214,12 +214,12 @@ export function MasterCalendar({ events, users }: MasterCalendarProps) {
                                         return (
                                             <div
                                                 key={event.id}
-                                                className={`p-3 rounded-lg border ${config.color}`}
+                                                className={`p-3 rounded-lg border ${config.color} overflow-hidden`}
                                             >
                                                 <div className="flex items-start gap-2">
                                                     <Icon className="h-4 w-4 mt-0.5 shrink-0" />
-                                                    <div className="flex-1 min-w-0">
-                                                        <h5 className="font-medium text-sm truncate">{event.title}</h5>
+                                                    <div className="flex-1 min-w-0 overflow-hidden">
+                                                        <h5 className="font-medium text-sm truncate max-w-full">{event.title}</h5>
                                                         <div className="flex items-center gap-2 mt-1 flex-wrap">
                                                             <Badge variant="outline" className="text-[9px] h-4">
                                                                 {config.label}

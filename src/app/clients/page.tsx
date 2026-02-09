@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic';
 import { Suspense } from "react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";

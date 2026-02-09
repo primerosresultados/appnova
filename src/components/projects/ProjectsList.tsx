@@ -1,8 +1,10 @@
 import { db } from "@/lib/db";
 import { ProjectsListClient } from "@/components/projects/ProjectsListClient";
+import { unstable_cache } from "next/cache";
 
-async function getProjects() {
-    try {
+// Cache projects list for 30 seconds
+const getCachedProjects = unstable_cache(
+    async () => {
         const projects = await db.project.findMany({
             take: 50,
             orderBy: { updatedAt: "desc" },
@@ -36,6 +38,14 @@ async function getProjects() {
             }
         });
         return projects;
+    },
+    ['projects-list'],
+    { revalidate: 30 }
+);
+
+async function getProjects() {
+    try {
+        return await getCachedProjects();
     } catch (error) {
         console.error("Error fetching projects:", error);
         return [];

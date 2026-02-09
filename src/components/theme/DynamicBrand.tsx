@@ -1,31 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getOrganizationSettings } from "@/app/actions/organization-actions";
+import { useEffect } from "react";
 
-export function DynamicBrand() {
-    const [primaryColor, setPrimaryColor] = useState<string | null>(null);
-    const [sidebarColor, setSidebarColor] = useState<string | null>(null);
-    const [sidebarTextColor, setSidebarTextColor] = useState<string | null>(null);
-    const [borderRadius, setBorderRadius] = useState<string | null>(null);
+interface DynamicBrandProps {
+    primaryColor?: string | null;
+    sidebarColor?: string | null;
+    sidebarTextColor?: string | null;
+    borderRadius?: string | null;
+}
 
-    useEffect(() => {
-        const fetchSettings = async () => {
-            try {
-                const { data, success } = await getOrganizationSettings();
-                if (success) {
-                    if (data?.primaryColor) setPrimaryColor(data.primaryColor);
-                    if (data?.sidebarColor) setSidebarColor(data.sidebarColor);
-                    if (data?.sidebarTextColor) setSidebarTextColor(data.sidebarTextColor);
-                    if (data?.borderRadius) setBorderRadius(data.borderRadius);
-                }
-            } catch (error) {
-                console.error("Failed to fetch brand settings:", error);
-            }
-        };
-        fetchSettings();
-    }, []);
-
+export function DynamicBrand({ primaryColor, sidebarColor, sidebarTextColor, borderRadius }: DynamicBrandProps) {
     useEffect(() => {
         const root = document.documentElement;
 
@@ -49,3 +33,4 @@ export function DynamicBrand() {
 
     return null;
 }
+

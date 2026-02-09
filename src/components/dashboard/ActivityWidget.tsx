@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { unstable_cache } from "next/cache";
 
-async function getRecentActivity() {
-    try {
+// Cache recent activity for 30 seconds
+const getCachedRecentActivity = unstable_cache(
+    async () => {
         const logs = await db.actionLog.findMany({
             take: 5,
             orderBy: { createdAt: 'desc' },
@@ -22,6 +24,14 @@ async function getRecentActivity() {
             }
         });
         return logs;
+    },
+    ['recent-activity'],
+    { revalidate: 30 }
+);
+
+async function getRecentActivity() {
+    try {
+        return await getCachedRecentActivity();
     } catch (error) {
         return [];
     }
