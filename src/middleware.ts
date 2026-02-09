@@ -2,6 +2,15 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+    const path = request.nextUrl.pathname
+
+    // Skip auth check entirely for public paths — saves a Supabase network round-trip
+    const isPublicPath = path === '/login' || path.startsWith('/auth') || path === '/favicon.ico'
+
+    if (isPublicPath) {
+        return NextResponse.next()
+    }
+
     let response = NextResponse.next({
         request: {
             headers: request.headers,
@@ -35,28 +44,14 @@ export async function middleware(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
-    const path = request.nextUrl.pathname
-
-    // Public paths that don't need auth
-    const isPublicPath = path === '/login' || path.startsWith('/auth') || path.startsWith('/_next') || path.startsWith('/static') || path === '/favicon.ico'
-
     // Block unauthenticated access to protected routes
-    if (!user && !isPublicPath) {
+    if (!user) {
         return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // Block authenticated users from accessing login
-    if (user && path === '/login') {
-        return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
-
-    // If user is accessing root /, redirect to dashboard if logged in, or login if not
+    // If user is accessing root /, redirect to dashboard
     if (path === '/') {
-        if (user) {
-            return NextResponse.redirect(new URL('/dashboard', request.url))
-        } else {
-            return NextResponse.redirect(new URL('/login', request.url))
-        }
+        return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
     return response
@@ -69,8 +64,10 @@ export const config = {
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
-         * Feel free to modify this pattern to include more paths.
+         * - static assets (images, fonts, etc.)
+         * - API routes that handle their own auth
          */
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2)$).*)',
     ],
 }
+
