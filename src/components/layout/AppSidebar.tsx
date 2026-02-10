@@ -37,6 +37,21 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
     });
   }, []);
 
+  // Don't render anything until mounted to avoid hydration mismatch
+  // (user, orgSettings, and mounted state all differ between server and client)
+  if (!mounted) {
+    return (
+      <aside
+        suppressHydrationWarning
+        className={cn(
+          "fixed left-0 top-0 z-50 h-screen w-72 border-r bg-sidebar/95 backdrop-blur-3xl border-border transition-transform duration-300 shadow-2xl md:shadow-none flex flex-col justify-between",
+          "md:translate-x-0 md:z-40",
+          "-translate-x-full md:translate-x-0"
+        )}
+      />
+    );
+  }
+
   return (
     <>
       {/* Mobile Overlay */}
@@ -48,7 +63,6 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
       )}
 
       <aside
-        suppressHydrationWarning
         className={cn(
           "fixed left-0 top-0 z-50 h-screen w-72 border-r bg-sidebar/95 backdrop-blur-3xl border-border transition-transform duration-300 shadow-2xl md:shadow-none flex flex-col justify-between",
           "md:translate-x-0 md:z-40",

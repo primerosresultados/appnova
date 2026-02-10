@@ -88,12 +88,14 @@ function ClientTasksWrapper({ tasks }: { tasks: any[] }) {
 
 
 async function ProjectDetailsContent({ id }: { id: string }) {
-    // 1. Fetch User Session first (needed for permission routing)
-    const currentUser = await getUserSession();
-
-    let project = null;
+    // Fetch user session and project core in parallel (both are cached)
+    const [currentUser, project] = await Promise.all([
+        getUserSession(),
+        getProjectCore(id)
+    ]);
 
     try {
+        // Client-specific flow: re-fetch from client-scoped action
         if (currentUser?.role === 'CLIENTE') {
             const { getClientProjectDetails } = await import('@/app/actions/client-actions');
             const clientProject = await getClientProjectDetails(id);
@@ -110,8 +112,6 @@ async function ProjectDetailsContent({ id }: { id: string }) {
         }
 
         // ADMIN / REGULAR USER FLOW
-        project = await getProjectCore(id);
-
         if (!project) notFound();
 
         return (
