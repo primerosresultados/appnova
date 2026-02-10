@@ -9,6 +9,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { EditClientSheet } from "@/components/clients/EditClientSheet";
 import { NewFinancialRecordDialog } from "@/components/clients/NewFinancialRecordDialog";
+import { unstable_cache } from "next/cache";
 
 interface ClientPageProps {
     params: {
@@ -16,19 +17,28 @@ interface ClientPageProps {
     }
 }
 
-async function getClient(id: string) {
-    return await db.client.findUnique({
-        where: { id },
-        include: {
-            projects: true,
-            financialRecords: {
-                orderBy: { date: 'desc' }
-            },
-            clientNotes: {
-                orderBy: { createdAt: 'desc' }
+// Cache client detail for 30 seconds to avoid hitting DB on every page view
+const getCachedClient = unstable_cache(
+    async (id: string) => {
+        return db.client.findUnique({
+            where: { id },
+            include: {
+                projects: true,
+                financialRecords: {
+                    orderBy: { date: 'desc' }
+                },
+                clientNotes: {
+                    orderBy: { createdAt: 'desc' }
+                }
             }
-        }
-    });
+        });
+    },
+    ['client-detail'],
+    { revalidate: 30 }
+);
+
+async function getClient(id: string) {
+    return getCachedClient(id);
 }
 
 // Define params type compatible with Next.js 15+
