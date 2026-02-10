@@ -44,18 +44,25 @@ export async function updateContent(contentId: string, projectId: string, formDa
     const status = formData.get("status") as string;
 
     try {
+        // Build update data conditionally to avoid overwriting with null
+        const updateData: Record<string, any> = {
+            title,
+            type,
+            description: description || null,
+            mediaUrl: mediaUrl || null,
+            links: links || null,
+            status,
+            publishDate: publishDate ? new Date(publishDate) : null,
+        };
+
+        // Only update fileUrl if explicitly provided (to preserve existing uploads)
+        if (fileUrl) {
+            updateData.fileUrl = fileUrl;
+        }
+
         await db.content.update({
             where: { id: contentId },
-            data: {
-                title,
-                type,
-                description,
-                mediaUrl,
-                fileUrl,
-                links,
-                status,
-                publishDate: publishDate ? new Date(publishDate) : null,
-            }
+            data: updateData,
         });
         revalidatePath(`/projects/${projectId}`);
         return { success: true };
@@ -64,6 +71,7 @@ export async function updateContent(contentId: string, projectId: string, formDa
         return { success: false };
     }
 }
+
 
 export async function updateContentStatus(contentId: string, status: string, projectId: string) {
     try {

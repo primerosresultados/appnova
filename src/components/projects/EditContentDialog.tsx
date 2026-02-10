@@ -14,8 +14,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2, Upload, X, FileIcon } from "lucide-react";
 import { updateContent } from "@/app/projects/content-actions";
+import { uploadFile } from "@/app/actions/upload-actions";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -35,9 +36,20 @@ export function EditContentDialog({ content, projectId, open, onOpenChange }: Ed
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [date, setDate] = useState<Date | undefined>(content.publishDate ? new Date(content.publishDate) : undefined);
     const [previewUrl, setPreviewUrl] = useState<string | null>(content.mediaUrl);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setPreviewUrl(e.target.value);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setSelectedFile(file);
+            if (file.type.startsWith('image/')) {
+                setPreviewUrl(URL.createObjectURL(file));
+            }
+        }
     };
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -47,6 +59,30 @@ export function EditContentDialog({ content, projectId, open, onOpenChange }: Ed
         const formData = new FormData(event.currentTarget);
         if (date) {
             formData.set("publishDate", date.toISOString());
+        }
+
+        // Preserve existing fileUrl if not uploading a new file
+        if (!selectedFile && content.fileUrl) {
+            formData.set("fileUrl", content.fileUrl);
+        }
+
+        // Handle new file upload
+        if (selectedFile) {
+            const uploadFormData = new FormData();
+            uploadFormData.append("file", selectedFile);
+            const uploadResult = await uploadFile(uploadFormData);
+
+            if (uploadResult.success && uploadResult.url) {
+                formData.set("fileUrl", uploadResult.url);
+                // If the uploaded file is an image and user didn't manually set a mediaUrl, use the uploaded image
+                if (selectedFile.type.startsWith('image/')) {
+                    formData.set("mediaUrl", uploadResult.url);
+                }
+            } else {
+                toast.error("Error al subir archivo");
+                setIsSubmitting(false);
+                return;
+            }
         }
 
         const result = await updateContent(content.id, projectId, formData);
@@ -143,9 +179,43 @@ export function EditContentDialog({ content, projectId, open, onOpenChange }: Ed
                     <div className="grid gap-2">
                         <Label htmlFor="mediaUrl">URL de Previsualización (Drive, YouTube, Imagen)</Label>
                         <Input id="mediaUrl" name="mediaUrl" defaultValue={content.mediaUrl || ""} onChange={handleUrlChange} />
-                        <div className="aspect-video w-full mt-2 rounded-lg border border-border/50 overflow-hidden">
+
+                        <div className="aspect-video w-full mt-2 rounded-lg border border-border/50 overflow-hidden relative">
                             <MediaPreview url={previewUrl} type={content.type} />
+
+                            {selectedFile && (
+                                <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="destructive"
+                                    className="absolute top-2 right-2 h-6 w-6"
+                                    onClick={() => {
+                                        setSelectedFile(null);
+                                        setPreviewUrl(content.mediaUrl);
+                                    }}
+                                >
+                                    <X className="h-3 w-3" />
+                                </Button>
+                            )}
                         </div>
+
+                        {!selectedFile && (
+                            <div className="flex items-center justify-center w-full">
+                                <label className="flex flex-col items-center justify-center w-full h-10 border border-border border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                                    <div className="flex items-center gap-2">
+                                        <Upload className="w-4 h-4 text-muted-foreground" />
+                                        <p className="text-xs text-muted-foreground">O sube un archivo local</p>
+                                    </div>
+                                    <input type="file" className="hidden" accept="image/*,video/*" onChange={handleFileChange} />
+                                </label>
+                            </div>
+                        )}
+                        {selectedFile && !selectedFile.type.startsWith('image/') && (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground p-2 bg-secondary/20 rounded">
+                                <FileIcon className="h-4 w-4" />
+                                <span className="truncate flex-1">{selectedFile.name}</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="grid gap-2">
