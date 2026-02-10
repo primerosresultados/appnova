@@ -17,8 +17,10 @@ import { BrandTab } from "@/components/settings/BrandTab";
 import { MetaConnectionCard } from "@/components/settings/MetaConnectionCard";
 
 export default async function SettingsPage() {
-    const users = await getUsers();
-    const orgSettings = await getOrganizationSettings();
+    const [users, orgSettings] = await Promise.all([
+        getUsers(),
+        getOrganizationSettings()
+    ]);
 
     return (
         <div className="space-y-6 animate-in fade-in-50 duration-500">

@@ -2,6 +2,25 @@
 
 import { db } from "@/lib/db";
 import { getUserSession } from "./auth-actions";
+import { unstable_cache } from "next/cache";
+
+// Cached fetcher for client projects list (keyed by clientId)
+const getCachedClientProjects = unstable_cache(
+    async (clientId: string) => {
+        return db.project.findMany({
+            where: { clientId },
+            select: {
+                id: true,
+                name: true,
+                status: true,
+                client: { select: { name: true } }
+            },
+            orderBy: { updatedAt: 'desc' }
+        });
+    },
+    ['client-projects'],
+    { revalidate: 30 }
+);
 
 export async function getClientProjects() {
     const user = await getUserSession();
@@ -11,25 +30,7 @@ export async function getClientProjects() {
     }
 
     try {
-        const projects = await db.project.findMany({
-            where: {
-                clientId: user.clientId
-            },
-            select: {
-                id: true,
-                name: true,
-                status: true,
-                client: {
-                    select: {
-                        name: true
-                    }
-                }
-            },
-            orderBy: {
-                updatedAt: 'desc'
-            }
-        });
-
+        const projects = await getCachedClientProjects(user.clientId);
         return { success: true, data: projects };
     } catch (error) {
         console.error("Error fetching client projects:", error);
@@ -37,17 +38,15 @@ export async function getClientProjects() {
     }
 }
 
-export async function getClientProjectDetails(id: string) {
-    const user = await getUserSession();
+// Cached fetcher for client project details (keyed by projectId + clientId + userId)
+const getCachedClientProjectDetails = unstable_cache(
+    async (projectId: string, clientId: string | null, userId: string | null) => {
+        const where: any = { id: projectId };
+        if (clientId) {
+            where.clientId = clientId;
+        }
 
-    // Ensure the project belongs to the client (if user is client)
-    const where: any = { id };
-    if (user?.role === 'CLIENTE' && user.clientId) {
-        where.clientId = user.clientId;
-    }
-
-    try {
-        const project = await db.project.findUnique({
+        return db.project.findUnique({
             where,
             include: {
                 client: { select: { id: true, name: true, email: true, phone: true } },
@@ -64,7 +63,7 @@ export async function getClientProjectDetails(id: string) {
                     where: {
                         OR: [
                             { isPublic: true },
-                            { userId: user?.id }
+                            ...(userId ? [{ userId }] : [])
                         ]
                     },
                     orderBy: { createdAt: 'asc' },
@@ -119,7 +118,17 @@ export async function getClientProjectDetails(id: string) {
                 }
             }
         });
+    },
+    ['client-project-details'],
+    { revalidate: 30 }
+);
 
+export async function getClientProjectDetails(id: string) {
+    const user = await getUserSession();
+
+    try {
+        const clientId = (user?.role === 'CLIENTE' && user.clientId) ? user.clientId : null;
+        const project = await getCachedClientProjectDetails(id, clientId, user?.id || null);
         return project;
     } catch (error) {
         console.error("Error fetching client project details:", error);

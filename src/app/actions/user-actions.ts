@@ -3,13 +3,29 @@
 import { db } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { revalidatePath } from "next/cache";
+import { unstable_cache } from "next/cache";
+
+const getCachedUsers = unstable_cache(
+    async () => {
+        return db.user.findMany({
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                avatar: true,
+                clientId: true,
+            },
+            orderBy: { name: 'asc' }
+        });
+    },
+    ['users-list-settings'],
+    { revalidate: 60 }
+);
 
 export async function getUsers() {
     try {
-        const users = await db.user.findMany({
-            orderBy: { name: 'asc' }
-        });
-        return users;
+        return await getCachedUsers();
     } catch (error) {
         console.error("Failed to fetch users:", error);
         return [];

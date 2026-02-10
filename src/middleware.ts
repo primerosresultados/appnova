@@ -4,8 +4,8 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname
 
-    // Skip auth check entirely for public paths — saves a Supabase network round-trip
-    const isPublicPath = path === '/login' || path.startsWith('/auth') || path === '/favicon.ico'
+    // Skip auth check entirely for public paths and API routes — saves a Supabase network round-trip
+    const isPublicPath = path === '/login' || path.startsWith('/auth') || path === '/favicon.ico' || path.startsWith('/api/')
 
     if (isPublicPath) {
         return NextResponse.next()
@@ -64,10 +64,9 @@ export const config = {
          * - _next/static (static files)
          * - _next/image (image optimization files)
          * - favicon.ico (favicon file)
-         * - static assets (images, fonts, etc.)
-         * - API routes that handle their own auth
+         * - static assets (images, fonts, videos, scripts, etc.)
+         * - API routes (handle their own auth)
          */
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2)$).*)',
+        '/((?!_next/static|_next/image|favicon.ico|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff|woff2|mp4|webm|json|css|js)$).*)',
     ],
 }
-
