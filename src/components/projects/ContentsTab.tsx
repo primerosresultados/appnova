@@ -98,7 +98,7 @@ export function ContentsTab({ projectId, contents, isClient = false }: ContentsT
                         return (
                             <Card key={item.id} className="group overflow-hidden bg-card border-border/50 hover:border-primary/50 transition-all hover:shadow-2xl hover:shadow-primary/5">
                                 <div className="aspect-video relative overflow-hidden bg-muted">
-                                    <MediaPreview url={item.mediaUrl} type={item.type} />
+                                    <MediaPreview url={item.mediaUrl || item.fileUrl} type={item.type} />
                                     <div className="absolute top-2 left-2 flex gap-2">
                                         <Badge className={`${config.color} border-none backdrop-blur-md`}>
                                             <Icon className="h-3 w-3 mr-1" />
@@ -140,21 +140,39 @@ export function ContentsTab({ projectId, contents, isClient = false }: ContentsT
                                         {item.description || "Sin descripción."}
                                     </p>
 
-                                    {item.publishDate && (
-                                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium pt-1">
-                                            <CalendarIcon className="h-3 w-3" />
-                                            <span>Publicación: {format(new Date(item.publishDate), "PPP", { locale: es })}</span>
-                                        </div>
-                                    )}
+                                    {/* Creator and date info */}
+                                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                                        {item.creator && (
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="h-5 w-5 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[8px] font-bold text-white shrink-0">
+                                                    {item.creator.name?.substring(0, 2).toUpperCase() || "??"}
+                                                </div>
+                                                <span className="font-medium truncate max-w-[100px]">{item.creator.name}</span>
+                                            </div>
+                                        )}
+                                        {item.publishDate && (
+                                            <div className="flex items-center gap-1">
+                                                <CalendarIcon className="h-3 w-3" />
+                                                <span>{format(new Date(item.publishDate), "dd MMM yyyy", { locale: es })}</span>
+                                            </div>
+                                        )}
+                                    </div>
 
                                     <div className="flex items-center justify-between pt-2 border-t border-border/40">
                                         <Badge variant="secondary" className={`${status.color} border-none text-[10px] py-0 px-2 h-5`}>
                                             {status.label}
                                         </Badge>
                                         <div className="flex gap-1">
+                                            {item.fileUrl && (
+                                                <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
+                                                    <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" title="Ver archivo">
+                                                        <FileText className="h-3.5 w-3.5" />
+                                                    </a>
+                                                </Button>
+                                            )}
                                             {item.links && (
                                                 <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-                                                    <a href={item.links} target="_blank" rel="noopener noreferrer">
+                                                    <a href={item.links} target="_blank" rel="noopener noreferrer" title="Link externo">
                                                         <ExternalLink className="h-3.5 w-3.5" />
                                                     </a>
                                                 </Button>

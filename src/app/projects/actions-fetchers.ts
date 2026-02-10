@@ -101,7 +101,10 @@ const getCachedProjectContents = unstable_cache(
     async (id: string) => {
         return db.content.findMany({
             where: { projectId: id },
-            orderBy: { publishDate: 'asc' }
+            orderBy: { publishDate: 'asc' },
+            include: {
+                creator: { select: { id: true, name: true, avatar: true } }
+            }
         });
     },
     ['project-contents'],
