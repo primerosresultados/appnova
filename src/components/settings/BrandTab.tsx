@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Upload, Palette, Loader2, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -15,14 +16,45 @@ interface BrandTabProps {
     initialData: any;
 }
 
+// Helper to apply theme changes immediately without page reload
+function applyThemeToDOM(settings: { primaryColor?: string; sidebarColor?: string; sidebarTextColor?: string; borderRadius?: string }) {
+    const root = document.documentElement;
+    if (settings.sidebarColor) {
+        root.style.setProperty('--sidebar', settings.sidebarColor);
+    }
+    if (settings.primaryColor) {
+        root.style.setProperty('--primary', settings.primaryColor);
+    }
+    if (settings.sidebarTextColor) {
+        root.style.setProperty('--sidebar-muted-custom', settings.sidebarTextColor);
+        root.style.setProperty('--sidebar-foreground', settings.sidebarTextColor);
+    }
+    if (settings.borderRadius) {
+        root.style.setProperty('--radius', settings.borderRadius);
+    }
+}
+
 export function BrandTab({ initialData }: BrandTabProps) {
+    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [logoUrl, setLogoUrl] = useState(initialData?.logoUrl || "");
     const [logoDarkUrl, setLogoDarkUrl] = useState(initialData?.logoDarkUrl || "");
     const [primaryColor, setPrimaryColor] = useState(initialData?.primaryColor || "#6366f1");
-    const [sidebarColor, setSidebarColor] = useState(initialData?.sidebarColor || "#ffffff");
-    const [sidebarTextColor, setSidebarTextColor] = useState(initialData?.sidebarTextColor || "#64748b");
+    const [sidebarColor, setSidebarColor] = useState(initialData?.sidebarColor || "#0a0a0a");
+    const [sidebarTextColor, setSidebarTextColor] = useState(initialData?.sidebarTextColor || "#ffffff");
     const [borderRadius, setBorderRadius] = useState(initialData?.borderRadius || "0.5rem");
+
+    // Sync state when initialData changes (e.g. after router.refresh())
+    useEffect(() => {
+        if (initialData) {
+            if (initialData.logoUrl !== undefined) setLogoUrl(initialData.logoUrl || "");
+            if (initialData.logoDarkUrl !== undefined) setLogoDarkUrl(initialData.logoDarkUrl || "");
+            if (initialData.primaryColor) setPrimaryColor(initialData.primaryColor);
+            if (initialData.sidebarColor) setSidebarColor(initialData.sidebarColor);
+            if (initialData.sidebarTextColor) setSidebarTextColor(initialData.sidebarTextColor);
+            if (initialData.borderRadius) setBorderRadius(initialData.borderRadius);
+        }
+    }, [initialData]);
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, isDark: boolean = false) => {
         const file = e.target.files?.[0];
@@ -66,8 +98,10 @@ export function BrandTab({ initialData }: BrandTabProps) {
 
             if (result.success) {
                 toast.success("Configuración de marca actualizada");
-                // Force a reload to update the theme everywhere immediately
-                window.location.reload();
+                // Apply theme changes immediately to the DOM (no page reload needed)
+                applyThemeToDOM({ primaryColor, sidebarColor, sidebarTextColor, borderRadius });
+                // Soft-refresh server data without full hydration cycle
+                router.refresh();
             } else {
                 toast.error("Error al guardar los cambios");
             }

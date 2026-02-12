@@ -360,6 +360,8 @@ model Transaction {
   @@index([projectId])
   @@index([clientId])
   @@index([date])
+  @@index([type, date]) // For filtering by type and sorting by date
+  @@index([type, amount]) // For fast aggregations of income/expense
 }
 
 model Contract {

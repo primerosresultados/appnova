@@ -21,7 +21,21 @@ const getCachedUser = unstable_cache(
 export const getUserSession = cache(async () => {
     try {
         const supabase = await createClient();
+
+        // Temporarily suppress console.error during getUser() to prevent
+        // Supabase's internal AuthApiError logging from appearing in the
+        // Next.js dev overlay when the refresh token is expired/missing.
+        const originalConsoleError = console.error;
+        console.error = (...args: any[]) => {
+            const fullMsg = args.map(a => (a instanceof Error ? a.message : String(a))).join(' ');
+            if (fullMsg.includes('AuthApiError') || fullMsg.includes('Refresh Token')) return;
+            originalConsoleError.apply(console, args);
+        };
+
         const { data: { user }, error } = await supabase.auth.getUser();
+
+        // Restore console.error immediately
+        console.error = originalConsoleError;
 
         if (error || !user || !user.email) {
             return null;
@@ -32,7 +46,7 @@ export const getUserSession = cache(async () => {
 
         return dbUser;
     } catch (error) {
-        console.error("Error getting user session:", error);
+        // Expected when not logged in — don't log to avoid dev overlay noise
         return null;
     }
 });

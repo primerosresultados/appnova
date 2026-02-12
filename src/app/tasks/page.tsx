@@ -20,13 +20,13 @@ const getCachedTasks = unstable_cache(
                     },
                     assignee: { select: { id: true, name: true, avatar: true, role: true } }
                 },
-                take: 100
+                take: 50
             });
         } else {
             return db.task.findMany({
                 where: { assigneeId: userId! },
                 orderBy: { createdAt: 'desc' },
-                take: 100,
+                take: 50,
                 include: {
                     project: {
                         select: {

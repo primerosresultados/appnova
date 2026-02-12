@@ -58,12 +58,14 @@ const typeConfig: Record<string, { label: string; color: string; cellColor: stri
 };
 
 const WEEKDAYS = ["DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SAB"];
+const WEEKDAYS_SHORT = ["D", "L", "M", "M", "J", "V", "S"];
 
 export function MasterCalendar({ events, users }: MasterCalendarProps) {
     const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
     const [selectedType, setSelectedType] = useState<string>("all");
     const [selectedUser, setSelectedUser] = useState<string>("all");
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+    const [selectedDay, setSelectedDay] = useState<Date>(new Date());
 
     // Filter events
     const filteredEvents = events.filter(event => {
@@ -139,9 +141,9 @@ export function MasterCalendar({ events, users }: MasterCalendarProps) {
             </CardHeader>
             <CardContent className="p-0">
                 {/* Calendar Header with navigation */}
-                <div className="flex items-center justify-between p-4 border-b border-border/30 bg-card/50">
-                    <div className="flex items-center gap-4">
-                        <h2 className="text-lg font-bold capitalize">
+                <div className="flex items-center justify-between p-3 md:p-4 border-b border-border/30 bg-card/50">
+                    <div className="flex items-center gap-2 md:gap-4">
+                        <h2 className="text-base md:text-lg font-bold capitalize">
                             {format(currentMonth, "MMMM yyyy", { locale: es })}
                         </h2>
                         <div className="flex items-center rounded-md border border-border/50 bg-background/50 shadow-sm">
@@ -159,70 +161,139 @@ export function MasterCalendar({ events, users }: MasterCalendarProps) {
                 </div>
 
                 {/* Calendar Grid */}
-                <div className="overflow-auto">
-                    <div className="w-full min-w-[800px] flex flex-col">
-                        {/* Weekday Headers */}
-                        <div className="grid grid-cols-7 border-b border-border/50 bg-muted/20">
-                            {WEEKDAYS.map((day) => (
-                                <div key={day} className="py-2 text-center text-xs font-semibold text-muted-foreground">
-                                    {day}
-                                </div>
-                            ))}
-                        </div>
+                <div className="w-full flex flex-col">
+                    {/* Weekday Headers */}
+                    <div className="grid grid-cols-7 border-b border-border/50 bg-muted/20">
+                        {WEEKDAYS.map((day, i) => (
+                            <div key={day} className="py-2 text-center text-xs font-semibold text-muted-foreground">
+                                <span className="hidden md:inline">{day}</span>
+                                <span className="md:hidden">{WEEKDAYS_SHORT[i]}</span>
+                            </div>
+                        ))}
+                    </div>
 
-                        {/* Days Grid */}
-                        <div className="grid grid-cols-7 bg-border/20 gap-px">
-                            {calendarDays.map((day) => {
-                                const dayEvents = getEventsForDay(day);
-                                const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
-                                const isTodayDate = isToday(day);
+                    {/* Days Grid */}
+                    <div className="grid grid-cols-7 bg-border/20 gap-px">
+                        {calendarDays.map((day) => {
+                            const dayEvents = getEventsForDay(day);
+                            const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
+                            const isTodayDate = isToday(day);
+                            const isSelected = isSameDay(day, selectedDay);
 
-                                return (
-                                    <div
-                                        key={day.toISOString()}
-                                        className={cn(
-                                            "min-h-[120px] bg-card p-2 flex flex-col gap-1 transition-colors hover:bg-accent/5 group relative",
-                                            !isCurrentMonth && "bg-muted/10 text-muted-foreground/50",
-                                            isTodayDate && "bg-primary/5"
-                                        )}
-                                    >
-                                        <div className="flex justify-between items-start">
-                                            <span className={cn(
-                                                "text-sm font-medium h-6 w-6 flex items-center justify-center rounded-full",
-                                                isTodayDate ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-                                                !isCurrentMonth && "opacity-50"
-                                            )}>
-                                                {format(day, "d")}
-                                            </span>
-                                        </div>
+                            return (
+                                <div
+                                    key={day.toISOString()}
+                                    className={cn(
+                                        "min-h-[60px] md:min-h-[120px] bg-card p-1.5 md:p-2 flex flex-col gap-0.5 md:gap-1 transition-colors hover:bg-accent/5 group relative cursor-pointer",
+                                        !isCurrentMonth && "bg-muted/10 text-muted-foreground/50",
+                                        isTodayDate && "bg-primary/5",
+                                        isSelected && "ring-2 ring-primary/40 ring-inset md:ring-0"
+                                    )}
+                                    onClick={() => setSelectedDay(day)}
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <span className={cn(
+                                            "text-xs md:text-sm font-medium h-5 w-5 md:h-6 md:w-6 flex items-center justify-center rounded-full",
+                                            isTodayDate ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                                            !isCurrentMonth && "opacity-50"
+                                        )}>
+                                            {format(day, "d")}
+                                        </span>
+                                    </div>
 
-                                        {/* Events List */}
-                                        <div className="flex flex-col gap-1 mt-1 overflow-y-auto max-h-[150px] scrollbar-none">
-                                            {dayEvents.map((event) => {
-                                                const config = typeConfig[event.type];
-                                                const Icon = config?.icon;
+                                    {/* Mobile: colored dots */}
+                                    {dayEvents.length > 0 && (
+                                        <div className="flex flex-wrap gap-0.5 mt-0.5 md:hidden">
+                                            {dayEvents.slice(0, 4).map((event) => {
+                                                const dotColor = event.type === 'TASK' ? 'bg-emerald-500' :
+                                                    event.type === 'PROJECT' ? 'bg-blue-500' :
+                                                        event.type === 'CONTRACT' ? 'bg-amber-500' :
+                                                            event.type === 'CONTENT' ? 'bg-purple-500' : 'bg-rose-500';
                                                 return (
-                                                    <div
-                                                        key={`${event.type}-${event.id}`}
-                                                        className={cn(
-                                                            "text-[10px] px-1.5 py-1 rounded border truncate flex items-center gap-1.5 cursor-pointer shadow-sm hover:opacity-80 transition-opacity",
-                                                            config?.cellColor
-                                                        )}
-                                                        onClick={() => setSelectedEvent(event)}
-                                                        title={event.title}
-                                                    >
-                                                        {Icon && <Icon className="h-3 w-3 shrink-0" />}
-                                                        <span className="truncate flex-1">{event.title}</span>
-                                                    </div>
+                                                    <span key={`${event.type}-${event.id}`} className={cn("h-1.5 w-1.5 rounded-full", dotColor)} />
                                                 );
                                             })}
+                                            {dayEvents.length > 4 && (
+                                                <span className="text-[8px] text-muted-foreground leading-none">+{dayEvents.length - 4}</span>
+                                            )}
                                         </div>
+                                    )}
+
+                                    {/* Desktop: full event cards */}
+                                    <div className="hidden md:flex flex-col gap-1 mt-1 overflow-y-auto max-h-[150px] scrollbar-none">
+                                        {dayEvents.map((event) => {
+                                            const config = typeConfig[event.type];
+                                            const Icon = config?.icon;
+                                            return (
+                                                <div
+                                                    key={`${event.type}-${event.id}`}
+                                                    className={cn(
+                                                        "text-[10px] px-1.5 py-1 rounded border truncate flex items-center gap-1.5 cursor-pointer shadow-sm hover:opacity-80 transition-opacity",
+                                                        config?.cellColor
+                                                    )}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedEvent(event);
+                                                    }}
+                                                    title={event.title}
+                                                >
+                                                    {Icon && <Icon className="h-3 w-3 shrink-0" />}
+                                                    <span className="truncate flex-1">{event.title}</span>
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                );
-                            })}
-                        </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
+
+                {/* Mobile: Selected day events panel */}
+                {(() => {
+                    const dayEvents = getEventsForDay(selectedDay);
+                    return (
+                        <div className="md:hidden border-t border-border/30 p-3">
+                            <h4 className="text-sm font-bold mb-2 capitalize">
+                                {format(selectedDay, "EEEE d 'de' MMMM", { locale: es })}
+                            </h4>
+                            {dayEvents.length === 0 ? (
+                                <p className="text-xs text-muted-foreground py-4 text-center">Sin eventos para este día</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {dayEvents.map((event) => {
+                                        const config = typeConfig[event.type];
+                                        const Icon = config?.icon;
+                                        return (
+                                            <div
+                                                key={`mobile-${event.type}-${event.id}`}
+                                                className={cn(
+                                                    "p-2.5 rounded-lg border flex items-start gap-2 cursor-pointer active:opacity-70",
+                                                    config?.color
+                                                )}
+                                                onClick={() => setSelectedEvent(event)}
+                                            >
+                                                {Icon && <Icon className="h-4 w-4 mt-0.5 shrink-0" />}
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium truncate">{event.title}</p>
+                                                    <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                                        <Badge variant="outline" className="text-[9px] h-4">{config?.label}</Badge>
+                                                        {event.status && <Badge variant="secondary" className="text-[9px] h-4">{event.status}</Badge>}
+                                                    </div>
+                                                    {event.assignee && (
+                                                        <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                                                            <UserIcon className="h-2.5 w-2.5" />{event.assignee.name}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
             </CardContent>
 
             {/* Event Details Dialog */}

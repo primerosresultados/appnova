@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { unstable_cache } from "next/cache";
 
 // Cache org settings for 5 minutes - rarely changes, called on every page via DynamicBrand
@@ -54,6 +54,7 @@ export async function updateOrganizationSettings(data: {
             }
         });
 
+        revalidateTag("organization-settings");
         revalidatePath("/");
         return { success: true, data: org };
     } catch (error) {

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { updateTaskStatus } from "@/app/tasks/actions";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Circle, Clock, Loader2, RefreshCw } from "lucide-react";
+import { CheckCircle2, Circle, Clock, Loader2, RefreshCw, ChevronDown } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { usePathname } from "next/navigation";
 
@@ -48,10 +48,11 @@ export function TaskStatusSelect({ taskId, status, variant = "default" }: TaskSt
         return (
             <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                 <Select value={currentStatus} onValueChange={handleStatusChange} disabled={isPending}>
-                    <SelectTrigger className="h-8 w-auto px-2 border-0 shadow-none focus:ring-0 bg-transparent p-0">
-                        <Badge variant="outline" className={`${currentOption.bg} ${currentOption.color} border-0 px-2 py-0.5 pointer-events-none flex items-center gap-1.5`}>
+                    <SelectTrigger className="h-8 w-auto px-2 border-0 shadow-none focus:ring-0 bg-transparent p-0 group/status hover:opacity-80 transition-opacity">
+                        <Badge variant="outline" className={`${currentOption.bg} ${currentOption.color} border-0 px-2 py-0.5 flex items-center gap-1.5`}>
                             {isPending ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Icon className="h-3 w-3" />}
                             {currentOption.label}
+                            <ChevronDown className="h-3 w-3 opacity-50 ml-1" />
                         </Badge>
                     </SelectTrigger>
                     <SelectContent align="start">

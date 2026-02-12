@@ -93,98 +93,71 @@ export function ClientTaskList({ initialTasks, users, userRole }: ClientTaskList
                     </div>
                 ) : (
                     finalTasks.map((task) => {
-                        const status = statusMap[task.status] || statusMap.TODO;
-                        // Rest of the component remains the same for item rendering logic provided it uses 'task'
-                        const StatusIcon = status.icon;
-
                         return (
-                            <Link key={task.id} href={`/tasks/${task.id}`}>
-                                <div className="group flex flex-col gap-3 p-4 md:p-5 rounded-xl border border-border/40 bg-card hover:bg-accent/50 hover:border-primary/20 transition-all duration-300 shadow-sm active:bg-accent cursor-pointer relative overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div key={task.id} className="group relative flex flex-col md:flex-row md:items-center gap-3 md:gap-4 p-3 md:p-4 rounded-xl border border-border/40 bg-card hover:bg-accent/50 hover:border-primary/20 transition-all duration-200 shadow-sm active:bg-accent cursor-pointer overflow-hidden">
+                                <Link href={`/tasks/${task.id}`} className="absolute inset-0 z-0 focus:outline-none" />
 
-                                    <div className="flex-1 z-10">
-                                        <div className="flex items-center flex-wrap gap-2 mb-2">
-                                            <TaskStatusSelect taskId={task.id} status={task.status} variant="minimal" />
-                                            <Badge variant="secondary" className={`${priorityMap[task.priority]?.color} border-transparent text-xs`}>
-                                                {priorityMap[task.priority]?.label}
-                                            </Badge>
-                                            <span className="text-xs text-muted-foreground ml-auto">
-                                                {format(new Date(task.createdAt), 'dd MMM', { locale: es })}
-                                            </span>
-                                        </div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
-                                        <h3 className="text-base md:text-lg font-semibold group-hover:text-primary transition-colors mb-2 line-clamp-2">
+                                {/* Left: Status & Title & Context */}
+                                <div className="flex-1 min-w-0 z-0 flex flex-col gap-1.5 pointer-events-none">
+                                    <div className="flex items-center gap-2">
+                                        {/* Status moved to right */}
+                                        <h3 className="text-sm md:text-base font-bold group-hover:text-primary transition-colors truncate">
                                             {task.title}
                                         </h3>
-
-                                        {/* Time Progress Tracking */}
-                                        <div className="space-y-2 mb-4 bg-background/30 p-3 rounded-lg border border-border/20">
-                                            <div className="flex justify-between text-[10px] uppercase tracking-wider font-bold text-muted-foreground">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Clock className="h-3 w-3" />
-                                                    <span>Creado hace {differenceInDays(new Date(), new Date(task.createdAt))} días</span>
-                                                </div>
-                                                {task.dueDate && (
-                                                    <div className="flex items-center gap-1.5">
-                                                        <span>Vence: {format(new Date(task.dueDate), 'dd MMM', { locale: es })}</span>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {task.dueDate && (
-                                                <div className="space-y-1">
-                                                    <Progress
-                                                        value={(() => {
-                                                            const start = new Date(task.createdAt).getTime();
-                                                            const end = new Date(task.dueDate).getTime();
-                                                            const now = new Date().getTime();
-                                                            if (now >= end) return 100;
-                                                            const total = end - start;
-                                                            if (total <= 0) return 100;
-                                                            const elapsed = now - start;
-                                                            return Math.min(100, Math.max(0, (elapsed / total) * 100));
-                                                        })()}
-                                                        className="h-1.5"
-                                                    />
-                                                    <div className="flex justify-end">
-                                                        <span className="text-[10px] font-medium text-primary/70">
-                                                            {(() => {
-                                                                const diff = differenceInDays(new Date(task.dueDate), new Date());
-                                                                if (diff < 0) return "Vencido";
-                                                                if (diff === 0) return "Vence hoy";
-                                                                return `Quedan ${diff} días`;
-                                                            })()}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex items-center flex-wrap gap-2 text-xs md:text-sm text-muted-foreground">
-                                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-background/50 border border-border/20">
-                                                <Badge variant="outline" className="h-2 w-2 p-0 rounded-full bg-primary/20 border-primary/40" />
-                                                <span className="truncate max-w-[120px]">{task.project.name}</span>
-                                            </div>
-                                            <span className="flex items-center gap-1 text-xs">
-                                                <User className="h-3 w-3" />
-                                                <span className="truncate max-w-[100px]">{task.project.client.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+                                        <div className="flex items-center gap-1 min-w-0">
+                                            <Badge variant="outline" className="h-4 px-1.5 text-[10px] font-normal border-border/50 bg-background/50">
+                                                {task.project.name}
+                                            </Badge>
+                                            <span className="hidden md:inline text-muted-foreground/40">•</span>
+                                            <span className="flex items-center gap-1 truncate">
+                                                <User className="h-3 w-3 opacity-70" />
+                                                <span className="truncate">{task.project.client.name}</span>
                                             </span>
                                         </div>
                                     </div>
+                                </div>
 
-                                    <div className="flex items-center justify-between pt-3 border-t border-border/20 z-10">
-                                        <div className="flex items-center gap-2">
-                                            <Avatar className="h-6 w-6 border-2 border-background">
-                                                <AvatarFallback className="text-[10px] bg-primary/10 text-primary font-bold">
-                                                    {task.assignee?.name?.substring(0, 2).toUpperCase() || "?"}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <span className="text-xs md:text-sm font-medium">{task.assignee?.name || "Sin asignar"}</span>
+                                {/* Right: Meta Info (Priority, Assignee, Date) */}
+                                <div className="flex items-center justify-between md:justify-end gap-3 md:gap-6 z-0 mt-1 md:mt-0 pt-2 md:pt-0 border-t md:border-t-0 border-border/30 pointer-events-none">
+                                    {/* Priority */}
+                                    <Badge variant="secondary" className={`${priorityMap[task.priority]?.color} border-transparent text-[10px] px-1.5 h-5`}>
+                                        {priorityMap[task.priority]?.label}
+                                    </Badge>
+
+                                    {/* Assignee */}
+                                    <div className="flex items-center gap-2" title={`Asignado a: ${task.assignee?.name || "Sin asignar"}`}>
+                                        <span className="text-xs text-muted-foreground hidden lg:inline-block max-w-[80px] truncate text-right">
+                                            {task.assignee?.name?.split(' ')[0] || "Sin asignar"}
+                                        </span>
+                                        <Avatar className="h-6 w-6 border border-background shadow-sm">
+                                            <AvatarFallback className="text-[9px] bg-primary/10 text-primary font-bold">
+                                                {task.assignee?.name?.substring(0, 2).toUpperCase() || "?"}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </div>
+
+                                    {/* Due Date */}
+                                    {task.dueDate && (
+                                        <div className={`flex items-center gap-1.5 text-xs font-medium ${differenceInDays(new Date(task.dueDate), new Date()) < 0 ? 'text-destructive' :
+                                            differenceInDays(new Date(task.dueDate), new Date()) <= 2 ? 'text-amber-500' :
+                                                'text-muted-foreground'
+                                            }`}>
+                                            <Clock className="h-3.5 w-3.5 opacity-70" />
+                                            <span>{format(new Date(task.dueDate), 'd MMM')}</span>
                                         </div>
-                                        <ArrowUpRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground group-hover:text-primary transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                                    )}
+
+                                    <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 ml-1 hidden md:block" />
+
+                                    <div className="pl-2 border-l border-border/30 ml-2 pointer-events-auto z-10 relative">
+                                        <TaskStatusSelect taskId={task.id} status={task.status} variant="minimal" />
                                     </div>
                                 </div>
-                            </Link>
+                            </div>
                         );
                     })
                 )}

@@ -27,30 +27,12 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const [orgSettings, setOrgSettings] = useState<any>(null);
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
     getUserSession().then(setUser);
     getOrganizationSettings().then((res) => {
       if (res.success) setOrgSettings(res.data);
     });
   }, []);
-
-  // Don't render anything until mounted to avoid hydration mismatch
-  // (user, orgSettings, and mounted state all differ between server and client)
-  if (!mounted) {
-    return (
-      <aside
-        suppressHydrationWarning
-        className={cn(
-          "fixed left-0 top-0 z-50 h-screen w-72 border-r bg-sidebar/95 backdrop-blur-3xl border-border transition-transform duration-300 shadow-2xl md:shadow-none flex flex-col justify-between",
-          "md:translate-x-0 md:z-40",
-          "-translate-x-full md:translate-x-0"
-        )}
-      />
-    );
-  }
 
   return (
     <>
@@ -63,6 +45,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
       )}
 
       <aside
+        suppressHydrationWarning
         className={cn(
           "fixed left-0 top-0 z-50 h-screen w-72 border-r bg-sidebar/95 backdrop-blur-3xl border-border transition-transform duration-300 shadow-2xl md:shadow-none flex flex-col justify-between",
           "md:translate-x-0 md:z-40",
@@ -71,7 +54,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
         <div>
           <div className="flex h-24 items-center px-6 border-b border-border/50 justify-between">
             <div className="flex items-center gap-3">
-              {mounted && orgSettings?.logoUrl ? (
+              {orgSettings?.logoUrl ? (
                 <div className="h-12 w-auto max-w-[150px] flex items-center justify-start overflow-hidden">
                   {/* Simple dark/light mode logic for logo handled via CSS or just rendering one if universal */}
                   <img
@@ -110,8 +93,6 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
           <div className="py-6 px-4 space-y-2">
             {menuItems.filter(item => {
               if (user?.role === 'CLIENTE') {
-                // Clients strictly see NONE of the main admin/internal navigation
-                // They will navigate via the top project selector
                 return false;
               }
               return true;
@@ -126,17 +107,15 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                   href={item.href}
                   onClick={() => onClose?.()}
                   className={cn(
-                    "flex items-center w-full gap-4 h-12 px-4 rounded-xl transition-all duration-200 group relative overflow-hidden",
+                    "flex items-center w-full gap-3 h-11 px-3 rounded-lg transition-all duration-200 group relative overflow-hidden font-semibold",
                     isActive
-                      ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                      : "text-[var(--sidebar-muted-custom,var(--muted-foreground))] hover:text-foreground hover:bg-accent/50"
+                      ? "bg-white/10"
+                      : "hover:bg-white/5"
                   )}
+                  style={{ color: 'var(--sidebar-muted-custom, var(--sidebar-foreground))' }}
                 >
-                  {isActive && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent pointer-events-none" />
-                  )}
-                  <Icon className={cn("h-5 w-5 transition-transform group-hover:scale-110", isActive ? "text-primary-foreground" : "text-[var(--sidebar-muted-custom,var(--muted-foreground))] opacity-70 group-hover:text-foreground")} />
-                  <span className={cn("font-bold tracking-wide", isActive ? "text-primary-foreground" : "")}>{item.label}</span>
+                  <Icon className="h-[18px] w-[18px] transition-transform group-hover:scale-105" style={{ color: 'inherit' }} />
+                  <span className="text-[14px] tracking-wide">{item.label}</span>
                 </Link>
               );
             })}
@@ -151,13 +130,13 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                 href="/settings"
                 onClick={() => onClose?.()}
                 className={cn(
-                  "flex items-center w-full gap-4 h-12 px-4 rounded-xl transition-all duration-200 group hover:bg-accent/50 hover:text-foreground mb-2",
-                  !pathname.startsWith("/settings") && "text-[var(--sidebar-muted-custom,var(--muted-foreground))]",
+                  "flex items-center w-full gap-4 h-12 px-4 rounded-xl transition-all duration-200 group hover:bg-sidebar-accent/50 mb-2 font-medium",
                   pathname.startsWith("/settings") && "bg-accent text-accent-foreground"
                 )}
+                style={!pathname.startsWith("/settings") ? { color: 'var(--sidebar-muted-custom, var(--sidebar-foreground))' } : undefined}
               >
                 <Settings className={cn("h-5 w-5 transition-transform group-hover:rotate-45")} />
-                <span className="font-bold tracking-wide">Configuración</span>
+                <span className="font-semibold tracking-wide">Configuración</span>
               </Link>
             </div>
           )}
@@ -173,8 +152,8 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                   )}
                 </div>
                 <div className="flex flex-col text-left">
-                  <span className="font-bold text-sm leading-none group-hover:text-primary transition-colors">{user?.name || "Cargando..."}</span>
-                  <span className="text-[10px] font-semibold text-muted-foreground mt-1 uppercase tracking-wider">{user?.role || "..."}</span>
+                  <span className="font-semibold text-sm leading-none group-hover:text-primary transition-colors" style={{ color: 'var(--sidebar-foreground, inherit)' }}>{user?.name || "Cargando..."}</span>
+                  <span className="text-[10px] font-semibold mt-1 uppercase tracking-wider" style={{ color: 'var(--sidebar-muted-custom, var(--muted-foreground))' }}>{user?.role || "..."}</span>
                 </div>
               </div>
               <button

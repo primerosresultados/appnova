@@ -106,13 +106,13 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
 
                         return (
                             <div key={project.id} className="group border-b border-border/40 last:border-0 md:border md:rounded-xl md:bg-card md:backdrop-blur-sm md:border-border/50 hover:border-primary/50 transition-all duration-200 shadow-sm hover:shadow-md">
-                                <div className="p-4 md:p-5 flex flex-col gap-3 md:gap-4">
+                                <div className="p-3 md:p-4 flex flex-col gap-2 md:gap-3">
                                     {/* Header: Name and Actions */}
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3 mb-1">
+                                            <div className="flex items-center gap-2 mb-1">
                                                 <Link href={`/projects/${project.id}`} className="block group-hover:text-primary transition-colors">
-                                                    <h3 className="text-lg md:text-xl font-bold leading-tight truncate">
+                                                    <h3 className="text-base md:text-lg font-bold leading-tight truncate">
                                                         {project.name}
                                                     </h3>
                                                 </Link>
@@ -120,8 +120,8 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
                                                 {latestLog && (
                                                     <div className="relative group/bell">
                                                         <div className="bg-red-500/10 text-red-500 p-1 rounded-full animate-pulse md:animate-none md:hover:animate-pulse cursor-help">
-                                                            <Bell className="h-3.5 w-3.5" />
-                                                            <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full border-2 border-background"></span>
+                                                            <Bell className="h-3 w-3" />
+                                                            <span className="absolute top-0 right-0 h-1.5 w-1.5 bg-red-500 rounded-full border-2 border-background"></span>
                                                         </div>
                                                         {/* Tooltip for Bell */}
                                                         <div className="absolute left-0 bottom-full mb-2 hidden group-hover/bell:block bg-popover text-popover-foreground text-xs p-2 rounded border shadow-lg w-64 z-10">
@@ -136,17 +136,17 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
                                                 <div className={`md:hidden h-2.5 w-2.5 rounded-full ${status.color.split(' ')[1] ? status.color.split(' ')[1].replace('text-', 'bg-') : 'bg-gray-500'}`} />
                                             </div>
 
-                                            <div className="flex flex-col gap-1">
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground truncate">
-                                                    <User className="h-3.5 w-3.5 opacity-70" />
+                                            <div className="flex flex-col gap-0.5">
+                                                <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground truncate">
+                                                    <User className="h-3 w-3 opacity-70" />
                                                     <span className="font-medium">{project.client.name}</span>
                                                 </div>
 
                                                 {/* Latest Change Text (Visible directly) */}
                                                 {latestLog && (
-                                                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80 mt-1 bg-muted/30 p-1.5 rounded w-fit max-w-full">
-                                                        <Bell className="h-3 w-3 text-primary/70 shrink-0" />
-                                                        <span className="font-medium text-primary/90 shrink-0">Últimos Cambios:</span>
+                                                    <div className="flex items-center gap-1.5 text-[10px] md:text-xs text-muted-foreground/80 mt-1 bg-muted/30 p-1 rounded w-fit max-w-full">
+                                                        <Bell className="h-2.5 w-2.5 text-primary/70 shrink-0" />
+                                                        <span className="font-medium text-primary/90 shrink-0">Últimos:</span>
                                                         <span className="truncate">{latestLog.content}</span>
                                                     </div>
                                                 )}
@@ -166,7 +166,7 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
                                     </div>
 
                                     {/* Desktop: Horizontal Layout (Hidden on Mobile) */}
-                                    <div className="hidden md:flex items-center justify-between mt-0 pt-3 border-t border-border/40">
+                                    <div className="hidden md:flex items-center justify-between mt-0 pt-2 border-t border-border/40">
                                         <div className="text-sm text-muted-foreground truncate max-w-[40%] flex items-center gap-2">
                                             {project.description ? (
                                                 <span>{project.description}</span>

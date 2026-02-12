@@ -34,12 +34,19 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // Fetch user and org settings in parallel (both are cached)
-  const [user, orgResult] = await Promise.all([
-    getUserSession(),
-    getOrganizationSettings()
-  ]);
+  // Wrap in defensive try-catch — Supabase may throw AuthApiError on expired sessions
+  let user = null;
+  let orgResult: any = { success: false };
+  try {
+    [user, orgResult] = await Promise.all([
+      getUserSession(),
+      getOrganizationSettings()
+    ]);
+  } catch {
+    // Expected when session is expired — silently fall through
+  }
   const isClient = user?.role === 'CLIENTE';
-  const orgData = orgResult.success ? orgResult.data : null;
+  const orgData = orgResult?.success ? orgResult.data : null;
 
   return (
     <html lang="en" suppressHydrationWarning>

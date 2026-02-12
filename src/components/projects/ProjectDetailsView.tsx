@@ -96,34 +96,36 @@ export function ProjectDetailsView({
                 </div>
 
                 <Tabs defaultValue="tasks" className="w-full">
-                    <TabsList className="w-full flex justify-start bg-muted border-b-0 rounded-xl h-auto p-1 mb-6 gap-1 flex-nowrap overflow-x-auto overflow-y-hidden max-w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        <TabsTrigger value="tasks" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                            <ListTodo className="h-4 w-4" /> Tareas Pendientes
-                        </TabsTrigger>
-                        <TabsTrigger value="planning" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                            <CalendarIcon className="h-4 w-4" /> Planificación
-                        </TabsTrigger>
-                        {!isClient && (
-                            <TabsTrigger value="resources" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                                <Database className="h-4 w-4" /> Recursos
+                    <div className="border-b border-border/40 mb-6">
+                        <TabsList className="w-full flex justify-start bg-transparent p-0 gap-2 overflow-x-auto overflow-y-hidden max-w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-2">
+                            <TabsTrigger value="tasks" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <ListTodo className="h-4 w-4" /> Tareas
                             </TabsTrigger>
-                        )}
-                        <TabsTrigger value="creativity" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                            <Brain className="h-4 w-4" /> Creatividades
-                        </TabsTrigger>
-                        <TabsTrigger value="competitors" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                            <Target className="h-4 w-4" /> Competencia
-                        </TabsTrigger>
-                        <TabsTrigger value="ads" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                            <TrendingUp className="h-4 w-4" /> Ads
-                        </TabsTrigger>
-                        <TabsTrigger value="content" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                            <FileText className="h-4 w-4" /> Contenido
-                        </TabsTrigger>
-                        <TabsTrigger value="workflows" className="rounded-lg border-0 px-4 py-2 gap-2 whitespace-nowrap data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
-                            <Workflow className="h-4 w-4" /> Flujos de Trabajo
-                        </TabsTrigger>
-                    </TabsList>
+                            <TabsTrigger value="planning" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <CalendarIcon className="h-4 w-4" /> Planificación
+                            </TabsTrigger>
+                            {!isClient && (
+                                <TabsTrigger value="resources" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                    <Database className="h-4 w-4" /> Recursos
+                                </TabsTrigger>
+                            )}
+                            <TabsTrigger value="creativity" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <Brain className="h-4 w-4" /> Creatividad
+                            </TabsTrigger>
+                            <TabsTrigger value="competitors" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <Target className="h-4 w-4" /> Competencia
+                            </TabsTrigger>
+                            <TabsTrigger value="ads" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <TrendingUp className="h-4 w-4" /> Ads
+                            </TabsTrigger>
+                            <TabsTrigger value="content" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <FileText className="h-4 w-4" /> Contenido
+                            </TabsTrigger>
+                            <TabsTrigger value="workflows" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <Workflow className="h-4 w-4" /> Flujos
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
 
 
                     <TabsContent value="tasks" className="space-y-4">

@@ -41,14 +41,15 @@ function TaskDescriptionBox({ description }: { description: string | null }) {
 export function TaskItem({ task, priorityMap }: { task: any, priorityMap: any }) {
     return (
         <Link href={`/tasks/${task.id}`}>
-            <div className="flex flex-col gap-2 p-4 rounded-lg border border-border/50 bg-card hover:bg-card transition-colors cursor-pointer group">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 md:gap-0">
+            <div className="flex flex-col gap-2 p-4 rounded-xl border border-border/20 bg-card hover:bg-card hover:shadow-md transition-all duration-300 cursor-pointer group relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 md:gap-0 relative z-10">
                     <div className="flex items-start gap-3 w-full">
-                        <div className={`p-2 rounded-full mt-0.5 shrink-0 ${task.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/10 text-primary'}`}>
+                        <div className={`p-2 rounded-full mt-0.5 shrink-0 ${task.status === 'DONE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-primary/5 text-primary group-hover:bg-primary/10 transition-colors'}`}>
                             {task.status === 'DONE' ? <CheckCircle2 className="h-4 w-4" /> : <Circle className="h-4 w-4" />}
                         </div>
                         <div className="min-w-0 flex-1">
-                            <h4 className={`font-medium leading-snug ${task.status === 'DONE' ? 'line-through text-muted-foreground' : 'group-hover:text-primary transition-colors'}`}>{task.title}</h4>
+                            <h4 className={`font-medium leading-snug ${task.status === 'DONE' ? 'line-through text-muted-foreground' : 'text-foreground group-hover:text-primary transition-colors'}`}>{task.title}</h4>
                             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
                                 {task.assignee ? (
                                     <div className="flex items-center gap-1">

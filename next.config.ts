@@ -10,6 +10,18 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', 'date-fns', 'date-fns/locale', '@radix-ui/react-icons'],
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+      },
+    ],
+  },
 };
 
 export default nextConfig;

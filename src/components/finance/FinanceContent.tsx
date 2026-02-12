@@ -71,6 +71,7 @@ const getCachedFinanceData = unstable_cache(
             db.financialRecord.findMany({
                 orderBy: { date: 'desc' },
                 where: { type: 'INVOICE' },
+                take: 50,
                 include: { client: true }
             })
         ]);
