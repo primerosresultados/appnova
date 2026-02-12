@@ -10,7 +10,6 @@ import { StatsCards } from "@/components/dashboard/StatsCards";
 import { CalendarWidget } from "@/components/dashboard/CalendarWidget";
 import { ActivityWidget } from "@/components/dashboard/ActivityWidget";
 import { AttentionWidget } from "@/components/dashboard/AttentionWidget";
-import { IncomeChartWidget } from "@/components/dashboard/IncomeChartWidget";
 
 // Skeletons
 import {
@@ -18,7 +17,6 @@ import {
   CalendarSkeleton,
   ActivitySkeleton,
   AttentionSkeleton,
-  IncomeChartSkeleton
 } from "@/components/dashboard/DashboardSkeletons";
 
 
@@ -74,17 +72,9 @@ export default async function Dashboard({ searchParams }: SearchParamsProps) {
         <StatsCards period={period} />
       </Suspense>
 
-      <div className="grid gap-4 lg:grid-cols-7">
-        <Suspense fallback={<IncomeChartSkeleton />}>
-          <IncomeChartWidget period={period} />
-        </Suspense>
-
-        <div className="lg:col-span-3 space-y-4">
-          <Suspense fallback={<ActivitySkeleton />}>
-            <ActivityWidget />
-          </Suspense>
-        </div>
-      </div>
+      <Suspense fallback={<ActivitySkeleton />}>
+        <ActivityWidget />
+      </Suspense>
     </div>
   );
 }
