@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Calendar, User, FileText, CheckCircle2, Circle, Paperclip, Send, FolderKanban } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,14 +26,20 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit2 } from "lucide-react";
 import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import { DeadlineProgress } from "./DeadlineProgress";
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
+
+const RichTextEditor = dynamic(
+    () => import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextEditor })),
+    { ssr: false, loading: () => <div className="min-h-[150px] rounded-md border border-border/40 bg-muted/20 animate-pulse" /> }
+);
 
 interface TaskDetailViewProps {
     task: any;
 }
 
 export function TaskDetailView({ task }: TaskDetailViewProps) {
+    const router = useRouter();
     const [logContent, setLogContent] = useState("");
     const [isPending, startTransition] = useTransition();
 
@@ -58,12 +65,13 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
     const updateTaskWithId = updateTask.bind(null, task.id);
     const [editState, editAction] = useActionState(updateTaskWithId, { message: "", success: false });
 
-    // Close dialog on successful edit
+    // Close dialog and refresh data on successful edit
     useEffect(() => {
         if (editState.success) {
             setIsEditOpen(false);
+            router.refresh();
         }
-    }, [editState.success]);
+    }, [editState]);
 
     // Upload State
     const [isUploadOpen, setIsUploadOpen] = useState(false);

@@ -15,7 +15,11 @@ import CompetitorsTab from "./tabs/CompetitorsTab";
 import AdsTab from "./tabs/AdsTab";
 import ContentTab from "./tabs/ContentTab";
 import WorkflowsTab from "./tabs/WorkflowsTab";
+import ConversionsTab from "./tabs/ConversionsTab";
+import DashboardTab from "./tabs/DashboardTab";
 import ActionLogSlot from "./tabs/ActionLogSlot";
+import { BuyerPersonaTab } from "@/components/projects/BuyerPersonaTab";
+import { OfertaTab } from "@/components/projects/OfertaTab";
 
 // Client-side component for rendering tasks (used for Client role)
 import { TaskItem } from "@/components/projects/TaskItem";
@@ -118,6 +122,11 @@ async function ProjectDetailsContent({ id }: { id: string }) {
             <ProjectDetailsView
                 project={project}
                 currentUser={currentUser}
+                dashboardSlot={
+                    <Suspense fallback={<TabSkeleton />}>
+                        <DashboardTab projectId={id} />
+                    </Suspense>
+                }
                 tasksSlot={
                     <Suspense fallback={<TabSkeleton />}>
                         <TasksTab projectId={id} isClient={false} />
@@ -157,6 +166,17 @@ async function ProjectDetailsContent({ id }: { id: string }) {
                     <Suspense fallback={<TabSkeleton />}>
                         <WorkflowsTab projectId={id} isClient={false} />
                     </Suspense>
+                }
+                conversionsSlot={
+                    <Suspense fallback={<TabSkeleton />}>
+                        <ConversionsTab projectId={id} />
+                    </Suspense>
+                }
+                buyerPersonaSlot={
+                    <BuyerPersonaTab project={project} />
+                }
+                ofertaSlot={
+                    <OfertaTab project={project} />
                 }
                 actionLogSlot={
                     <Suspense fallback={<div className="p-4 space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-20 w-full" /></div>}>

@@ -5,7 +5,7 @@ export async function middleware(request: NextRequest) {
     const path = request.nextUrl.pathname
 
     // Skip auth check entirely for public paths and API routes — saves a Supabase network round-trip
-    const isPublicPath = path === '/login' || path.startsWith('/auth') || path === '/favicon.ico' || path.startsWith('/api/')
+    const isPublicPath = path === '/login' || path.startsWith('/auth') || path === '/favicon.ico' || path.startsWith('/api/') || path.startsWith('/quiz')
 
     if (isPublicPath) {
         return NextResponse.next()

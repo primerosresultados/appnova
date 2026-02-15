@@ -116,16 +116,14 @@ export function NewProjectSheet() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
                             <Label htmlFor="status">Estado</Label>
-                            <Select name="status" defaultValue="PLANNING">
+                            <Select name="status" defaultValue="ACTIVE">
                                 <SelectTrigger>
                                     <SelectValue placeholder="Estado" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="PLANNING">Planificación</SelectItem>
-                                    <SelectItem value="IN_PROGRESS">En Progreso</SelectItem>
-                                    <SelectItem value="REVIEW">Revisión</SelectItem>
-                                    <SelectItem value="ON_HOLD">En Pausa</SelectItem>
-                                    <SelectItem value="COMPLETED">Completado</SelectItem>
+                                    <SelectItem value="ACTIVE">Activo</SelectItem>
+                                    <SelectItem value="ALERT">Alerta</SelectItem>
+                                    <SelectItem value="CANCELLED">Cancelado</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

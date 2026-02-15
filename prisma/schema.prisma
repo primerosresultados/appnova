@@ -39,6 +39,7 @@ model Client {
   updatedAt DateTime @updatedAt
 
   users User[]
+  prospects Prospect[]
 
   @@index([status])
 }
@@ -56,9 +57,27 @@ model Project {
   dueDate      DateTime?
   budget       Float?
   
+  // Project brief / dashboard info
+  objectives        String? // Project goals / objectives
+  communicationTone String? // Communication tone / voice
+  brandManual       String? // Brand guidelines or manual notes
+  
+  // Buyer Persona & Market Offering
+  buyerPersona String? // Rich text description of the ideal customer profile
+  oferta       String? // Market offering: products/services offered to the market
+  
   // Meta (Facebook) Ad Account Integration
   metaAdAccountId   String? // Linked Meta ad account ID
   metaAdAccountName String? // Display name of the ad account
+  
+  // Content Counts (planned quantities per type)
+  graficas   Int @default(0)
+  reels      Int @default(0)
+  historias  Int @default(0)
+  carruseles Int @default(0)
+  lives      Int @default(0)
+  mailings   Int @default(0)
+  postSeos   Int @default(0)
   
   tasks        Task[]
   createdAt    DateTime          @default(now())
@@ -71,6 +90,7 @@ model Project {
   contents     Content[]
   competitors  Competitor[]
   adReports    AdReport[]
+  conversions  Conversion[]
 
   @@index([clientId])
   @@index([status])
@@ -215,6 +235,8 @@ model User {
   votes             ResourceVote[]
   adReports         AdReport[]
   adReportComments  AdReportComment[]
+
+  conversions       Conversion[]
 
   // Social features
   mentions      UserMention[]
@@ -432,12 +454,29 @@ model Employee {
   updatedAt DateTime @updatedAt
 }
 
+model MonthlyPayment {
+  id            String  @id @default(uuid())
+  year          Int
+  month         Int // 0-11 (JS month index)
+  refType       String // EMPLOYEE, CONTRACT
+  refId         String // Employee or Contract ID
+  paid          Boolean @default(false)
+  transactionId String? // Auto-created transaction ID
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([year, month, refType, refId])
+  @@index([year, month])
+}
+
 model Organization {
   id               String  @id @default("default")
   name             String  @default("Nova Partners")
   logoUrl          String?
   logoDarkUrl      String?
   primaryColor     String  @default("#6366f1") // Indigo-500 default
+  primaryTextColor String? // Custom text color on primary backgrounds (buttons, badges)
   sidebarColor     String? // Custom sidebar background color
   sidebarTextColor String? // Custom sidebar unselected text color
   borderRadius     String  @default("0.5rem") // Global border radius
@@ -596,4 +635,53 @@ model Notification {
   createdAt DateTime @default(now())
   
   @@index([userId, read])
+}
+
+model Conversion {
+  id          String   @id @default(uuid())
+  quantity    Int      @default(1) // Number of conversions
+  amount      Float?   // Optional monetary value
+  description String?
+  tags        String?  // JSON array of labels/tags e.g. ["Lead", "Venta"]
+  channel     String?  // Source channel: "Google Ads", "Meta Ads", etc.
+  date        DateTime
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdById String?
+  createdBy   User?    @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([projectId])
+  @@index([date])
+}
+
+model Prospect {
+  id            String      @id @default(uuid())
+  name          String                               // Contact / company name
+  email         String?
+  phone         String?
+  company       String?
+  source        String?                              // Referido, Website, Instagram, etc.
+  status        String      @default("NUEVO")        // NUEVO, CONTACTADO, COTIZADO, GANADO, PERDIDO
+  notes         String?
+  quoteItems    QuoteItem[]
+  clientId      String?                              // Optional link to existing Client
+  client        Client?     @relation(fields: [clientId], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([status])
+}
+
+model QuoteItem {
+  id          String   @id @default(uuid())
+  service     String                                 // e.g. "Community Manager", "Pack Redes"
+  description String?
+  quantity    Int      @default(1)
+  unitPrice   Float
+  prospectId  String
+  prospect    Prospect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@index([prospectId])
 }

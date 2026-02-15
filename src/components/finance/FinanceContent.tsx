@@ -8,7 +8,7 @@ import { NewTransactionDialog } from "@/components/finance/NewTransactionDialog"
 import { NewAccountDialog } from "@/components/finance/NewAccountDialog";
 import { NewAgreementDialog } from "@/components/finance/NewAgreementDialog";
 import { db } from "@/lib/db";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,45 +16,38 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, DollarSign, Wallet, FileText, ArrowUpRight, ArrowDownRight, Handshake, Building2, Calendar } from "lucide-react";
 import Link from "next/link";
-import { unstable_cache } from "next/cache";
 import { InvoicingTab } from "@/components/finance/InvoicingTab";
+import { MonthlyFinanceView } from "@/components/finance/MonthlyFinanceView";
+import { getMonthlyPayments } from "@/app/finance/actions";
 
-// Cache finance data for 30 seconds
-const getCachedFinanceData = unstable_cache(
-    async () => {
+async function getFinanceData() {
+    try {
         const [
             accounts,
-            recentTransactions,
-            incomeThisMonth,
-            expensesThisMonth,
+            transactions,
             contracts,
             clients,
             employees,
-            allFinancialRecords
+            allFinancialRecords,
+            allMonthlyPayments
         ] = await Promise.all([
-
             db.account.findMany({
                 select: { id: true, name: true, type: true, balance: true }
             }),
             db.transaction.findMany({
-                take: 8,
                 orderBy: { date: 'desc' },
+                take: 200,
                 select: {
                     id: true,
                     type: true,
                     amount: true,
                     description: true,
                     category: true,
-                    date: true
+                    date: true,
+                    status: true,
+                    clientId: true,
+                    client: { select: { name: true } },
                 }
-            }),
-            db.transaction.aggregate({
-                where: { type: 'INCOME' },
-                _sum: { amount: true }
-            }),
-            db.transaction.aggregate({
-                where: { type: 'EXPENSE' },
-                _sum: { amount: true }
             }),
             db.contract.findMany({
                 include: { client: true },
@@ -73,88 +66,42 @@ const getCachedFinanceData = unstable_cache(
                 where: { type: 'INVOICE' },
                 take: 50,
                 include: { client: true }
-            })
+            }),
+            db.monthlyPayment.findMany()
         ]);
 
         const totalBalance = accounts.reduce((acc, curr) => acc + curr.balance, 0);
-
-        // Calculate active contract income with "Day 5" logic
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-
-        const activeContracts = contracts.filter(c =>
-            c.status === 'ACTIVE' &&
-            new Date(c.startDate) <= now &&
-            (!c.endDate || new Date(c.endDate) >= now)
-        );
-
-        let monthlyContractIncome = 0;
-        let incomeByDay5 = 0;
-
-        activeContracts.forEach(contract => {
-            const startDate = new Date(contract.startDate);
-            const startDay = startDate.getDate();
-            const startMonth = startDate.getMonth();
-            const startYear = startDate.getFullYear();
-
-            // Frequency factor
-            let amount = 0;
-            if (contract.frequency === 'MONTHLY') {
-                amount = contract.amount;
-            } else if (contract.frequency === 'ANNUALLY') {
-                amount = contract.amount / 12;
-            }
-
-            // Recurring monthly income base
-            monthlyContractIncome += amount;
-
-            // Day 5 collection pool
-            if (startDay <= 5) {
-                incomeByDay5 += amount;
-            }
-        });
-
-        // Calculate Monthly Salaries
         const monthlySalaries = employees.reduce((sum, emp) => sum + emp.salary, 0);
+
+        // Build a map of all monthly payments
+        const paymentMap: Record<string, boolean> = {};
+        for (const p of allMonthlyPayments) {
+            paymentMap[`${p.year}-${p.month}-${p.refType}-${p.refId}`] = p.paid;
+        }
 
         return {
             accounts,
-            recentTransactions,
+            transactions,
             totalBalance,
-            income: (incomeThisMonth._sum.amount || 0) + monthlyContractIncome,
-            expenses: (expensesThisMonth._sum.amount || 0) + monthlySalaries,
-            incomeByDay5,
             clients,
-            pendingTax: 0,
-            allFinancialRecords: allFinancialRecords,
+            allFinancialRecords,
             contracts,
             employees,
-            monthlySalaries
+            monthlySalaries,
+            paymentMap,
         };
-    },
-    ['finance-data-v2'], // Bump cache key
-    { revalidate: 30 }
-);
-
-async function getFinanceData() {
-    try {
-        return await getCachedFinanceData();
     } catch (error) {
         console.error("Error fetching finance data:", error);
         return {
             accounts: [],
-            recentTransactions: [],
+            transactions: [],
             totalBalance: 0,
-            income: 0,
-            expenses: 0,
-            pendingTax: 0,
             allFinancialRecords: [],
             contracts: [],
             clients: [],
             employees: [],
             monthlySalaries: 0,
-            incomeByDay5: 0
+            paymentMap: {} as Record<string, boolean>,
         };
     }
 }
@@ -170,158 +117,30 @@ export async function FinanceContent() {
                     <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
                         Finanzas
                     </h1>
-                    <p className="text-muted-foreground mt-2">Visión global de flujo de caja, contratos y obligaciones fiscales.</p>
+                    <p className="text-muted-foreground mt-2">Control mensual de ingresos, egresos y costos fijos.</p>
                 </div>
                 <div className="flex gap-3">
                     <NewTransactionDialog accounts={data.accounts} />
                 </div>
             </div>
 
-            <Tabs defaultValue="overview" className="space-y-8">
+            <Tabs defaultValue="monthly" className="space-y-8">
                 <TabsList className="w-full flex justify-start bg-secondary/30 border-b-0 rounded-xl h-12 p-1 gap-1 flex-nowrap overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                    <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-4 md:px-8 h-10 transition-all font-medium whitespace-nowrap">Resumen</TabsTrigger>
+                    <TabsTrigger value="monthly" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-4 md:px-8 h-10 transition-all font-medium whitespace-nowrap">Resumen Mensual</TabsTrigger>
                     <TabsTrigger value="invoices" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-4 md:px-8 h-10 transition-all font-medium whitespace-nowrap">Facturación</TabsTrigger>
                     <TabsTrigger value="agreements" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-4 md:px-8 h-10 transition-all font-medium whitespace-nowrap">Acuerdos Comerciales</TabsTrigger>
                     <TabsTrigger value="hr" className="rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-md px-4 md:px-8 h-10 transition-all font-medium whitespace-nowrap">Recursos Humanos</TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="overview" className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
-                    {/* KPI Cards */}
-                    <div className="grid gap-4 md:gap-6 md:grid-cols-4">
-                        {/* ... Existing KPI Cards ... */}
-                        <Card className="bg-card border border-border/40 shadow-lg overflow-hidden relative group hover:border-emerald-500/30 transition-colors">
-                            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Saldo Total</CardTitle>
-                                <Wallet className="h-4 w-4 text-emerald-500" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">${data.totalBalance.toLocaleString()}</div>
-                                <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                                    <span className="text-emerald-500 flex items-center font-medium"><TrendingUp className="h-3 w-3 mr-0.5" /> +2.5%</span> vs mes anterior
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="bg-card border border-border/40 shadow-lg overflow-hidden">
-                            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Ingresos (Mes)</CardTitle>
-                                <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">${data.income.toLocaleString()}</div>
-                                <div className="flex flex-col gap-1 mt-2">
-                                    <div className="flex items-center justify-between text-[10px] bg-emerald-500/10 text-emerald-500 px-2 py-1 rounded-md border border-emerald-500/20">
-                                        <span className="font-medium uppercase">Base Mensual (Día 5):</span>
-                                        <span className="font-bold">${data.incomeByDay5.toLocaleString()}</span>
-                                    </div>
-                                    <p className="text-[10px] text-muted-foreground uppercase tracking-tight pl-1">
-                                        Acumulado {format(new Date(), 'MMMM', { locale: es })}
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="bg-card border border-border/40 shadow-lg overflow-hidden">
-                            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Egresos (Mes)</CardTitle>
-                                <ArrowDownRight className="h-4 w-4 text-rose-500" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold">${data.expenses.toLocaleString()}</div>
-                                <p className="text-xs text-muted-foreground mt-1">Gastos e incluyendo nómina ({data.monthlySalaries > 0 ? `$${data.monthlySalaries.toLocaleString()}` : '$0'})</p>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="bg-card border border-border/40 shadow-lg overflow-hidden relative">
-                            <div className="absolute top-0 right-0 p-4 opacity-5">
-                                <FileText className="h-12 w-12" />
-                            </div>
-                            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">IVA Pendiente (F29)</CardTitle>
-                                <DollarSign className="h-4 w-4 text-amber-500" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-2xl font-bold text-amber-500">${data.pendingTax.toLocaleString()}</div>
-                                <p className="text-xs text-muted-foreground mt-1">Estimado a pagar</p>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    <div className="grid gap-6 md:grid-cols-12">
-                        {/* ... Accounts and Transactions ... */}
-                        {/* Accounts List */}
-                        <Card className="md:col-span-4 bg-card border border-border/40 shadow-lg">
-                            <CardHeader>
-                                <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Cuentas</CardTitle>
-                                <CardDescription>Saldos disponibles por cuenta.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                {data.accounts.length === 0 ? (
-                                    <div className="text-center py-8 text-muted-foreground text-sm">No hay cuentas registradas.</div>
-                                ) : (
-                                    data.accounts.map(account => (
-                                        <div key={account.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/20 border border-border/30">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                                                    <Wallet className="h-4 w-4" />
-                                                </div>
-                                                <div>
-                                                    <div className="font-medium text-sm">{account.name}</div>
-                                                    <div className="text-[10px] text-muted-foreground uppercase">{account.type}</div>
-                                                </div>
-                                            </div>
-                                            <div className="font-bold text-sm">${account.balance.toLocaleString()}</div>
-                                        </div>
-                                    ))
-                                )}
-                                <NewAccountDialog />
-                            </CardContent>
-                        </Card>
-
-                        {/* Recent Transactions */}
-                        <Card className="md:col-span-8 bg-card border border-border/40 shadow-lg">
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <div>
-                                    <CardTitle className="text-sm font-bold uppercase tracking-widest text-primary/80">Ultimos Movimientos</CardTitle>
-                                    <CardDescription>Registro de ingresos y egresos recientes.</CardDescription>
-                                </div>
-                                <Link href="/finance/transactions">
-                                    <Button variant="ghost" size="sm">Ver Todo</Button>
-                                </Link>
-                            </CardHeader>
-                            <CardContent>
-                                {data.recentTransactions.length === 0 ? (
-                                    <div className="text-center py-12 text-muted-foreground">
-                                        <TrendingUp className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                                        <p>No hay transacciones recientes.</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-1">
-                                        {data.recentTransactions.map(t => (
-                                            <div key={t.id} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg transition-colors group gap-3">
-                                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                                    <div className={`h-9 w-9 shrink-0 rounded-full flex items-center justify-center ${t.type === 'INCOME' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
-                                                        {t.type === 'INCOME' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="font-medium text-sm group-hover:text-primary transition-colors truncate">{t.description || "Sin descripción"}</div>
-                                                        <div className="text-xs text-muted-foreground flex items-center gap-2 truncate">
-                                                            <span className="shrink-0">{format(new Date(t.date), 'dd MMM', { locale: es })}</span>
-                                                            <span className="w-1 h-1 rounded-full bg-border shrink-0" />
-                                                            <Badge variant="outline" className="text-[9px] h-4 py-0 shrink-0">{t.category}</Badge>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className={`font-bold ${t.type === 'INCOME' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                                    {t.type === 'INCOME' ? '+' : '-'}${t.amount.toLocaleString()}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </div>
+                <TabsContent value="monthly" className="space-y-8 animate-in slide-in-from-bottom-2 duration-500">
+                    <MonthlyFinanceView
+                        transactions={JSON.parse(JSON.stringify(data.transactions))}
+                        contracts={JSON.parse(JSON.stringify(data.contracts))}
+                        employees={JSON.parse(JSON.stringify(data.employees))}
+                        accounts={JSON.parse(JSON.stringify(data.accounts))}
+                        totalBalance={data.totalBalance}
+                        initialPayments={data.paymentMap}
+                    />
                 </TabsContent>
 
                 <TabsContent value="invoices" className="animate-in slide-in-from-bottom-2 duration-500">
@@ -482,24 +301,4 @@ export async function FinanceContent() {
             </Tabs>
         </div>
     );
-}
-
-function PlusIcon(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M5 12h14" />
-            <path d="M12 5v14" />
-        </svg>
-    )
 }

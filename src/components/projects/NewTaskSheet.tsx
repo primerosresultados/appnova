@@ -57,9 +57,13 @@ interface User {
     name: string;
 }
 
-import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import dynamic from "next/dynamic";
 
-// ... existing imports
+// Lazy-load RichTextEditor to defer TipTap from the initial bundle
+const RichTextEditor = dynamic(
+    () => import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextEditor })),
+    { ssr: false, loading: () => <div className="min-h-[150px] border rounded-md bg-muted/20 animate-pulse" /> }
+);
 
 export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
     const [state, formAction, isPending] = useActionState(createTask, initialState);
@@ -90,22 +94,22 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
             <SheetTrigger asChild>
                 <Button>Agregar Tarea</Button>
             </SheetTrigger>
-            <SheetContent className="overflow-y-auto w-[400px] sm:w-[540px]">
-                <SheetHeader>
+            <SheetContent className="overflow-y-auto w-[400px] sm:w-[540px] p-6 sm:p-8">
+                <SheetHeader className="mb-2">
                     <SheetTitle>Agregar Nueva Tarea</SheetTitle>
                     <SheetDescription>
                         Crea una tarea detallada para tu equipo.
                     </SheetDescription>
                 </SheetHeader>
-                <form action={formAction} className="grid gap-6 py-6">
+                <form action={formAction} className="grid gap-8 py-6">
                     <input type="hidden" name="projectId" value={projectId} />
 
-                    <div className="grid gap-2">
+                    <div className="grid gap-3">
                         <Label htmlFor="title">Título</Label>
                         <Input id="title" name="title" placeholder="Ej: Diseñar Mockups" required />
                     </div>
 
-                    <div className="grid gap-2">
+                    <div className="grid gap-3">
                         <Label htmlFor="assigneeId">Asignar a</Label>
                         <Select name="assigneeId">
                             <SelectTrigger>
@@ -120,8 +124,8 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
                         </Select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="grid gap-3">
                             <Label htmlFor="status">Estado</Label>
                             <Select name="status" defaultValue="TODO">
                                 <SelectTrigger>
@@ -136,7 +140,7 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
                             </Select>
                         </div>
 
-                        <div className="grid gap-2">
+                        <div className="grid gap-3">
                             <Label htmlFor="priority">Prioridad</Label>
                             <Select name="priority" defaultValue="MEDIUM">
                                 <SelectTrigger>
@@ -151,7 +155,7 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
                         </div>
                     </div>
 
-                    <div className="grid gap-2">
+                    <div className="grid gap-3">
                         <Label>Fecha de Vencimiento</Label>
                         <Popover>
                             <PopoverTrigger asChild>
@@ -178,7 +182,7 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
                         <input type="hidden" name="dueDate" value={dueDate ? dueDate.toISOString() : ""} />
                     </div>
 
-                    <div className="grid gap-2">
+                    <div className="grid gap-3">
                         <Label htmlFor="description">Descripción / Detalles</Label>
                         <RichTextEditor
                             value={description}
@@ -189,7 +193,7 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
                         <input type="hidden" name="description" value={description} />
                     </div>
 
-                    <div className="grid gap-2">
+                    <div className="grid gap-3">
                         <Label htmlFor="links" className="flex items-center gap-2">
                             <LinkIcon className="h-3 w-3" /> Enlaces / Documentos
                         </Label>

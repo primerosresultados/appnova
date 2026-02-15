@@ -236,6 +236,7 @@ const getCachedCalendarEvents = unstable_cache(
                 select: {
                     id: true,
                     title: true,
+                    description: true,
                     dueDate: true,
                     status: true,
                     assignee: { select: { id: true, name: true } },
@@ -307,6 +308,7 @@ const getCachedCalendarEvents = unstable_cache(
             ...tasks.map(t => ({
                 id: t.id,
                 title: t.title,
+                description: t.description ? t.description.replace(/<[^>]*>/g, '').trim().substring(0, 120) : null,
                 date: t.dueDate!,
                 type: 'TASK' as const,
                 status: t.status,

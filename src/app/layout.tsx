@@ -64,6 +64,7 @@ export default async function RootLayout({
           <MainLayout initialIsClient={isClient}>
             <DynamicBrand
               primaryColor={orgData?.primaryColor}
+              primaryTextColor={orgData?.primaryTextColor}
               sidebarColor={orgData?.sidebarColor}
               sidebarTextColor={orgData?.sidebarTextColor}
               borderRadius={orgData?.borderRadius}

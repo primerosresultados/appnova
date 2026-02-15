@@ -22,7 +22,7 @@ const getCachedOrgSettings = unstable_cache(
         return org;
     },
     ['organization-settings'],
-    { revalidate: 300 }
+    { revalidate: 300, tags: ['organization-settings'] }
 );
 
 export async function getOrganizationSettings() {
@@ -40,6 +40,7 @@ export async function updateOrganizationSettings(data: {
     logoUrl?: string;
     logoDarkUrl?: string;
     primaryColor?: string;
+    primaryTextColor?: string;
     sidebarColor?: string;
     sidebarTextColor?: string;
     borderRadius?: string;

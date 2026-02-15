@@ -37,6 +37,7 @@ export async function createUser(prevState: any, formData: FormData) {
     const email = formData.get("email") as string;
     const role = formData.get("role") as string;
     const password = formData.get("password") as string;
+    const clientId = formData.get("clientId") as string | null;
 
     if (!name || !email) {
         return { success: false, message: "Nombre y Email requeridos" };
@@ -45,8 +46,6 @@ export async function createUser(prevState: any, formData: FormData) {
     // 1. Check if we have the Service Role Key
     if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
         console.warn("Missing SUPABASE_SERVICE_ROLE_KEY. Creating only DB user.");
-        // Proceed to create only in DB but warn user in return message?
-        // Or fail? Let's try to minimal effort: Create in DB so they appear in list.
     }
 
     try {
@@ -55,9 +54,9 @@ export async function createUser(prevState: any, formData: FormData) {
             const supabaseAdmin = createAdminClient();
             const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
                 email: email,
-                email_confirm: true, // Auto-confirm
+                email_confirm: true,
                 user_metadata: { full_name: name },
-                password: password || "TemporalPassword123!" // Use provided password or fallback
+                password: password || "TemporalPassword123!"
             });
 
             if (authError) {
@@ -65,14 +64,12 @@ export async function createUser(prevState: any, formData: FormData) {
                 return { success: false, message: `Error Auth: ${authError.message}` };
             }
 
-            // Ideally send an email with password reset link here
             const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
                 type: 'recovery',
                 email: email
             });
 
             console.log("Invite Link generated:", resetData.properties?.action_link);
-            // In a real app, send this link via email provider (Resend, AWS SES)
         }
 
         // 3. Create in Prisma
@@ -81,7 +78,8 @@ export async function createUser(prevState: any, formData: FormData) {
                 name,
                 email,
                 role: (role as any) || "COLABORADOR",
-                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
+                avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`,
+                ...(clientId && role === "CLIENTE" ? { clientId } : {}),
             }
         });
 

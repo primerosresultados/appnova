@@ -21,11 +21,9 @@ interface Project {
 }
 
 const statusMap: Record<string, { label: string; color: string; icon: any }> = {
-    PLANNING: { label: "Planificación", color: "bg-blue-500/10 text-blue-500 border-blue-500/20", icon: Circle },
-    IN_PROGRESS: { label: "En Progreso", color: "bg-amber-500/10 text-amber-500 border-amber-500/20", icon: Circle },
-    REVIEW: { label: "Revisión", color: "bg-purple-500/10 text-purple-500 border-purple-500/20", icon: CheckCircle2 },
-    COMPLETED: { label: "Completado", color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20", icon: CheckCircle2 },
-    ON_HOLD: { label: "En Pausa", color: "bg-gray-500/10 text-gray-500 border-gray-500/20", icon: Circle },
+    ACTIVE: { label: "Activo", color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20", icon: CheckCircle2 },
+    ALERT: { label: "Alerta", color: "bg-amber-500/10 text-amber-500 border-amber-500/20", icon: Circle },
+    CANCELLED: { label: "Cancelado", color: "bg-red-500/10 text-red-500 border-red-500/20", icon: Circle },
 };
 
 export function ClientProjectSelector() {
@@ -96,7 +94,7 @@ export function ClientProjectSelector() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[300px]">
                 {projects.map((project) => {
-                    const pStatus = statusMap[project.status] || statusMap.PLANNING;
+                    const pStatus = statusMap[project.status] || statusMap.ACTIVE;
                     return (
                         <DropdownMenuItem
                             key={project.id}

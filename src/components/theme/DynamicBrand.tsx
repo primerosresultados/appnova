@@ -5,12 +5,13 @@ import { getContrastColor, adjustColorBrightness } from "@/lib/theme-utils";
 
 interface DynamicBrandProps {
     primaryColor?: string | null;
+    primaryTextColor?: string | null;
     sidebarColor?: string | null;
     sidebarTextColor?: string | null;
     borderRadius?: string | null;
 }
 
-export function DynamicBrand({ primaryColor, sidebarColor, sidebarTextColor, borderRadius }: DynamicBrandProps) {
+export function DynamicBrand({ primaryColor, primaryTextColor, sidebarColor, sidebarTextColor, borderRadius }: DynamicBrandProps) {
     useEffect(() => {
         const root = document.documentElement;
 
@@ -18,10 +19,16 @@ export function DynamicBrand({ primaryColor, sidebarColor, sidebarTextColor, bor
             root.style.setProperty("--primary", primaryColor);
 
             if (primaryColor.startsWith("#")) {
-                const foreground = getContrastColor(primaryColor);
+                // Use manual override if set, otherwise auto-calculate
+                const foreground = primaryTextColor || getContrastColor(primaryColor);
                 root.style.setProperty("--primary-foreground", foreground);
                 root.style.setProperty("--ring", primaryColor);
             }
+        }
+
+        // If primaryTextColor is set but primaryColor is not a hex (edge case), still apply it
+        if (primaryTextColor && (!primaryColor || !primaryColor.startsWith("#"))) {
+            root.style.setProperty("--primary-foreground", primaryTextColor);
         }
 
         if (sidebarColor) {
@@ -46,7 +53,7 @@ export function DynamicBrand({ primaryColor, sidebarColor, sidebarTextColor, bor
         if (borderRadius) {
             root.style.setProperty("--radius", borderRadius);
         }
-    }, [primaryColor, sidebarColor, sidebarTextColor, borderRadius]);
+    }, [primaryColor, primaryTextColor, sidebarColor, sidebarTextColor, borderRadius]);
 
     return null;
 }

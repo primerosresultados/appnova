@@ -16,15 +16,16 @@ import {
 import { es } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Flag, FileIcon, Plus, Trash2, Megaphone, ListTodo, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Flag, FileIcon, Plus, Trash2, Megaphone, ListTodo, ChevronLeft, ChevronRight, Clock, UserIcon } from "lucide-react";
 import { createMilestone, deleteMilestone } from "@/app/projects/milestone-actions";
 import { useActionState } from "react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface Milestone {
     id: string;
@@ -59,7 +60,23 @@ const initialState = {
     success: false
 };
 
-const WEEKDAYS = ["DOM", "LUN", "MAR", "MIE", "JUE", "VIE", "SAB"];
+const kindConfig: Record<string, { label: string; color: string; accent: string; dot: string; icon: React.ElementType }> = {
+    MILESTONE: { label: 'Hito', color: 'text-primary', accent: 'bg-primary/10 border-primary/20', dot: 'bg-primary', icon: Flag },
+    CONTENT: { label: 'Contenido', color: 'text-purple-600 dark:text-purple-400', accent: 'bg-purple-500/10 border-purple-500/20', dot: 'bg-purple-500', icon: Megaphone },
+    TASK: { label: 'Tarea', color: 'text-amber-600 dark:text-amber-400', accent: 'bg-amber-500/10 border-amber-500/20', dot: 'bg-amber-500', icon: ListTodo },
+};
+
+const statusLabels: Record<string, string> = {
+    TODO: 'Pendiente',
+    IN_PROGRESS: 'En Progreso',
+    REVIEW: 'Revisión',
+    DONE: 'Completado',
+    DRAFT: 'Borrador',
+    PUBLISHED: 'Publicado',
+    SCHEDULED: 'Programado',
+};
+
+const WEEKDAYS = ["LUN", "MAR", "MIE", "JUE", "VIE", "SAB", "DOM"];
 
 export function ProjectCalendar({ projectId, milestones, contents, tasks, isClient = false }: ProjectCalendarProps) {
     const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -95,8 +112,8 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
     // Calculate grid days
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(monthStart);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
+    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
     const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
 
     // Combine all events
@@ -149,7 +166,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
 
                     {/* Days Grid */}
                     <div className="grid grid-cols-7 flex-1 auto-rows-fr bg-border/20 gap-px">
-                        {calendarDays.map((day, dayIdx) => {
+                        {calendarDays.map((day) => {
                             const events = getEventsForDay(day);
                             const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
                             const isTodayDate = isToday(day);
@@ -172,44 +189,64 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
                                         )}>
                                             {format(day, "d")}
                                         </span>
-                                        {!isClient && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-1"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDateClick(day);
-                                                }}
-                                            >
-                                                <Plus className="h-3 w-3" />
-                                            </Button>
-                                        )}
+                                        <div className="flex items-center gap-1">
+                                            {events.length > 0 && (
+                                                <span className="text-[9px] text-muted-foreground font-medium">
+                                                    {events.length}
+                                                </span>
+                                            )}
+                                            {!isClient && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-1"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDateClick(day);
+                                                    }}
+                                                >
+                                                    <Plus className="h-3 w-3" />
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    {/* Events List */}
+                                    {/* Events List — modern cards */}
                                     <div className="flex flex-col gap-1 mt-1 overflow-y-auto max-h-[150px] scrollbar-none">
-                                        {events.map((event: any) => (
-                                            <div
-                                                key={`${event._kind}-${event.id}`}
-                                                className={cn(
-                                                    "text-[10px] px-1.5 py-1 rounded border truncate flex items-center gap-1.5 cursor-pointer shadow-sm hover:opacity-80 transition-opacity",
-                                                    event._kind === 'MILESTONE' && "bg-primary/10 border-primary/20 text-primary-foreground/90 dark:text-primary-foreground",
-                                                    event._kind === 'CONTENT' && "bg-purple-500/10 border-purple-500/20 text-purple-700 dark:text-purple-300",
-                                                    event._kind === 'TASK' && "bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300",
-                                                )}
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setSelectedEvent(event);
-                                                }}
-                                                title={event.title}
-                                            >
-                                                {event._kind === 'MILESTONE' && <Flag className="h-3 w-3 shrink-0" />}
-                                                {event._kind === 'CONTENT' && <Megaphone className="h-3 w-3 shrink-0" />}
-                                                {event._kind === 'TASK' && <ListTodo className="h-3 w-3 shrink-0" />}
-                                                <span className="truncate flex-1">{event.title}</span>
-                                            </div>
-                                        ))}
+                                        {events.map((event: any) => {
+                                            const config = kindConfig[event._kind];
+                                            const Icon = config?.icon;
+                                            return (
+                                                <div
+                                                    key={`${event._kind}-${event.id}`}
+                                                    className={cn(
+                                                        "group/event text-[11px] px-2 py-1.5 rounded-md border cursor-pointer transition-all duration-200",
+                                                        "hover:shadow-md hover:scale-[1.02] hover:-translate-y-px",
+                                                        config?.accent
+                                                    )}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedEvent(event);
+                                                    }}
+                                                    title={event.title}
+                                                >
+                                                    <div className="flex items-center gap-1.5">
+                                                        <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", config?.dot)} />
+                                                        <span className={cn("truncate font-medium flex-1", config?.color)}>{event.title}</span>
+                                                    </div>
+                                                    {event.assignee && (
+                                                        <div className="flex items-center gap-1 mt-0.5 ml-3 text-[9px] text-muted-foreground">
+                                                            <span className="truncate">{event.assignee.name}</span>
+                                                        </div>
+                                                    )}
+                                                    {event.status && (
+                                                        <div className="ml-3 mt-0.5">
+                                                            <span className="text-[9px] text-muted-foreground">{statusLabels[event.status] || event.status}</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             );
@@ -265,41 +302,74 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
                 </DialogContent>
             </Dialog>
 
-            {/* Event Details Dialog */}
+            {/* Event Details Dialog — richer info */}
             <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
-                        <div className="flex items-center gap-2">
-                            {selectedEvent?._kind === 'MILESTONE' && <Flag className="h-5 w-5 text-primary" />}
-                            {selectedEvent?._kind === 'CONTENT' && <Megaphone className="h-5 w-5 text-purple-500" />}
-                            {selectedEvent?._kind === 'TASK' && <ListTodo className="h-5 w-5 text-amber-500" />}
-                            <DialogTitle>{selectedEvent?.title}</DialogTitle>
+                        <div className="flex items-center gap-3">
+                            {selectedEvent && kindConfig[selectedEvent._kind] && (() => {
+                                const config = kindConfig[selectedEvent._kind];
+                                const Icon = config.icon;
+                                return (
+                                    <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border", config.accent)}>
+                                        <Icon className={cn("h-5 w-5", config.color)} />
+                                    </div>
+                                );
+                            })()}
+                            <div>
+                                <DialogTitle className="text-lg">{selectedEvent?.title}</DialogTitle>
+                                <DialogDescription className="flex items-center gap-1.5 mt-0.5">
+                                    <Clock className="h-3 w-3" />
+                                    {selectedEvent?.date && format(new Date(selectedEvent.date), "PPP", { locale: es })}
+                                </DialogDescription>
+                            </div>
                         </div>
-                        <DialogDescription>
-                            {selectedEvent?.date && format(new Date(selectedEvent.date), "PPP", { locale: es })}
-                        </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-4 py-4">
+                        {/* Type & Status */}
+                        <div className="flex items-center gap-3 flex-wrap">
+                            {selectedEvent && kindConfig[selectedEvent._kind] && (
+                                <Badge variant="outline" className={cn("text-xs", kindConfig[selectedEvent._kind].accent, kindConfig[selectedEvent._kind].color)}>
+                                    {kindConfig[selectedEvent._kind].label}
+                                </Badge>
+                            )}
+                            {selectedEvent?.status && (
+                                <Badge variant="secondary" className="text-xs">
+                                    {statusLabels[selectedEvent.status] || selectedEvent.status}
+                                </Badge>
+                            )}
+                        </div>
+
+                        {/* Description */}
                         {selectedEvent?.description && (
                             <div
-                                className="bg-muted/30 p-3 rounded-md text-sm prose prose-sm dark:prose-invert max-w-none text-muted-foreground"
+                                className="bg-muted/30 p-3 rounded-lg text-sm prose prose-sm dark:prose-invert max-w-none text-muted-foreground border border-border/30"
                                 dangerouslySetInnerHTML={{ __html: selectedEvent.description }}
                             />
                         )}
 
-                        {selectedEvent?.status && (
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">Estado:</span>
-                                <Badge variant="secondary">{selectedEvent.status}</Badge>
+                        {/* Assignee */}
+                        {selectedEvent?.assignee && (
+                            <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-3 border border-border/30">
+                                <Avatar className="h-8 w-8">
+                                    <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
+                                        {selectedEvent.assignee.name.substring(0, 2).toUpperCase()}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Asignado a</p>
+                                    <p className="text-sm font-medium">{selectedEvent.assignee.name}</p>
+                                </div>
                             </div>
                         )}
 
+                        {/* Media */}
                         {selectedEvent?.mediaUrl && (
                             <div className="space-y-2">
                                 <Label className="text-xs text-muted-foreground">Multimedia</Label>
                                 {selectedEvent.mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                                    <div className="rounded-md overflow-hidden border border-border/50">
+                                    <div className="rounded-lg overflow-hidden border border-border/50">
                                         <img src={selectedEvent.mediaUrl} alt="Media" className="w-full h-auto max-h-[300px] object-cover" />
                                     </div>
                                 ) : (
@@ -310,10 +380,11 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
                             </div>
                         )}
 
+                        {/* File */}
                         {selectedEvent?.filePath && (
                             <div className="space-y-2">
                                 <Label className="text-xs text-muted-foreground">Archivo Adjunto</Label>
-                                <a href={selectedEvent.filePath} target="_blank" className="flex items-center gap-2 p-2 rounded-md border border-border/50 hover:bg-accent/50 transition-colors">
+                                <a href={selectedEvent.filePath} target="_blank" className="flex items-center gap-2 p-3 rounded-lg border border-border/50 hover:bg-accent/50 transition-colors">
                                     <FileIcon className="h-4 w-4 text-primary" />
                                     <span className="text-sm">Ver archivo</span>
                                 </a>
@@ -322,7 +393,13 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
                     </div>
 
                     <DialogFooter className="gap-2 sm:justify-between">
-                        {/* Only allow deleting milestones for now */}
+                        {selectedEvent?._kind === 'TASK' && (
+                            <Link href={`/tasks/${selectedEvent.id}`}>
+                                <Button variant="outline" size="sm" className="gap-1.5">
+                                    Ver tarea
+                                </Button>
+                            </Link>
+                        )}
                         {selectedEvent?._kind === 'MILESTONE' && !isClient ? (
                             <Button
                                 variant="destructive"
@@ -337,7 +414,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
                                 <Trash2 className="h-4 w-4 mr-2" />
                                 Eliminar
                             </Button>
-                        ) : <div />}
+                        ) : selectedEvent?._kind !== 'TASK' ? <div /> : null}
 
                         <Button variant="secondary" onClick={() => setSelectedEvent(null)}>
                             Cerrar

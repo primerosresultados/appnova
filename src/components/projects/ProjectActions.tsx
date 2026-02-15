@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Trash2, Pencil, Archive } from "lucide-react";
+import { MoreHorizontal, Trash2, Pencil, Archive, ArchiveRestore } from "lucide-react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -19,17 +19,21 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { deleteProject, archiveProject } from "@/app/projects/actions";
+import { deleteProject, archiveProject, unarchiveProject } from "@/app/projects/actions";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
+import { EditProjectDialog } from "@/components/projects/EditProjectDialog";
 
 interface ProjectActionsProps {
     projectId: string;
+    project?: any;
+    isArchived?: boolean;
 }
 
-export function ProjectActions({ projectId }: ProjectActionsProps) {
+export function ProjectActions({ projectId, project, isArchived = false }: ProjectActionsProps) {
     const [open, setOpen] = useState(false);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+    const [showEditDialog, setShowEditDialog] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [isArchiving, setIsArchiving] = useState(false);
 
@@ -42,6 +46,23 @@ export function ProjectActions({ projectId }: ProjectActionsProps) {
                 setOpen(false);
             } else {
                 toast.error("Error al archivar el proyecto.");
+            }
+        } catch (error) {
+            toast.error("Error inesperado.");
+        } finally {
+            setIsArchiving(false);
+        }
+    };
+
+    const handleUnarchive = async () => {
+        setIsArchiving(true);
+        try {
+            const result = await unarchiveProject(projectId);
+            if (result.success) {
+                toast.success("Proyecto restaurado.");
+                setOpen(false);
+            } else {
+                toast.error("Error al restaurar el proyecto.");
             }
         } catch (error) {
             toast.error("Error inesperado.");
@@ -79,20 +100,32 @@ export function ProjectActions({ projectId }: ProjectActionsProps) {
                     <DropdownMenuItem asChild>
                         <Link href={`/projects/${projectId}`}>Ver Detalles</Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => {
-                        // TODO: Implement Edit
-                        toast.error("Edición próximamente");
-                    }}>
-                        <Pencil className="h-4 w-4 mr-2" />
-                        Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                        onClick={handleArchive}
-                        disabled={isArchiving}
-                    >
-                        <Archive className="h-4 w-4 mr-2" />
-                        {isArchiving ? "Archivando..." : "Archivar"}
-                    </DropdownMenuItem>
+                    {!isArchived && (
+                        <DropdownMenuItem onClick={() => {
+                            setOpen(false);
+                            setShowEditDialog(true);
+                        }}>
+                            <Pencil className="h-4 w-4 mr-2" />
+                            Editar
+                        </DropdownMenuItem>
+                    )}
+                    {isArchived ? (
+                        <DropdownMenuItem
+                            onClick={handleUnarchive}
+                            disabled={isArchiving}
+                        >
+                            <ArchiveRestore className="h-4 w-4 mr-2" />
+                            {isArchiving ? "Restaurando..." : "Restaurar"}
+                        </DropdownMenuItem>
+                    ) : (
+                        <DropdownMenuItem
+                            onClick={handleArchive}
+                            disabled={isArchiving}
+                        >
+                            <Archive className="h-4 w-4 mr-2" />
+                            {isArchiving ? "Archivando..." : "Archivar"}
+                        </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
                         onSelect={(e) => {
@@ -106,6 +139,15 @@ export function ProjectActions({ projectId }: ProjectActionsProps) {
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Edit Dialog */}
+            {project && (
+                <EditProjectDialog
+                    project={project}
+                    open={showEditDialog}
+                    onOpenChange={setShowEditDialog}
+                />
+            )}
 
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <AlertDialogContent>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, Settings, Command, Workflow, CreditCard, ListTodo, LogOut as KeyIcon, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, Settings, Command, Workflow, CreditCard, ListTodo, LogOut as KeyIcon, Menu, X, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 import { getUserSession } from "@/app/actions/auth-actions";
@@ -14,6 +14,7 @@ const menuItems = [
   { href: "/projects", label: "Proyectos", icon: FolderKanban },
   { href: "/tasks", label: "Tareas", icon: ListTodo },
   { href: "/workflows", label: "Flujos de Trabajo", icon: Workflow },
+  { href: "/prospectos", label: "Prospectos", icon: TrendingUp },
   { href: "/finance", label: "Finanzas", icon: CreditCard },
   { href: "/clients", label: "Clientes", icon: Users },
 ];
@@ -52,7 +53,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}>
         <div>
-          <div className="flex h-24 items-center px-6 border-b border-border/50 justify-between">
+          <div className="flex h-24 items-center px-6 border-b border-white/[0.06] justify-between">
             <div className="flex items-center gap-3">
               {orgSettings?.logoUrl ? (
                 <div className="h-12 w-auto max-w-[150px] flex items-center justify-start overflow-hidden">
@@ -107,7 +108,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                   href={item.href}
                   onClick={() => onClose?.()}
                   className={cn(
-                    "flex items-center w-full gap-3 h-11 px-3 rounded-lg transition-all duration-200 group relative overflow-hidden font-semibold",
+                    "flex items-center w-full gap-3 h-11 px-3 rounded-lg transition-all duration-200 group relative overflow-hidden font-bold",
                     isActive
                       ? "bg-white/10"
                       : "hover:bg-white/5"
@@ -115,7 +116,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
                   style={{ color: 'var(--sidebar-muted-custom, var(--sidebar-foreground))' }}
                 >
                   <Icon className="h-[18px] w-[18px] transition-transform group-hover:scale-105" style={{ color: 'inherit' }} />
-                  <span className="text-[14px] tracking-wide">{item.label}</span>
+                  <span className="text-[15px] tracking-wide">{item.label}</span>
                 </Link>
               );
             })}
@@ -141,7 +142,7 @@ export function AppSidebar({ isOpen, onClose }: AppSidebarProps) {
             </div>
           )}
 
-          <div className="p-6 border-t border-border bg-sidebar/50 backdrop-blur-sm">
+          <div className="p-6 border-t border-white/[0.06] bg-sidebar/50 backdrop-blur-sm">
             <div className="flex items-center gap-3 justify-between">
               <div className="flex items-center gap-3 group cursor-pointer hover:opacity-80 transition-opacity">
                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-lg border-2 border-sidebar">

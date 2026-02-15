@@ -17,13 +17,16 @@ interface BrandTabProps {
 }
 
 // Helper to apply theme changes immediately without page reload
-function applyThemeToDOM(settings: { primaryColor?: string; sidebarColor?: string; sidebarTextColor?: string; borderRadius?: string }) {
+function applyThemeToDOM(settings: { primaryColor?: string; primaryTextColor?: string; sidebarColor?: string; sidebarTextColor?: string; borderRadius?: string }) {
     const root = document.documentElement;
     if (settings.sidebarColor) {
         root.style.setProperty('--sidebar', settings.sidebarColor);
     }
     if (settings.primaryColor) {
         root.style.setProperty('--primary', settings.primaryColor);
+    }
+    if (settings.primaryTextColor) {
+        root.style.setProperty('--primary-foreground', settings.primaryTextColor);
     }
     if (settings.sidebarTextColor) {
         root.style.setProperty('--sidebar-muted-custom', settings.sidebarTextColor);
@@ -40,6 +43,7 @@ export function BrandTab({ initialData }: BrandTabProps) {
     const [logoUrl, setLogoUrl] = useState(initialData?.logoUrl || "");
     const [logoDarkUrl, setLogoDarkUrl] = useState(initialData?.logoDarkUrl || "");
     const [primaryColor, setPrimaryColor] = useState(initialData?.primaryColor || "#6366f1");
+    const [primaryTextColor, setPrimaryTextColor] = useState(initialData?.primaryTextColor || "#ffffff");
     const [sidebarColor, setSidebarColor] = useState(initialData?.sidebarColor || "#0a0a0a");
     const [sidebarTextColor, setSidebarTextColor] = useState(initialData?.sidebarTextColor || "#ffffff");
     const [borderRadius, setBorderRadius] = useState(initialData?.borderRadius || "0.5rem");
@@ -50,6 +54,7 @@ export function BrandTab({ initialData }: BrandTabProps) {
             if (initialData.logoUrl !== undefined) setLogoUrl(initialData.logoUrl || "");
             if (initialData.logoDarkUrl !== undefined) setLogoDarkUrl(initialData.logoDarkUrl || "");
             if (initialData.primaryColor) setPrimaryColor(initialData.primaryColor);
+            if (initialData.primaryTextColor) setPrimaryTextColor(initialData.primaryTextColor);
             if (initialData.sidebarColor) setSidebarColor(initialData.sidebarColor);
             if (initialData.sidebarTextColor) setSidebarTextColor(initialData.sidebarTextColor);
             if (initialData.borderRadius) setBorderRadius(initialData.borderRadius);
@@ -67,12 +72,20 @@ export function BrandTab({ initialData }: BrandTabProps) {
         try {
             const result = await uploadFile(formData);
             if (result.success && result.url) {
+                // Update local state immediately
                 if (isDark) {
                     setLogoDarkUrl(result.url);
                 } else {
                     setLogoUrl(result.url);
                 }
-                toast.success("Logo subido correctamente");
+                // Auto-save to database so sidebar updates immediately
+                const savePayload: Record<string, string> = isDark
+                    ? { logoDarkUrl: result.url }
+                    : { logoUrl: result.url };
+                await updateOrganizationSettings(savePayload);
+                toast.success("Logo actualizado");
+                // Refresh server data so sidebar picks up the new logo
+                router.refresh();
             } else {
                 toast.error(result.error || "Error al subir el logo");
             }
@@ -91,6 +104,7 @@ export function BrandTab({ initialData }: BrandTabProps) {
                 logoUrl,
                 logoDarkUrl,
                 primaryColor,
+                primaryTextColor,
                 sidebarColor,
                 sidebarTextColor,
                 borderRadius
@@ -99,7 +113,7 @@ export function BrandTab({ initialData }: BrandTabProps) {
             if (result.success) {
                 toast.success("Configuración de marca actualizada");
                 // Apply theme changes immediately to the DOM (no page reload needed)
-                applyThemeToDOM({ primaryColor, sidebarColor, sidebarTextColor, borderRadius });
+                applyThemeToDOM({ primaryColor, primaryTextColor, sidebarColor, sidebarTextColor, borderRadius });
                 // Soft-refresh server data without full hydration cycle
                 router.refresh();
             } else {
@@ -226,6 +240,35 @@ export function BrandTab({ initialData }: BrandTabProps) {
                                 </div>
                             </div>
                             <p className="text-xs text-muted-foreground">Este color se usará para botones, enlaces y elementos destacados.</p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <Label>Texto sobre Primario</Label>
+                            <div className="flex items-center gap-4">
+                                <div
+                                    className="h-12 w-12 rounded-lg border shadow-sm transition-transform cursor-pointer hover:scale-105 active:scale-95 flex items-center justify-center text-xs font-bold"
+                                    style={{ backgroundColor: primaryColor, color: primaryTextColor }}
+                                    onClick={() => document.getElementById('primary-text-color-picker')?.click()}
+                                >
+                                    Aa
+                                </div>
+                                <div className="flex-1 max-w-xs">
+                                    <div className="relative">
+                                        <Palette className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            id="primary-text-color-picker"
+                                            type="color"
+                                            value={primaryTextColor}
+                                            onChange={(e) => setPrimaryTextColor(e.target.value)}
+                                            className="pl-9 h-10 w-full cursor-pointer"
+                                        />
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-mono text-muted-foreground uppercase">
+                                            {primaryTextColor}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground">Color del texto en botones y elementos con fondo primario.</p>
                         </div>
 
                         <div className="space-y-4">

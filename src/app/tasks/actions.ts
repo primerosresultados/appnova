@@ -2,19 +2,19 @@
 
 import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { getUserSession } from "@/app/actions/auth-actions";
 
 export async function createTaskLog(taskId: string, content: string, type: string = "NOTE") {
     try {
+        const user = await getUserSession();
+
         await db.actionLog.create({
             data: {
                 content,
                 type,
                 taskId,
-                // We need to link it to the project as well for global visibility? 
-                // For now, let's fetch the task to get the projectId
-
                 projectId: (await db.task.findUniqueOrThrow({ where: { id: taskId } })).projectId,
-                // User ID should be handled via auth context, doing generic for now
+                userId: user?.id,
             }
         });
         revalidatePath(`/projects`);

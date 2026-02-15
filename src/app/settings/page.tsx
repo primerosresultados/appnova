@@ -15,11 +15,13 @@ import { getOrganizationSettings } from "@/app/actions/organization-actions";
 import { MembersTab } from "@/components/settings/MembersTab";
 import { BrandTab } from "@/components/settings/BrandTab";
 import { MetaConnectionCard } from "@/components/settings/MetaConnectionCard";
+import { db } from "@/lib/db";
 
 export default async function SettingsPage() {
-    const [users, orgSettings] = await Promise.all([
+    const [users, orgSettings, clients] = await Promise.all([
         getUsers(),
-        getOrganizationSettings()
+        getOrganizationSettings(),
+        db.client.findMany({ select: { id: true, name: true, email: true }, orderBy: { name: 'asc' } }),
     ]);
 
     return (
@@ -51,7 +53,7 @@ export default async function SettingsPage() {
 
                 {/* --- MEMBERS TAB --- */}
                 <TabsContent value="members" className="space-y-4">
-                    <MembersTab users={users} />
+                    <MembersTab users={users} clients={clients} />
                 </TabsContent>
 
                 {/* --- BRAND TAB --- */}

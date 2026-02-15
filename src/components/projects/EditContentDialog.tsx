@@ -119,12 +119,15 @@ export function EditContentDialog({ content, projectId, open, onOpenChange }: Ed
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="GRAFICA">Gráfica</SelectItem>
                                         <SelectItem value="INSTAGRAM_POST">Instagram Post</SelectItem>
-                                        <SelectItem value="INSTAGRAM_REEL">Instagram Reel</SelectItem>
-                                        <SelectItem value="INSTAGRAM_STORY">Instagram Story</SelectItem>
-                                        <SelectItem value="SEO">Artículo SEO</SelectItem>
+                                        <SelectItem value="INSTAGRAM_REEL">Reel</SelectItem>
+                                        <SelectItem value="INSTAGRAM_STORY">Historia</SelectItem>
+                                        <SelectItem value="CAROUSEL">Carrusel</SelectItem>
+                                        <SelectItem value="LIVE">Live</SelectItem>
+                                        <SelectItem value="SEO">Post SEO</SelectItem>
+                                        <SelectItem value="EMAIL">Mailing</SelectItem>
                                         <SelectItem value="ADS_CAMPAIGN">Campaña Ads</SelectItem>
-                                        <SelectItem value="EMAIL">Email Marketing</SelectItem>
                                         <SelectItem value="OTHER">Otro</SelectItem>
                                     </SelectContent>
                                 </Select>

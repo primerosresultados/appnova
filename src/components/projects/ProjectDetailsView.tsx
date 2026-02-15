@@ -3,16 +3,18 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Calendar as CalendarIcon, CheckCircle2, Circle, ListTodo, Workflow, FileText, Database, User, Brain, ChevronLeft, ChevronRight, Target, TrendingUp } from "lucide-react";
+import { ArrowLeft, Calendar as CalendarIcon, CheckCircle2, Circle, ListTodo, Workflow, FileText, Database, User, Brain, ChevronLeft, ChevronRight, Target, TrendingUp, Image, Film, BookImage, LayoutGrid, Radio, Mail, PenLine, BarChart3, LayoutDashboard, UserCircle, Package } from "lucide-react";
 import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useState, ReactNode } from "react";
+import { useState, ReactNode, useCallback } from "react";
+import { EditProjectDialog } from "./EditProjectDialog";
 
 interface ProjectDetailsViewProps {
     project: any; // Core project data
     currentUser?: any;
 
     // Slots for Streaming Content
+    dashboardSlot?: ReactNode;
     tasksSlot?: ReactNode;
     planningSlot?: ReactNode;
     resourcesSlot?: ReactNode;
@@ -21,16 +23,17 @@ interface ProjectDetailsViewProps {
     adsSlot?: ReactNode;
     contentSlot?: ReactNode;
     workflowsSlot?: ReactNode;
+    conversionsSlot?: ReactNode;
+    buyerPersonaSlot?: ReactNode;
+    ofertaSlot?: ReactNode;
     actionLogSlot?: ReactNode;
 }
 
 
 const statusMap: Record<string, { label: string; color: string; icon: any }> = {
-    PLANNING: { label: "Planificación", color: "bg-blue-500/10 text-blue-500 border-blue-500/20", icon: Circle },
-    IN_PROGRESS: { label: "En Progreso", color: "bg-amber-500/10 text-amber-500 border-amber-500/20", icon: Circle },
-    REVIEW: { label: "Revisión", color: "bg-purple-500/10 text-purple-500 border-purple-500/20", icon: CheckCircle2 },
-    COMPLETED: { label: "Completado", color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20", icon: CheckCircle2 },
-    ON_HOLD: { label: "En Pausa", color: "bg-gray-500/10 text-gray-500 border-gray-500/20", icon: Circle },
+    ACTIVE: { label: "Activo", color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20", icon: CheckCircle2 },
+    ALERT: { label: "Alerta", color: "bg-amber-500/10 text-amber-500 border-amber-500/20", icon: Circle },
+    CANCELLED: { label: "Cancelado", color: "bg-red-500/10 text-red-500 border-red-500/20", icon: Circle },
 };
 
 const priorityMap: Record<string, { label: string; color: string }> = {
@@ -45,6 +48,7 @@ const priorityMap: Record<string, { label: string; color: string }> = {
 export function ProjectDetailsView({
     project,
     currentUser,
+    dashboardSlot,
     tasksSlot,
     planningSlot,
     resourcesSlot,
@@ -53,13 +57,43 @@ export function ProjectDetailsView({
     adsSlot,
     contentSlot,
     workflowsSlot,
+    conversionsSlot,
+    buyerPersonaSlot,
+    ofertaSlot,
     actionLogSlot
 }: ProjectDetailsViewProps) {
 
-    const status = statusMap[project.status] || statusMap.PLANNING;
+    const status = statusMap[project.status] || statusMap.ACTIVE;
     const StatusIcon = status.icon;
     const isClient = currentUser?.role === 'CLIENTE';
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState("tasks");
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    // Track which tabs have been visited so we mount them lazily but keep them alive
+    const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set(["tasks"]));
+
+    const handleTabChange = useCallback((value: string) => {
+        setActiveTab(value);
+        setVisitedTabs(prev => {
+            if (prev.has(value)) return prev;
+            const next = new Set(prev);
+            next.add(value);
+            return next;
+        });
+    }, []);
+
+    // Content type config for display — keys match Project schema fields
+    const contentTypeConfig: { key: string; label: string; icon: any; color: string }[] = [
+        { key: "graficas", label: "Gráficas", icon: Image, color: "text-pink-500 bg-pink-500/10" },
+        { key: "reels", label: "Reels", icon: Film, color: "text-purple-500 bg-purple-500/10" },
+        { key: "historias", label: "Historias", icon: BookImage, color: "text-orange-500 bg-orange-500/10" },
+        { key: "carruseles", label: "Carruseles", icon: LayoutGrid, color: "text-blue-500 bg-blue-500/10" },
+        { key: "lives", label: "Lives", icon: Radio, color: "text-red-500 bg-red-500/10" },
+        { key: "mailings", label: "Mailing", icon: Mail, color: "text-cyan-500 bg-cyan-500/10" },
+        { key: "postSeos", label: "Post SEO", icon: PenLine, color: "text-emerald-500 bg-emerald-500/10" },
+    ];
+
+    const hasContentCounts = contentTypeConfig.some(({ key }) => (project[key] || 0) > 0);
 
     return (
         <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_350px] h-[calc(100vh-4rem)] w-full gap-0 overflow-hidden">
@@ -92,23 +126,54 @@ export function ProjectDetailsView({
                         )}
                         {isClient && <div className="flex-1" />}
                     </div>
-                    {!isClient && <Button variant="outline" className="w-full md:w-auto ml-0 md:ml-0">Editar Proyecto</Button>}
+                    {!isClient && (
+                        <Button variant="outline" className="w-full md:w-auto ml-0 md:ml-0" onClick={() => setIsEditOpen(true)}>
+                            Editar Proyecto
+                        </Button>
+                    )}
                 </div>
 
-                <Tabs defaultValue="tasks" className="w-full">
+                {!isClient && <EditProjectDialog project={project} open={isEditOpen} onOpenChange={setIsEditOpen} />}
+
+                {!isClient && hasContentCounts && (
+                    <div className="flex flex-wrap gap-2">
+                        {contentTypeConfig.map(({ key, label, icon: Icon, color }) => {
+                            const count = project[key] || 0;
+                            if (count === 0) return null;
+                            return (
+                                <div
+                                    key={key}
+                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${color} border border-current/10`}
+                                >
+                                    <Icon className="h-3 w-3" />
+                                    <span className="font-bold">{count}</span>
+                                    <span className="opacity-80">{label}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+
+                <Tabs defaultValue="dashboard" className="w-full" value={activeTab} onValueChange={handleTabChange}>
                     <div className="border-b border-border/40 mb-6">
                         <TabsList className="w-full flex justify-start bg-transparent p-0 gap-2 overflow-x-auto overflow-y-hidden max-w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-2">
-                            <TabsTrigger value="tasks" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
-                                <ListTodo className="h-4 w-4" /> Tareas
+                            <TabsTrigger value="dashboard" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <LayoutDashboard className="h-4 w-4" /> Dashboard
                             </TabsTrigger>
-                            <TabsTrigger value="planning" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
-                                <CalendarIcon className="h-4 w-4" /> Planificación
+                            <TabsTrigger value="conversions" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <BarChart3 className="h-4 w-4" /> Conversiones
                             </TabsTrigger>
                             {!isClient && (
                                 <TabsTrigger value="resources" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
                                     <Database className="h-4 w-4" /> Recursos
                                 </TabsTrigger>
                             )}
+                            <TabsTrigger value="planning" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <CalendarIcon className="h-4 w-4" /> Planificación
+                            </TabsTrigger>
+                            <TabsTrigger value="tasks" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <ListTodo className="h-4 w-4" /> Tareas
+                            </TabsTrigger>
                             <TabsTrigger value="creativity" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
                                 <Brain className="h-4 w-4" /> Creatividad
                             </TabsTrigger>
@@ -124,40 +189,62 @@ export function ProjectDetailsView({
                             <TabsTrigger value="workflows" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
                                 <Workflow className="h-4 w-4" /> Flujos
                             </TabsTrigger>
+                            <TabsTrigger value="buyerPersona" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <UserCircle className="h-4 w-4" /> Buyer Persona
+                            </TabsTrigger>
+                            <TabsTrigger value="oferta" className="rounded-full border border-transparent px-4 py-2 gap-2 font-medium text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all flex items-center whitespace-nowrap">
+                                <Package className="h-4 w-4" /> Oferta
+                            </TabsTrigger>
                         </TabsList>
                     </div>
 
 
-                    <TabsContent value="tasks" className="space-y-4">
+                    <TabsContent value="dashboard" className="space-y-4" forceMount hidden={activeTab !== "dashboard"}>
+                        {dashboardSlot}
+                    </TabsContent>
+
+                    <TabsContent value="tasks" className="space-y-4" forceMount hidden={activeTab !== "tasks"}>
                         {tasksSlot}
                     </TabsContent>
 
-                    <TabsContent value="planning" className="w-full h-full">
-                        {planningSlot}
+                    <TabsContent value="planning" className="w-full h-full" forceMount={visitedTabs.has("planning") || undefined} hidden={activeTab !== "planning"}>
+                        {visitedTabs.has("planning") && planningSlot}
                     </TabsContent>
 
-                    <TabsContent value="resources" className="space-y-4">
-                        {resourcesSlot}
+                    <TabsContent value="resources" className="space-y-4" forceMount={visitedTabs.has("resources") || undefined} hidden={activeTab !== "resources"}>
+                        {visitedTabs.has("resources") && resourcesSlot}
                     </TabsContent>
 
-                    <TabsContent value="creativity" className="space-y-4">
-                        {creativitySlot}
+                    <TabsContent value="creativity" className="space-y-4" forceMount={visitedTabs.has("creativity") || undefined} hidden={activeTab !== "creativity"}>
+                        {visitedTabs.has("creativity") && creativitySlot}
                     </TabsContent>
 
-                    <TabsContent value="competitors" className="space-y-4">
-                        {competitorsSlot}
+                    <TabsContent value="competitors" className="space-y-4" forceMount={visitedTabs.has("competitors") || undefined} hidden={activeTab !== "competitors"}>
+                        {visitedTabs.has("competitors") && competitorsSlot}
                     </TabsContent>
 
-                    <TabsContent value="ads" className="space-y-4">
-                        {adsSlot}
+                    <TabsContent value="ads" className="space-y-4" forceMount={visitedTabs.has("ads") || undefined} hidden={activeTab !== "ads"}>
+                        {visitedTabs.has("ads") && adsSlot}
                     </TabsContent>
 
-                    <TabsContent value="content" className="space-y-4">
-                        {contentSlot}
+                    <TabsContent value="content" className="space-y-4" forceMount={visitedTabs.has("content") || undefined} hidden={activeTab !== "content"}>
+                        {visitedTabs.has("content") && contentSlot}
                     </TabsContent>
 
-                    <TabsContent value="workflows" className="space-y-4">
-                        {workflowsSlot}
+                    <TabsContent value="workflows" className="space-y-4" forceMount={visitedTabs.has("workflows") || undefined} hidden={activeTab !== "workflows"}>
+                        {visitedTabs.has("workflows") && workflowsSlot}
+                    </TabsContent>
+
+                    <TabsContent value="conversions" className="space-y-4" forceMount={visitedTabs.has("conversions") || undefined} hidden={activeTab !== "conversions"}>
+                        {visitedTabs.has("conversions") && conversionsSlot}
+                    </TabsContent>
+
+                    <TabsContent value="buyerPersona" className="space-y-4" forceMount={visitedTabs.has("buyerPersona") || undefined} hidden={activeTab !== "buyerPersona"}>
+                        {visitedTabs.has("buyerPersona") && buyerPersonaSlot}
+                    </TabsContent>
+
+                    <TabsContent value="oferta" className="space-y-4" forceMount={visitedTabs.has("oferta") || undefined} hidden={activeTab !== "oferta"}>
+                        {visitedTabs.has("oferta") && ofertaSlot}
                     </TabsContent>
                 </Tabs>
             </div>

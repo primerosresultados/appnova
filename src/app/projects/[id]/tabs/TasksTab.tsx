@@ -6,9 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Circle, ListTodo, User } from "lucide-react";
 import { format } from "date-fns";
 import { TaskStatusSelect } from "@/components/tasks/TaskStatusSelect";
-import { NewTaskSheet } from "@/components/projects/NewTaskSheet";
 import { getProjectTasks } from "@/app/projects/actions-fetchers";
 import { TaskItem } from "@/components/projects/TaskItem";
+import { NewTaskSheet } from "@/components/projects/NewTaskSheet";
+import { CompletedTasksCollapsible } from "@/components/projects/CompletedTasksCollapsible";
 
 export default async function TasksTab({ projectId, isClient }: { projectId: string, isClient: boolean }) {
     // 1. Fetch data directly here
@@ -19,6 +20,9 @@ export default async function TasksTab({ projectId, isClient }: { projectId: str
         MEDIUM: { label: "Media", color: "text-amber-500 bg-amber-500/10" },
         HIGH: { label: "Alta", color: "text-red-500 bg-red-500/10" },
     };
+
+    const pendingTasks = tasks.filter((t: any) => t.status !== "DONE");
+    const completedTasks = tasks.filter((t: any) => t.status === "DONE");
 
     if (tasks.length === 0) {
         return (
@@ -38,11 +42,21 @@ export default async function TasksTab({ projectId, isClient }: { projectId: str
                     <NewTaskSheet projectId={projectId} />
                 </div>
             )}
+            {/* Pending tasks */}
             <div className="grid gap-2">
-                {tasks.map((task: any) => (
+                {pendingTasks.map((task: any) => (
                     <TaskItem key={task.id} task={task} priorityMap={priorityMap} />
                 ))}
             </div>
+
+            {/* Completed tasks collapsible */}
+            {completedTasks.length > 0 && (
+                <CompletedTasksCollapsible count={completedTasks.length}>
+                    {completedTasks.map((task: any) => (
+                        <TaskItem key={task.id} task={task} priorityMap={priorityMap} />
+                    ))}
+                </CompletedTasksCollapsible>
+            )}
         </div>
     );
 }

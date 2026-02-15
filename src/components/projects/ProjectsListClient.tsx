@@ -3,20 +3,33 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Calendar, CheckCircle2, Circle, Clock, Search, Bell, User } from "lucide-react";
+import {
+    Calendar, CheckCircle2, Circle, Clock, Search, User, Archive,
+    Image, Film, BookImage, LayoutGrid, Radio, Mail, PenLine,
+    FolderOpen, ChevronRight, Layers
+} from "lucide-react";
 import Link from "next/link";
 import { ProjectActions } from "@/components/projects/ProjectActions";
 import { NewProjectSheet } from "@/components/projects/NewProjectSheet";
+import { cn } from "@/lib/utils";
 
-const statusMap: Record<string, { label: string; color: string; icon: any }> = {
-    PLANNING: { label: "Planificación", color: "bg-blue-500/10 text-blue-500 border-blue-500/20", icon: Circle },
-    IN_PROGRESS: { label: "En Progreso", color: "bg-amber-500/10 text-amber-500 border-amber-500/20", icon: Clock },
-    REVIEW: { label: "Revisión", color: "bg-purple-500/10 text-purple-500 border-purple-500/20", icon: CheckCircle2 },
-    COMPLETED: { label: "Completado", color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20", icon: CheckCircle2 },
-    ON_HOLD: { label: "En Pausa", color: "bg-gray-500/10 text-gray-500 border-gray-500/20", icon: Circle },
+const statusMap: Record<string, { label: string; color: string; dotColor: string; icon: any }> = {
+    ACTIVE: { label: "Activo", color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 dark:text-emerald-400", dotColor: "bg-emerald-500", icon: CheckCircle2 },
+    ALERT: { label: "Alerta", color: "text-amber-600 bg-amber-50 dark:bg-amber-500/10 dark:text-amber-400", dotColor: "bg-amber-500", icon: Clock },
+    CANCELLED: { label: "Cancelado", color: "text-red-600 bg-red-50 dark:bg-red-500/10 dark:text-red-400", dotColor: "bg-red-500", icon: Circle },
+    ARCHIVED: { label: "Archivado", color: "text-gray-500 bg-gray-50 dark:bg-gray-500/10 dark:text-gray-400", dotColor: "bg-gray-400", icon: Archive },
 };
+
+const contentTypes = [
+    { key: "graficas", icon: Image, label: "Gráficas", color: "text-pink-500" },
+    { key: "reels", icon: Film, label: "Reels", color: "text-violet-500" },
+    { key: "historias", icon: BookImage, label: "Historias", color: "text-amber-500" },
+    { key: "carruseles", icon: LayoutGrid, label: "Carruseles", color: "text-cyan-500" },
+    { key: "lives", icon: Radio, label: "Lives", color: "text-red-500" },
+    { key: "mailings", icon: Mail, label: "Mailings", color: "text-emerald-500" },
+    { key: "postSeos", icon: PenLine, label: "Posts SEO", color: "text-blue-500" },
+] as const;
 
 interface Project {
     id: string;
@@ -24,13 +37,15 @@ interface Project {
     description: string | null;
     status: string;
     dueDate: Date | null;
-    client: {
-        id: string;
-        name: string;
-    };
-    _count: {
-        tasks: number;
-    };
+    client: { id: string; name: string };
+    _count: { tasks: number };
+    graficas?: number;
+    reels?: number;
+    historias?: number;
+    carruseles?: number;
+    lives?: number;
+    mailings?: number;
+    postSeos?: number;
     actionLogs?: {
         content: string;
         createdAt: Date;
@@ -40,154 +55,191 @@ interface Project {
 
 interface ProjectsListClientProps {
     projects: Project[];
+    archivedProjects: Project[];
 }
 
-
-export function ProjectsListClient({ projects }: ProjectsListClientProps) {
+export function ProjectsListClient({ projects, archivedProjects }: ProjectsListClientProps) {
     const [searchQuery, setSearchQuery] = useState("");
+    const [activeTab, setActiveTab] = useState<"active" | "archived">("active");
+
+    const currentProjects = activeTab === "active" ? projects : archivedProjects;
 
     const filteredProjects = useMemo(() => {
-        if (!searchQuery.trim()) {
-            return projects;
-        }
-
+        if (!searchQuery.trim()) return currentProjects;
         const query = searchQuery.toLowerCase().trim();
-        return projects.filter((project) => {
-            return (
-                project.name.toLowerCase().includes(query) ||
-                project.client.name.toLowerCase().includes(query) ||
-                (project.description && project.description.toLowerCase().includes(query))
-            );
-        });
-    }, [projects, searchQuery]);
+        return currentProjects.filter((project) =>
+            project.name.toLowerCase().includes(query) ||
+            project.client.name.toLowerCase().includes(query) ||
+            (project.description && project.description.toLowerCase().includes(query))
+        );
+    }, [currentProjects, searchQuery]);
 
     return (
-        <div className="space-y-4 md:space-y-6 animate-in fade-in-50 duration-500 w-full max-w-[100vw] overflow-x-hidden px-1">
+        <div className="space-y-6 animate-in fade-in-50 duration-500 w-full max-w-[100vw] overflow-x-hidden">
+            {/* Header */}
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Proyectos</h1>
-                    <p className="text-sm md:text-base text-muted-foreground">Gestiona y rastrea el progreso de todos los proyectos.</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                        Gestiona y rastrea el progreso de todos los proyectos.
+                    </p>
                 </div>
                 <div className="flex items-center gap-2 w-full md:w-auto">
                     <div className="relative flex-1 md:w-64 md:flex-none">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Buscar proyectos..."
-                            className="pl-9"
+                            className="pl-9 bg-background/50 backdrop-blur-sm"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <NewProjectSheet />
+                    {activeTab === "active" && <NewProjectSheet />}
                 </div>
             </div>
 
+            {/* Tabs */}
+            <div className="flex items-center gap-1 border-b border-border/50">
+                <button
+                    onClick={() => { setActiveTab("active"); setSearchQuery(""); }}
+                    className={cn(
+                        "px-4 py-2.5 text-sm font-medium transition-all relative",
+                        activeTab === "active" ? "text-foreground" : "text-muted-foreground hover:text-foreground/80"
+                    )}
+                >
+                    Activos
+                    <span className="ml-1.5 text-xs text-muted-foreground">({projects.length})</span>
+                    {activeTab === "active" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />}
+                </button>
+                <button
+                    onClick={() => { setActiveTab("archived"); setSearchQuery(""); }}
+                    className={cn(
+                        "px-4 py-2.5 text-sm font-medium transition-all relative flex items-center gap-1.5",
+                        activeTab === "archived" ? "text-foreground" : "text-muted-foreground hover:text-foreground/80"
+                    )}
+                >
+                    <Archive className="h-3.5 w-3.5" />
+                    Archivados
+                    {archivedProjects.length > 0 && (
+                        <span className="ml-1 text-xs bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full">
+                            {archivedProjects.length}
+                        </span>
+                    )}
+                    {activeTab === "archived" && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-t" />}
+                </button>
+            </div>
+
+            {/* Project List */}
             {filteredProjects.length === 0 ? (
-                <div className="text-center py-12 border border-dashed rounded-lg">
-                    {projects.length === 0 ? (
+                <div className="text-center py-16 border border-dashed rounded-xl bg-muted/5">
+                    {activeTab === "archived" ? (
                         <>
-                            <h3 className="text-lg font-medium">No hay proyectos activos</h3>
-                            <p className="text-muted-foreground mb-4">Crea tu primer proyecto para comenzar.</p>
+                            <Archive className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold">No hay proyectos archivados</h3>
+                            <p className="text-sm text-muted-foreground mt-1">Los proyectos archivados aparecerán aquí.</p>
+                        </>
+                    ) : currentProjects.length === 0 ? (
+                        <>
+                            <FolderOpen className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold">No hay proyectos activos</h3>
+                            <p className="text-sm text-muted-foreground mb-4">Crea tu primer proyecto para comenzar.</p>
                             <NewProjectSheet />
                         </>
                     ) : (
                         <>
-                            <h3 className="text-lg font-medium">No se encontraron resultados</h3>
-                            <p className="text-muted-foreground">Intenta con otro término de búsqueda.</p>
+                            <Search className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                            <h3 className="text-lg font-semibold">No se encontraron resultados</h3>
+                            <p className="text-sm text-muted-foreground mt-1">Intenta con otro término de búsqueda.</p>
                         </>
                     )}
                 </div>
             ) : (
-                <div className="flex flex-col gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     {filteredProjects.map((project) => {
-                        const status = statusMap[project.status] || statusMap.PLANNING;
-                        const StatusIcon = status.icon;
-                        const latestLog = project.actionLogs?.[0]; // Get the latest log
+                        const status = statusMap[project.status] || statusMap.ACTIVE;
+                        const isArchived = activeTab === "archived";
+                        const activeContent = contentTypes.filter(ct => ((project as any)[ct.key] || 0) > 0);
 
                         return (
-                            <div key={project.id} className="group border-b border-border/40 last:border-0 md:border md:rounded-xl md:bg-card md:backdrop-blur-sm md:border-border/50 hover:border-primary/50 transition-all duration-200 shadow-sm hover:shadow-md">
-                                <div className="p-3 md:p-4 flex flex-col gap-2 md:gap-3">
-                                    {/* Header: Name and Actions */}
-                                    <div className="flex items-start justify-between gap-3">
+                            <div
+                                key={project.id}
+                                className={cn(
+                                    "group relative rounded-xl border bg-card overflow-hidden transition-all duration-300",
+                                    "hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30 hover:-translate-y-0.5",
+                                    isArchived && "opacity-60 hover:opacity-80"
+                                )}
+                            >
+                                {/* Accent top bar */}
+                                <div className={cn("h-1", status.dotColor)} />
+
+                                <div className="p-4 space-y-3">
+                                    {/* Header row */}
+                                    <div className="flex items-start justify-between gap-2">
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <Link href={`/projects/${project.id}`} className="block group-hover:text-primary transition-colors">
-                                                    <h3 className="text-base md:text-lg font-bold leading-tight truncate">
-                                                        {project.name}
-                                                    </h3>
-                                                </Link>
-                                                {/* Notification Bell */}
-                                                {latestLog && (
-                                                    <div className="relative group/bell">
-                                                        <div className="bg-red-500/10 text-red-500 p-1 rounded-full animate-pulse md:animate-none md:hover:animate-pulse cursor-help">
-                                                            <Bell className="h-3 w-3" />
-                                                            <span className="absolute top-0 right-0 h-1.5 w-1.5 bg-red-500 rounded-full border-2 border-background"></span>
-                                                        </div>
-                                                        {/* Tooltip for Bell */}
-                                                        <div className="absolute left-0 bottom-full mb-2 hidden group-hover/bell:block bg-popover text-popover-foreground text-xs p-2 rounded border shadow-lg w-64 z-10">
-                                                            <p className="font-semibold mb-1">Última actividad:</p>
-                                                            <p className="line-clamp-2">{latestLog.content}</p>
-                                                            <p className="text-muted-foreground mt-1 text-[10px]">{format(new Date(latestLog.createdAt), 'd MMM HH:mm')} por {latestLog.user?.name || 'Sistema'}</p>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Mobile Status Dot */}
-                                                <div className={`md:hidden h-2.5 w-2.5 rounded-full ${status.color.split(' ')[1] ? status.color.split(' ')[1].replace('text-', 'bg-') : 'bg-gray-500'}`} />
-                                            </div>
-
-                                            <div className="flex flex-col gap-0.5">
-                                                <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground truncate">
-                                                    <User className="h-3 w-3 opacity-70" />
-                                                    <span className="font-medium">{project.client.name}</span>
-                                                </div>
-
-                                                {/* Latest Change Text (Visible directly) */}
-                                                {latestLog && (
-                                                    <div className="flex items-center gap-1.5 text-[10px] md:text-xs text-muted-foreground/80 mt-1 bg-muted/30 p-1 rounded w-fit max-w-full">
-                                                        <Bell className="h-2.5 w-2.5 text-primary/70 shrink-0" />
-                                                        <span className="font-medium text-primary/90 shrink-0">Últimos:</span>
-                                                        <span className="truncate">{latestLog.content}</span>
-                                                    </div>
-                                                )}
+                                            <Link href={`/projects/${project.id}`} className="group/link flex items-center gap-1.5">
+                                                <h3 className="text-base font-bold truncate group-hover/link:text-primary transition-colors">
+                                                    {project.name}
+                                                </h3>
+                                                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/0 group-hover/link:text-primary group-hover/link:translate-x-0.5 transition-all shrink-0" />
+                                            </Link>
+                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                <User className="h-3 w-3 text-muted-foreground/60" />
+                                                <span className="text-xs text-muted-foreground font-medium">{project.client.name}</span>
                                             </div>
                                         </div>
-
-                                        <div className="flex items-center gap-2">
-                                            <div className="md:hidden">
-                                                {project.dueDate && (
-                                                    <span className="text-[10px] text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded mr-2">
-                                                        {format(new Date(project.dueDate!), 'd MMM')}
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <ProjectActions projectId={project.id} />
-                                        </div>
+                                        <ProjectActions projectId={project.id} project={project} isArchived={isArchived} />
                                     </div>
 
-                                    {/* Desktop: Horizontal Layout (Hidden on Mobile) */}
-                                    <div className="hidden md:flex items-center justify-between mt-0 pt-2 border-t border-border/40">
-                                        <div className="text-sm text-muted-foreground truncate max-w-[40%] flex items-center gap-2">
-                                            {project.description ? (
-                                                <span>{project.description}</span>
-                                            ) : (
-                                                <span className="italic opacity-50">Sin descripción</span>
-                                            )}
+                                    {/* Description */}
+                                    {project.description && (
+                                        <p className="text-xs text-muted-foreground/80 line-clamp-1">
+                                            {project.description}
+                                        </p>
+                                    )}
+
+                                    {/* Content type chips */}
+                                    {activeContent.length > 0 && (
+                                        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+                                            {activeContent.map((ct) => {
+                                                const Icon = ct.icon;
+                                                const count = (project as any)[ct.key];
+                                                return (
+                                                    <div
+                                                        key={ct.key}
+                                                        className={cn(
+                                                            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium",
+                                                            "bg-muted/50 border border-border/30",
+                                                            ct.color
+                                                        )}
+                                                        title={ct.label}
+                                                    >
+                                                        <Icon className="h-2.5 w-2.5" />
+                                                        <span>{count}</span>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
-                                        <div className="flex items-center gap-6">
-                                            <Badge variant="outline" className={`${status.color} border font-medium px-2.5 py-0.5 text-xs`}>
-                                                <StatusIcon className="mr-1.5 h-3.5 w-3.5" />
-                                                {status.label}
-                                            </Badge>
+                                    )}
+
+                                    {/* Footer */}
+                                    <div className="flex items-center justify-between pt-2 border-t border-border/30">
+                                        <Badge
+                                            variant="secondary"
+                                            className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-md border-0", status.color)}
+                                        >
+                                            {status.label}
+                                        </Badge>
+
+                                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                             {project.dueDate && (
-                                                <div className="flex items-center gap-2 text-sm text-muted-foreground" title="Fecha de entrega">
-                                                    <Calendar className="h-4 w-4 opacity-70" />
+                                                <div className="flex items-center gap-1" title="Fecha de entrega">
+                                                    <Calendar className="h-3 w-3 opacity-60" />
                                                     <span>{format(new Date(project.dueDate), 'd MMM')}</span>
                                                 </div>
                                             )}
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <CheckCircle2 className="h-4 w-4 opacity-70" />
-                                                <span>{project._count.tasks} Tareas</span>
+                                            <div className="flex items-center gap-1" title="Tareas">
+                                                <Layers className="h-3 w-3 opacity-60" />
+                                                <span>{project._count.tasks}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -200,4 +252,3 @@ export function ProjectsListClient({ projects }: ProjectsListClientProps) {
         </div>
     );
 }
-

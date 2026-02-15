@@ -177,3 +177,42 @@ export async function getProjectAdReports(id: string) {
     return getCachedProjectAdReports(id);
 }
 
+// Lightweight query to get content type counts for display in project header
+const getCachedProjectContentCounts = unstable_cache(
+    async (id: string) => {
+        const contents = await db.content.findMany({
+            where: { projectId: id },
+            select: { type: true }
+        });
+        const counts: Record<string, number> = {};
+        for (const c of contents) {
+            counts[c.type] = (counts[c.type] || 0) + 1;
+        }
+        return counts;
+    },
+    ['project-content-counts'],
+    { revalidate: 30 }
+);
+
+export async function getProjectContentCounts(id: string) {
+    return getCachedProjectContentCounts(id);
+}
+
+// Fetcher for project conversions
+const getCachedProjectConversions = unstable_cache(
+    async (id: string) => {
+        return db.conversion.findMany({
+            where: { projectId: id },
+            orderBy: { date: 'desc' },
+            include: {
+                createdBy: { select: { id: true, name: true, avatar: true } }
+            }
+        });
+    },
+    ['project-conversions'],
+    { revalidate: 30 }
+);
+
+export async function getProjectConversions(id: string) {
+    return getCachedProjectConversions(id);
+}

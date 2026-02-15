@@ -41,7 +41,7 @@ function TaskDescriptionBox({ description }: { description: string | null }) {
 export function TaskItem({ task, priorityMap }: { task: any, priorityMap: any }) {
     return (
         <Link href={`/tasks/${task.id}`}>
-            <div className="flex flex-col gap-2 p-4 rounded-xl border border-border/20 bg-card hover:bg-card hover:shadow-md transition-all duration-300 cursor-pointer group relative overflow-hidden">
+            <div className="flex flex-col gap-2 p-4 rounded-xl border border-border/50 bg-card shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer group relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="flex flex-col md:flex-row md:items-start justify-between gap-3 md:gap-0 relative z-10">
                     <div className="flex items-start gap-3 w-full">

@@ -46,16 +46,18 @@ export function TaskStatusSelect({ taskId, status, variant = "default" }: TaskSt
 
     if (variant === "minimal") {
         return (
-            <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+            <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }} onPointerDown={(e) => e.stopPropagation()}>
                 <Select value={currentStatus} onValueChange={handleStatusChange} disabled={isPending}>
-                    <SelectTrigger className="h-8 w-auto px-2 border-0 shadow-none focus:ring-0 bg-transparent p-0 group/status hover:opacity-80 transition-opacity">
+                    <SelectTrigger
+                        className="h-8 w-auto px-2 border-0 shadow-none focus:ring-0 bg-transparent p-0 group/status hover:opacity-80 transition-opacity"
+                        onPointerDown={(e) => e.stopPropagation()}
+                    >
                         <Badge variant="outline" className={`${currentOption.bg} ${currentOption.color} border-0 px-2 py-0.5 flex items-center gap-1.5`}>
                             {isPending ? <RefreshCw className="h-3 w-3 animate-spin" /> : <Icon className="h-3 w-3" />}
                             {currentOption.label}
-                            <ChevronDown className="h-3 w-3 opacity-50 ml-1" />
                         </Badge>
                     </SelectTrigger>
-                    <SelectContent align="start">
+                    <SelectContent align="start" position="popper" sideOffset={4}>
                         {statusOptions.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                                 <div className="flex items-center gap-2">

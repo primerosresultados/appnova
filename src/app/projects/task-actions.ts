@@ -49,7 +49,7 @@ export async function createTask(prevState: any, formData: FormData) {
                 projectId,
                 status,
                 priority,
-                dueDate: dueDate ? new Date(dueDate) : undefined,
+                dueDate: dueDate ? (() => { const [y, m, d] = dueDate.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0); })() : undefined,
                 assigneeId: assigneeId || null,
                 links: links || null,
             },
@@ -100,7 +100,11 @@ export async function updateTask(taskId: string, prevState: any, formData: FormD
     try {
         const user = await getUserSession();
         const data: any = { ...validatedFields.data };
-        if (data.dueDate) data.dueDate = new Date(data.dueDate);
+        if (data.dueDate) {
+            // Parse as local date at noon to avoid timezone day-shift
+            const [y, m, d] = data.dueDate.split('-').map(Number);
+            data.dueDate = new Date(y, m - 1, d, 12, 0, 0);
+        }
         if (data.assigneeId === undefined) data.assigneeId = null;
 
         const updatedTask = await db.task.update({
