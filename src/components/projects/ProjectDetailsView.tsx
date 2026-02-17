@@ -265,7 +265,7 @@ export function ProjectDetailsView({
                 </div>
             </div>
 
-            <div className="h-full hidden xl:block border-l border-border">
+            <div className="h-full hidden xl:block border-l border-border overflow-hidden">
                 {actionLogSlot}
             </div>
         </div>

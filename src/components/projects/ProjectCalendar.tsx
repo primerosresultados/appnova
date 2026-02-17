@@ -158,7 +158,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
     const isPending = isMilestonePending || isTaskPending || isContentPending;
 
     return (
-        <div className="flex flex-col h-full bg-background/50 rounded-xl overflow-hidden border border-border/50 shadow-sm">
+        <div className="flex flex-col bg-background/50 rounded-xl border border-border/50 shadow-sm">
             {/* Calendar Header */}
             <div className="flex flex-wrap items-center justify-between gap-2 p-3 sm:p-4 border-b border-border/50 bg-card/50 backdrop-blur-sm">
                 <div className="flex items-center gap-2 sm:gap-4">
@@ -187,8 +187,8 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
             </div>
 
             {/* Calendar Grid */}
-            <div className="flex-1 overflow-auto">
-                <div className="w-full h-full flex flex-col">
+            <div>
+                <div className="w-full flex flex-col">
                     {/* Days Header */}
                     <div className="grid grid-cols-7 border-b border-border/50 bg-muted/20">
                         {WEEKDAYS_FULL.map((day, i) => (
@@ -200,7 +200,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                     </div>
 
                     {/* Days Grid */}
-                    <div className="grid grid-cols-7 flex-1 auto-rows-fr bg-border/20 gap-px">
+                    <div className="grid grid-cols-7 bg-border/20 gap-px">
                         {calendarDays.map((day) => {
                             const events = getEventsForDay(day);
                             const isCurrentMonth = day.getMonth() === currentMonth.getMonth();

@@ -138,7 +138,7 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
             </div>
 
             {/* Log entries */}
-            <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+            <ScrollArea className="flex-1 min-h-0 p-4" ref={scrollRef}>
                 <div className="space-y-6">
                     {optimisticLogs.length === 0 ? (
                         <div className="text-center py-10 text-muted-foreground text-sm">
