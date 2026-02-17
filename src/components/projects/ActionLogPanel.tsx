@@ -126,7 +126,7 @@ export function ActionLogPanel({ projectId, logs, currentUser }: ActionLogPanelP
     }
 
     return (
-        <div className="flex flex-col h-full bg-card backdrop-blur-sm">
+        <div className="flex flex-col h-full overflow-hidden bg-card backdrop-blur-sm">
             {/* Header */}
             <div className="p-4 pb-3 border-b border-border/50 bg-gradient-to-r from-primary/5 via-transparent to-violet-500/5">
                 <h3 className="text-base font-bold flex items-center gap-2">

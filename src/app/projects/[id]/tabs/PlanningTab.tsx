@@ -1,12 +1,14 @@
 
 import { ProjectCalendar } from "@/components/projects/ProjectCalendar";
 import { getProjectMilestones, getProjectContents, getProjectTasks } from "@/app/projects/actions-fetchers";
+import { getUsers } from "@/app/actions/user-actions";
 
 export default async function PlanningTab({ projectId, isClient }: { projectId: string, isClient: boolean }) {
-    const [milestones, contents, tasks] = await Promise.all([
+    const [milestones, contents, tasks, users] = await Promise.all([
         getProjectMilestones(projectId),
         getProjectContents(projectId),
-        getProjectTasks(projectId)
+        getProjectTasks(projectId),
+        getUsers()
     ]);
 
     return (
@@ -16,6 +18,7 @@ export default async function PlanningTab({ projectId, isClient }: { projectId: 
                 milestones={milestones}
                 contents={contents}
                 tasks={tasks}
+                users={users}
                 isClient={isClient}
             />
         </div>

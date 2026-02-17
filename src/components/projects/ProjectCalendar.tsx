@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import {
     format,
     startOfMonth,
@@ -20,8 +20,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Flag, FileIcon, Plus, Trash2, Megaphone, ListTodo, ChevronLeft, ChevronRight, Clock, UserIcon } from "lucide-react";
 import { createMilestone, deleteMilestone } from "@/app/projects/milestone-actions";
+import { createTask } from "@/app/projects/task-actions";
+import { createContent } from "@/app/projects/content-actions";
 import { useActionState } from "react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -52,6 +55,7 @@ interface ProjectCalendarProps {
     milestones: Milestone[];
     contents: Content[];
     tasks: any[];
+    users?: { id: string; name: string }[];
     isClient?: boolean;
 }
 
@@ -76,22 +80,47 @@ const statusLabels: Record<string, string> = {
     SCHEDULED: 'Programado',
 };
 
-const WEEKDAYS = ["LUN", "MAR", "MIE", "JUE", "VIE", "SAB", "DOM"];
+const WEEKDAYS_SHORT = ["L", "M", "X", "J", "V", "S", "D"];
+const WEEKDAYS_FULL = ["LUN", "MAR", "MIE", "JUE", "VIE", "SAB", "DOM"];
 
-export function ProjectCalendar({ projectId, milestones, contents, tasks, isClient = false }: ProjectCalendarProps) {
+type EventType = 'MILESTONE' | 'TASK' | 'CONTENT';
+
+export function ProjectCalendar({ projectId, milestones, contents, tasks, users = [], isClient = false }: ProjectCalendarProps) {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
+    const [eventType, setEventType] = useState<EventType>('MILESTONE');
 
     // Dialog handling for creating milestones
-    const [state, formAction, isPending] = useActionState(createMilestone, initialState);
+    const [milestoneState, milestoneFormAction, isMilestonePending] = useActionState(createMilestone, initialState);
+    const [taskState, taskFormAction, isTaskPending] = useActionState(createTask, initialState);
+    const [isContentPending, startContentTransition] = useTransition();
+    const [contentError, setContentError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (state.success && isDialogOpen) {
+        if (milestoneState.success && isDialogOpen) {
             setIsDialogOpen(false);
         }
-    }, [state.success, isDialogOpen]);
+    }, [milestoneState.success, isDialogOpen]);
+
+    useEffect(() => {
+        if (taskState.success && isDialogOpen) {
+            setIsDialogOpen(false);
+        }
+    }, [taskState.success, isDialogOpen]);
+
+    const handleContentSubmit = async (formData: FormData) => {
+        setContentError(null);
+        startContentTransition(async () => {
+            const result = await createContent(projectId, formData);
+            if (result.success) {
+                setIsDialogOpen(false);
+            } else {
+                setContentError("Error al crear el contenido.");
+            }
+        });
+    };
 
     const handleDelete = async (id: string) => {
         if (confirm("¿Estás seguro de eliminar este hito?")) {
@@ -106,6 +135,8 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
     const handleDateClick = (date: Date) => {
         if (isClient) return;
         setSelectedDate(date);
+        setEventType('MILESTONE');
+        setContentError(null);
         setIsDialogOpen(true);
     };
 
@@ -124,19 +155,21 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
         return [...ms, ...cs, ...ts];
     };
 
+    const isPending = isMilestonePending || isTaskPending || isContentPending;
+
     return (
         <div className="flex flex-col h-full bg-background/50 rounded-xl overflow-hidden border border-border/50 shadow-sm">
             {/* Calendar Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border/50 bg-card/50 backdrop-blur-sm">
-                <div className="flex items-center gap-4">
-                    <h2 className="text-lg font-bold capitalize flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 p-3 sm:p-4 border-b border-border/50 bg-card/50 backdrop-blur-sm">
+                <div className="flex items-center gap-2 sm:gap-4">
+                    <h2 className="text-sm sm:text-lg font-bold capitalize flex items-center gap-2">
                         {format(currentMonth, "MMMM yyyy", { locale: es })}
                     </h2>
                     <div className="flex items-center rounded-md border border-border/50 bg-background/50 shadow-sm">
                         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-none rounded-l-md hover:bg-accent" onClick={handlePreviousMonth}>
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" className="h-7 px-3 rounded-none border-x border-border/50 font-normal hover:bg-accent text-xs" onClick={handleToday}>
+                        <Button variant="ghost" size="sm" className="h-7 px-2 sm:px-3 rounded-none border-x border-border/50 font-normal hover:bg-accent text-xs" onClick={handleToday}>
                             Hoy
                         </Button>
                         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-none rounded-r-md hover:bg-accent" onClick={handleNextMonth}>
@@ -145,21 +178,23 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
                     </div>
                 </div>
                 {!isClient && (
-                    <Button size="sm" onClick={() => handleDateClick(new Date())}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nuevo Hito
+                    <Button size="sm" className="text-xs sm:text-sm" onClick={() => handleDateClick(new Date())}>
+                        <Plus className="h-4 w-4 mr-1 sm:mr-2" />
+                        <span className="hidden sm:inline">Nuevo Evento</span>
+                        <span className="sm:hidden">Nuevo</span>
                     </Button>
                 )}
             </div>
 
             {/* Calendar Grid */}
-            <div className="flex-1 overflow-auto min-h-[600px]">
-                <div className="w-full h-full min-w-[800px] flex flex-col">
+            <div className="flex-1 overflow-auto">
+                <div className="w-full h-full flex flex-col">
                     {/* Days Header */}
                     <div className="grid grid-cols-7 border-b border-border/50 bg-muted/20">
-                        {WEEKDAYS.map((day) => (
+                        {WEEKDAYS_FULL.map((day, i) => (
                             <div key={day} className="py-2 text-center text-xs font-semibold text-muted-foreground">
-                                {day}
+                                <span className="hidden sm:inline">{day}</span>
+                                <span className="sm:hidden">{WEEKDAYS_SHORT[i]}</span>
                             </div>
                         ))}
                     </div>
@@ -175,7 +210,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
                                 <div
                                     key={day.toISOString()}
                                     className={cn(
-                                        "min-h-[120px] bg-card p-2 flex flex-col gap-1 transition-colors hover:bg-accent/5 group relative",
+                                        "min-h-[70px] sm:min-h-[100px] md:min-h-[120px] bg-card p-1 sm:p-2 flex flex-col gap-0.5 sm:gap-1 transition-colors hover:bg-accent/5 group relative cursor-pointer",
                                         !isCurrentMonth && "bg-muted/10 text-muted-foreground/50",
                                         isTodayDate && "bg-primary/5"
                                     )}
@@ -183,15 +218,15 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
                                 >
                                     <div className="flex justify-between items-start">
                                         <span className={cn(
-                                            "text-sm font-medium h-6 w-6 flex items-center justify-center rounded-full",
+                                            "text-xs sm:text-sm font-medium h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center rounded-full",
                                             isTodayDate ? "bg-primary text-primary-foreground" : "text-muted-foreground",
                                             !isCurrentMonth && "opacity-50"
                                         )}>
                                             {format(day, "d")}
                                         </span>
-                                        <div className="flex items-center gap-1">
+                                        <div className="flex items-center gap-0.5 sm:gap-1">
                                             {events.length > 0 && (
-                                                <span className="text-[9px] text-muted-foreground font-medium">
+                                                <span className="text-[8px] sm:text-[9px] text-muted-foreground font-medium">
                                                     {events.length}
                                                 </span>
                                             )}
@@ -199,20 +234,20 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity -mt-1 -mr-1"
+                                                    className="h-4 w-4 sm:h-5 sm:w-5 opacity-0 group-hover:opacity-100 transition-opacity -mt-0.5 sm:-mt-1 -mr-0.5 sm:-mr-1"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         handleDateClick(day);
                                                     }}
                                                 >
-                                                    <Plus className="h-3 w-3" />
+                                                    <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                                 </Button>
                                             )}
                                         </div>
                                     </div>
 
                                     {/* Events List — modern cards */}
-                                    <div className="flex flex-col gap-1 mt-1 overflow-y-auto max-h-[150px] scrollbar-none">
+                                    <div className="flex flex-col gap-0.5 sm:gap-1 mt-0.5 sm:mt-1 overflow-y-auto max-h-[60px] sm:max-h-[100px] md:max-h-[150px] scrollbar-none">
                                         {events.map((event: any) => {
                                             const config = kindConfig[event._kind];
                                             const Icon = config?.icon;
@@ -220,7 +255,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
                                                 <div
                                                     key={`${event._kind}-${event.id}`}
                                                     className={cn(
-                                                        "group/event text-[11px] px-2 py-1.5 rounded-md border cursor-pointer transition-all duration-200",
+                                                        "group/event text-[9px] sm:text-[11px] px-1 sm:px-2 py-0.5 sm:py-1.5 rounded-md border cursor-pointer transition-all duration-200",
                                                         "hover:shadow-md hover:scale-[1.02] hover:-translate-y-px",
                                                         config?.accent
                                                     )}
@@ -230,17 +265,17 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
                                                     }}
                                                     title={event.title}
                                                 >
-                                                    <div className="flex items-center gap-1.5">
-                                                        <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", config?.dot)} />
+                                                    <div className="flex items-center gap-1 sm:gap-1.5">
+                                                        <span className={cn("h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full shrink-0", config?.dot)} />
                                                         <span className={cn("truncate font-medium flex-1", config?.color)}>{event.title}</span>
                                                     </div>
                                                     {event.assignee && (
-                                                        <div className="flex items-center gap-1 mt-0.5 ml-3 text-[9px] text-muted-foreground">
+                                                        <div className="hidden sm:flex items-center gap-1 mt-0.5 ml-3 text-[9px] text-muted-foreground">
                                                             <span className="truncate">{event.assignee.name}</span>
                                                         </div>
                                                     )}
                                                     {event.status && (
-                                                        <div className="ml-3 mt-0.5">
+                                                        <div className="hidden sm:block ml-3 mt-0.5">
                                                             <span className="text-[9px] text-muted-foreground">{statusLabels[event.status] || event.status}</span>
                                                         </div>
                                                     )}
@@ -255,50 +290,216 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, isClie
                 </div>
             </div>
 
-            {/* Add Milestone Dialog */}
+            {/* Add Event Dialog — Multi-type */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent>
+                <DialogContent className="sm:max-w-lg">
                     <DialogHeader>
-                        <DialogTitle>Agregar Hito</DialogTitle>
+                        <DialogTitle>Nuevo Evento</DialogTitle>
                         <DialogDescription>
                             {selectedDate && `Para el ${format(selectedDate, "PPP", { locale: es })}`}
                         </DialogDescription>
                     </DialogHeader>
-                    <form action={formAction} className="space-y-4">
-                        <input type="hidden" name="projectId" value={projectId} />
-                        {selectedDate && <input type="hidden" name="date" value={selectedDate.toISOString()} />}
-                        <input type="hidden" name="type" value="MILESTONE" />
 
-                        <div className="space-y-2">
-                            <Label>Título</Label>
-                            <Input name="title" required placeholder="Ej: Entrega de Mockups" />
-                        </div>
+                    {/* Event Type Tabs */}
+                    <div className="flex gap-1 p-1 bg-muted/50 rounded-lg">
+                        {(['MILESTONE', 'TASK', 'CONTENT'] as EventType[]).map((type) => {
+                            const config = kindConfig[type];
+                            const Icon = config.icon;
+                            return (
+                                <button
+                                    key={type}
+                                    type="button"
+                                    onClick={() => setEventType(type)}
+                                    className={cn(
+                                        "flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-medium transition-all",
+                                        eventType === type
+                                            ? "bg-background shadow-sm text-foreground"
+                                            : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                                    )}
+                                >
+                                    <Icon className="h-3.5 w-3.5" />
+                                    <span className="hidden sm:inline">{config.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
 
-                        <div className="space-y-2">
-                            <Label>Descripción</Label>
-                            <Textarea name="description" placeholder="Detalles del hito..." />
-                        </div>
+                    {/* Milestone Form */}
+                    {eventType === 'MILESTONE' && (
+                        <form action={milestoneFormAction} className="space-y-4">
+                            <input type="hidden" name="projectId" value={projectId} />
+                            {selectedDate && <input type="hidden" name="date" value={selectedDate.toISOString()} />}
+                            <input type="hidden" name="type" value="MILESTONE" />
 
-                        <div className="space-y-2">
-                            <Label>Adjuntar Archivo</Label>
-                            <Input type="file" name="file" />
-                        </div>
+                            <div className="space-y-2">
+                                <Label>Título</Label>
+                                <Input name="title" required placeholder="Ej: Entrega de Mockups" />
+                            </div>
 
-                        <div className="space-y-2">
-                            <Label>Multimedia (URL Opcional)</Label>
-                            <Input name="mediaUrl" placeholder="https://..." />
-                        </div>
+                            <div className="space-y-2">
+                                <Label>Descripción</Label>
+                                <Textarea name="description" placeholder="Detalles del hito..." />
+                            </div>
 
-                        {state.message && !state.success && (
-                            <p className="text-xs text-red-500">{state.message}</p>
-                        )}
+                            <div className="space-y-2">
+                                <Label>Asignar a</Label>
+                                <Select name="assigneeId">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar responsable" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="unassigned">Sin asignar</SelectItem>
+                                        {users.map((u) => (
+                                            <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
 
-                        <DialogFooter>
-                            <Button type="submit" disabled={isPending}>
-                                {isPending ? "Guardando..." : "Guardar Hito"}
-                            </Button>
-                        </DialogFooter>
-                    </form>
+                            <div className="space-y-2">
+                                <Label>Adjuntar Archivo</Label>
+                                <Input type="file" name="file" />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Multimedia (URL Opcional)</Label>
+                                <Input name="mediaUrl" placeholder="https://..." />
+                            </div>
+
+                            {milestoneState.message && !milestoneState.success && (
+                                <p className="text-xs text-red-500">{milestoneState.message}</p>
+                            )}
+
+                            <DialogFooter>
+                                <Button type="submit" disabled={isPending}>
+                                    {isMilestonePending ? "Guardando..." : "Guardar Hito"}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    )}
+
+                    {/* Task Form */}
+                    {eventType === 'TASK' && (
+                        <form action={taskFormAction} className="space-y-4">
+                            <input type="hidden" name="projectId" value={projectId} />
+                            {selectedDate && <input type="hidden" name="dueDate" value={format(selectedDate, "yyyy-MM-dd")} />}
+                            <input type="hidden" name="status" value="TODO" />
+
+                            <div className="space-y-2">
+                                <Label>Título</Label>
+                                <Input name="title" required placeholder="Ej: Diseñar landing page" />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Descripción</Label>
+                                <Textarea name="description" placeholder="Detalles de la tarea..." />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Prioridad</Label>
+                                <Select name="priority" defaultValue="MEDIUM">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar prioridad" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="LOW">Baja</SelectItem>
+                                        <SelectItem value="MEDIUM">Media</SelectItem>
+                                        <SelectItem value="HIGH">Alta</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Asignar a</Label>
+                                <Select name="assigneeId">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar responsable" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="unassigned">Sin asignar</SelectItem>
+                                        {users.map((u) => (
+                                            <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {taskState.message && !taskState.success && (
+                                <p className="text-xs text-red-500">{taskState.message}</p>
+                            )}
+
+                            <DialogFooter>
+                                <Button type="submit" disabled={isPending}>
+                                    {isTaskPending ? "Guardando..." : "Guardar Tarea"}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    )}
+
+                    {/* Content Form */}
+                    {eventType === 'CONTENT' && (
+                        <form action={handleContentSubmit} className="space-y-4">
+                            {selectedDate && <input type="hidden" name="publishDate" value={selectedDate.toISOString()} />}
+
+                            <div className="space-y-2">
+                                <Label>Título</Label>
+                                <Input name="title" required placeholder="Ej: Post para Instagram" />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Tipo de Contenido</Label>
+                                <Select name="type" defaultValue="POST">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar tipo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="POST">Post</SelectItem>
+                                        <SelectItem value="REEL">Reel</SelectItem>
+                                        <SelectItem value="STORY">Story</SelectItem>
+                                        <SelectItem value="VIDEO">Video</SelectItem>
+                                        <SelectItem value="BLOG">Blog</SelectItem>
+                                        <SelectItem value="EMAIL">Email</SelectItem>
+                                        <SelectItem value="OTHER">Otro</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Descripción</Label>
+                                <Textarea name="description" placeholder="Detalles del contenido..." />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Asignar a</Label>
+                                <Select name="assigneeId">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar responsable" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="unassigned">Sin asignar</SelectItem>
+                                        {users.map((u) => (
+                                            <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>URL de Media (Opcional)</Label>
+                                <Input name="mediaUrl" placeholder="https://..." />
+                            </div>
+
+                            {contentError && (
+                                <p className="text-xs text-red-500">{contentError}</p>
+                            )}
+
+                            <DialogFooter>
+                                <Button type="submit" disabled={isPending}>
+                                    {isContentPending ? "Guardando..." : "Guardar Contenido"}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    )}
                 </DialogContent>
             </Dialog>
 
