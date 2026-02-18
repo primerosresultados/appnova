@@ -53,6 +53,27 @@ export async function updateProspectStatus(id: string, status: string) {
     }
 }
 
+export async function updateProspect(id: string, data: {
+    name?: string;
+    email?: string | null;
+    phone?: string | null;
+    company?: string | null;
+    source?: string | null;
+    notes?: string | null;
+}) {
+    try {
+        await db.prospect.update({
+            where: { id },
+            data,
+        });
+        revalidatePath("/prospectos");
+        return { success: true, message: "Prospecto actualizado" };
+    } catch (error: any) {
+        console.error("[updateProspect] Error:", error?.message);
+        return { success: false, message: "Error al actualizar prospecto" };
+    }
+}
+
 export async function deleteProspect(id: string) {
     try {
         await db.prospect.delete({ where: { id } });
@@ -97,6 +118,25 @@ export async function addQuoteItem(prevState: any, formData: FormData) {
     } catch (error: any) {
         console.error("[addQuoteItem] Error:", error?.message);
         return { message: "Error al agregar item", success: false };
+    }
+}
+
+export async function updateQuoteSettings(prospectId: string, data: {
+    quoteNotes?: string | null;
+    quoteValidDays?: number | null;
+    quoteDiscount?: number | null;
+    quoteTaxRate?: number | null;
+}) {
+    try {
+        await db.prospect.update({
+            where: { id: prospectId },
+            data,
+        });
+        revalidatePath("/prospectos");
+        return { success: true };
+    } catch (error: any) {
+        console.error("[updateQuoteSettings] Error:", error?.message);
+        return { success: false, message: "Error al actualizar configuración de cotización" };
     }
 }
 

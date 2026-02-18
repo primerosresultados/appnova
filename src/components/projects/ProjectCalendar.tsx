@@ -21,10 +21,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Flag, FileIcon, Plus, Trash2, Megaphone, ListTodo, ChevronLeft, ChevronRight, Clock, UserIcon } from "lucide-react";
-import { createMilestone, deleteMilestone } from "@/app/projects/milestone-actions";
+import { Flag, FileIcon, Plus, Trash2, Megaphone, ListTodo, ChevronLeft, ChevronRight, Clock, UserIcon, Pencil } from "lucide-react";
+import { createMilestone, deleteMilestone, updateMilestone } from "@/app/projects/milestone-actions";
 import { createTask } from "@/app/projects/task-actions";
-import { createContent } from "@/app/projects/content-actions";
+import { createContent, updateContent, deleteContent } from "@/app/projects/content-actions";
 import { useActionState } from "react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -38,6 +38,8 @@ interface Milestone {
     mediaUrl: string | null;
     filePath: string | null;
     type: string;
+    assigneeId?: string | null;
+    assignee?: { id: string; name: string; avatar?: string | null } | null;
 }
 
 interface Content {
@@ -48,6 +50,7 @@ interface Content {
     description: string | null;
     status: string;
     mediaUrl: string | null;
+    creator?: { id: string; name: string; avatar?: string | null } | null;
 }
 
 interface ProjectCalendarProps {
@@ -90,6 +93,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
+    const [isEditing, setIsEditing] = useState(false);
     const [eventType, setEventType] = useState<EventType>('MILESTONE');
 
     // Dialog handling for creating milestones
@@ -97,6 +101,10 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
     const [taskState, taskFormAction, isTaskPending] = useActionState(createTask, initialState);
     const [isContentPending, startContentTransition] = useTransition();
     const [contentError, setContentError] = useState<string | null>(null);
+
+    // Edit transitions
+    const [isEditPending, startEditTransition] = useTransition();
+    const [editError, setEditError] = useState<string | null>(null);
 
     useEffect(() => {
         if (milestoneState.success && isDialogOpen) {
@@ -122,10 +130,38 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
         });
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm("¿Estás seguro de eliminar este hito?")) {
-            await deleteMilestone(id, projectId);
+    const handleDelete = async (id: string, kind: string) => {
+        const label = kind === 'MILESTONE' ? 'hito' : kind === 'CONTENT' ? 'contenido' : 'evento';
+        if (confirm(`¿Eliminar este ${label} permanentemente?`)) {
+            if (kind === 'MILESTONE') {
+                await deleteMilestone(id, projectId);
+            } else if (kind === 'CONTENT') {
+                await deleteContent(id, projectId);
+            }
+            setSelectedEvent(null);
+            setIsEditing(false);
         }
+    };
+
+    const handleEditSubmit = async (formData: FormData) => {
+        if (!selectedEvent) return;
+        setEditError(null);
+
+        startEditTransition(async () => {
+            let result;
+            if (selectedEvent._kind === 'MILESTONE') {
+                result = await updateMilestone(selectedEvent.id, projectId, formData);
+            } else if (selectedEvent._kind === 'CONTENT') {
+                result = await updateContent(selectedEvent.id, projectId, formData);
+            }
+
+            if (result?.success) {
+                setSelectedEvent(null);
+                setIsEditing(false);
+            } else {
+                setEditError(result?.message || "Error al guardar los cambios.");
+            }
+        });
     };
 
     const handlePreviousMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
@@ -138,6 +174,18 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
         setEventType('MILESTONE');
         setContentError(null);
         setIsDialogOpen(true);
+    };
+
+    // Helper to get assignee display name for any event type
+    const getAssigneeName = (event: any): string | null => {
+        if (event._kind === 'TASK' && event.assignee) return event.assignee.name;
+        if (event._kind === 'MILESTONE' && event.assignee) return event.assignee.name;
+        if (event._kind === 'CONTENT' && event.creator) return event.creator.name;
+        return null;
+    };
+
+    const getAssigneeInitials = (name: string): string => {
+        return name.substring(0, 2).toUpperCase();
     };
 
     // Calculate grid days
@@ -251,6 +299,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                                         {events.map((event: any) => {
                                             const config = kindConfig[event._kind];
                                             const Icon = config?.icon;
+                                            const assigneeName = getAssigneeName(event);
                                             return (
                                                 <div
                                                     key={`${event._kind}-${event.id}`}
@@ -262,6 +311,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         setSelectedEvent(event);
+                                                        setIsEditing(false);
                                                     }}
                                                     title={event.title}
                                                 >
@@ -269,14 +319,10 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                                                         <span className={cn("h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full shrink-0", config?.dot)} />
                                                         <span className={cn("truncate font-medium flex-1", config?.color)}>{event.title}</span>
                                                     </div>
-                                                    {event.assignee && (
-                                                        <div className="hidden sm:flex items-center gap-1 mt-0.5 ml-3 text-[9px] text-muted-foreground">
-                                                            <span className="truncate">{event.assignee.name}</span>
-                                                        </div>
-                                                    )}
-                                                    {event.status && (
-                                                        <div className="hidden sm:block ml-3 mt-0.5">
-                                                            <span className="text-[9px] text-muted-foreground">{statusLabels[event.status] || event.status}</span>
+                                                    {assigneeName && (
+                                                        <div className="flex items-center gap-1 mt-0.5 ml-2.5 sm:ml-3">
+                                                            <UserIcon className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                                                            <span className="text-[8px] sm:text-[9px] text-muted-foreground truncate">{assigneeName}</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -503,8 +549,8 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                 </DialogContent>
             </Dialog>
 
-            {/* Event Details Dialog — richer info */}
-            <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
+            {/* Event Details / Edit Dialog */}
+            <Dialog open={!!selectedEvent} onOpenChange={(open) => { if (!open) { setSelectedEvent(null); setIsEditing(false); } }}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <div className="flex items-center gap-3">
@@ -517,8 +563,10 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                                     </div>
                                 );
                             })()}
-                            <div>
-                                <DialogTitle className="text-lg">{selectedEvent?.title}</DialogTitle>
+                            <div className="flex-1">
+                                <DialogTitle className="text-lg">
+                                    {isEditing ? `Editar ${kindConfig[selectedEvent?._kind]?.label || 'Evento'}` : selectedEvent?.title}
+                                </DialogTitle>
                                 <DialogDescription className="flex items-center gap-1.5 mt-0.5">
                                     <Clock className="h-3 w-3" />
                                     {selectedEvent?.date && format(new Date(selectedEvent.date), "PPP", { locale: es })}
@@ -527,100 +575,232 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                         </div>
                     </DialogHeader>
 
-                    <div className="space-y-4 py-4">
-                        {/* Type & Status */}
-                        <div className="flex items-center gap-3 flex-wrap">
-                            {selectedEvent && kindConfig[selectedEvent._kind] && (
-                                <Badge variant="outline" className={cn("text-xs", kindConfig[selectedEvent._kind].accent, kindConfig[selectedEvent._kind].color)}>
-                                    {kindConfig[selectedEvent._kind].label}
-                                </Badge>
-                            )}
-                            {selectedEvent?.status && (
-                                <Badge variant="secondary" className="text-xs">
-                                    {statusLabels[selectedEvent.status] || selectedEvent.status}
-                                </Badge>
-                            )}
-                        </div>
-
-                        {/* Description */}
-                        {selectedEvent?.description && (
-                            <div
-                                className="bg-muted/30 p-3 rounded-lg text-sm prose prose-sm dark:prose-invert max-w-none text-muted-foreground border border-border/30"
-                                dangerouslySetInnerHTML={{ __html: selectedEvent.description }}
-                            />
-                        )}
-
-                        {/* Assignee */}
-                        {selectedEvent?.assignee && (
-                            <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-3 border border-border/30">
-                                <Avatar className="h-8 w-8">
-                                    <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
-                                        {selectedEvent.assignee.name.substring(0, 2).toUpperCase()}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="text-xs text-muted-foreground">Asignado a</p>
-                                    <p className="text-sm font-medium">{selectedEvent.assignee.name}</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Media */}
-                        {selectedEvent?.mediaUrl && (
-                            <div className="space-y-2">
-                                <Label className="text-xs text-muted-foreground">Multimedia</Label>
-                                {selectedEvent.mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                                    <div className="rounded-lg overflow-hidden border border-border/50">
-                                        <img src={selectedEvent.mediaUrl} alt="Media" className="w-full h-auto max-h-[300px] object-cover" />
-                                    </div>
-                                ) : (
-                                    <a href={selectedEvent.mediaUrl} target="_blank" rel="noreferrer" className="block text-sm text-primary hover:underline truncate">
-                                        {selectedEvent.mediaUrl}
-                                    </a>
+                    {/* VIEW MODE */}
+                    {!isEditing && selectedEvent && (
+                        <div className="space-y-4 py-4">
+                            {/* Type & Status */}
+                            <div className="flex items-center gap-3 flex-wrap">
+                                {selectedEvent && kindConfig[selectedEvent._kind] && (
+                                    <Badge variant="outline" className={cn("text-xs", kindConfig[selectedEvent._kind].accent, kindConfig[selectedEvent._kind].color)}>
+                                        {kindConfig[selectedEvent._kind].label}
+                                    </Badge>
+                                )}
+                                {selectedEvent?.status && (
+                                    <Badge variant="secondary" className="text-xs">
+                                        {statusLabels[selectedEvent.status] || selectedEvent.status}
+                                    </Badge>
                                 )}
                             </div>
-                        )}
 
-                        {/* File */}
-                        {selectedEvent?.filePath && (
+                            {/* Description */}
+                            {selectedEvent?.description && (
+                                <div
+                                    className="bg-muted/30 p-3 rounded-lg text-sm prose prose-sm dark:prose-invert max-w-none text-muted-foreground border border-border/30"
+                                    dangerouslySetInnerHTML={{ __html: selectedEvent.description }}
+                                />
+                            )}
+
+                            {/* Assignee */}
+                            {(() => {
+                                const name = getAssigneeName(selectedEvent);
+                                if (!name) return null;
+                                return (
+                                    <div className="flex items-center gap-3 bg-muted/30 rounded-lg p-3 border border-border/30">
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
+                                                {getAssigneeInitials(name)}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground">Asignado a</p>
+                                            <p className="text-sm font-medium">{name}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
+                            {/* Media */}
+                            {selectedEvent?.mediaUrl && (
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-muted-foreground">Multimedia</Label>
+                                    {selectedEvent.mediaUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                        <div className="rounded-lg overflow-hidden border border-border/50">
+                                            <img src={selectedEvent.mediaUrl} alt="Media" className="w-full h-auto max-h-[300px] object-cover" />
+                                        </div>
+                                    ) : (
+                                        <a href={selectedEvent.mediaUrl} target="_blank" rel="noreferrer" className="block text-sm text-primary hover:underline truncate">
+                                            {selectedEvent.mediaUrl}
+                                        </a>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* File */}
+                            {selectedEvent?.filePath && (
+                                <div className="space-y-2">
+                                    <Label className="text-xs text-muted-foreground">Archivo Adjunto</Label>
+                                    <a href={selectedEvent.filePath} target="_blank" className="flex items-center gap-2 p-3 rounded-lg border border-border/50 hover:bg-accent/50 transition-colors">
+                                        <FileIcon className="h-4 w-4 text-primary" />
+                                        <span className="text-sm">Ver archivo</span>
+                                    </a>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* EDIT MODE — Milestone */}
+                    {isEditing && selectedEvent?._kind === 'MILESTONE' && (
+                        <form action={handleEditSubmit} className="space-y-4 py-2">
                             <div className="space-y-2">
-                                <Label className="text-xs text-muted-foreground">Archivo Adjunto</Label>
-                                <a href={selectedEvent.filePath} target="_blank" className="flex items-center gap-2 p-3 rounded-lg border border-border/50 hover:bg-accent/50 transition-colors">
-                                    <FileIcon className="h-4 w-4 text-primary" />
-                                    <span className="text-sm">Ver archivo</span>
-                                </a>
+                                <Label>Título</Label>
+                                <Input name="title" required defaultValue={selectedEvent.title} />
                             </div>
-                        )}
-                    </div>
+                            <div className="space-y-2">
+                                <Label>Descripción</Label>
+                                <Textarea name="description" defaultValue={selectedEvent.description || ""} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Fecha</Label>
+                                <Input type="date" name="date" defaultValue={format(new Date(selectedEvent.date), "yyyy-MM-dd")} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Asignar a</Label>
+                                <Select name="assigneeId" defaultValue={selectedEvent.assigneeId || "unassigned"}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar responsable" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="unassigned">Sin asignar</SelectItem>
+                                        {users.map((u) => (
+                                            <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Multimedia (URL Opcional)</Label>
+                                <Input name="mediaUrl" defaultValue={selectedEvent.mediaUrl || ""} placeholder="https://..." />
+                            </div>
 
-                    <DialogFooter className="gap-2 sm:justify-between">
-                        {selectedEvent?._kind === 'TASK' && (
-                            <Link href={`/tasks/${selectedEvent.id}`}>
-                                <Button variant="outline" size="sm" className="gap-1.5">
-                                    Ver tarea
+                            {editError && <p className="text-xs text-red-500">{editError}</p>}
+
+                            <DialogFooter>
+                                <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                                <Button type="submit" disabled={isEditPending}>
+                                    {isEditPending ? "Guardando..." : "Guardar Cambios"}
                                 </Button>
-                            </Link>
-                        )}
-                        {selectedEvent?._kind === 'MILESTONE' && !isClient ? (
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => {
-                                    if (confirm("¿Eliminar este hito permanentemente?")) {
-                                        handleDelete(selectedEvent.id);
-                                        setSelectedEvent(null);
-                                    }
-                                }}
-                            >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Eliminar
-                            </Button>
-                        ) : selectedEvent?._kind !== 'TASK' ? <div /> : null}
+                            </DialogFooter>
+                        </form>
+                    )}
 
-                        <Button variant="secondary" onClick={() => setSelectedEvent(null)}>
-                            Cerrar
-                        </Button>
-                    </DialogFooter>
+                    {/* EDIT MODE — Content */}
+                    {isEditing && selectedEvent?._kind === 'CONTENT' && (
+                        <form action={handleEditSubmit} className="space-y-4 py-2">
+                            <div className="space-y-2">
+                                <Label>Título</Label>
+                                <Input name="title" required defaultValue={selectedEvent.title} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Tipo de Contenido</Label>
+                                <Select name="type" defaultValue={selectedEvent.type || "POST"}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar tipo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="POST">Post</SelectItem>
+                                        <SelectItem value="REEL">Reel</SelectItem>
+                                        <SelectItem value="STORY">Story</SelectItem>
+                                        <SelectItem value="VIDEO">Video</SelectItem>
+                                        <SelectItem value="BLOG">Blog</SelectItem>
+                                        <SelectItem value="EMAIL">Email</SelectItem>
+                                        <SelectItem value="OTHER">Otro</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Descripción</Label>
+                                <Textarea name="description" defaultValue={selectedEvent.description || ""} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Fecha de publicación</Label>
+                                <Input type="date" name="publishDate" defaultValue={selectedEvent.date ? format(new Date(selectedEvent.date), "yyyy-MM-dd") : ""} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Estado</Label>
+                                <Select name="status" defaultValue={selectedEvent.status || "DRAFT"}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccionar estado" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="DRAFT">Borrador</SelectItem>
+                                        <SelectItem value="REVIEW">Revisión</SelectItem>
+                                        <SelectItem value="APPROVED">Aprobado</SelectItem>
+                                        <SelectItem value="SCHEDULED">Programado</SelectItem>
+                                        <SelectItem value="PUBLISHED">Publicado</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>URL de Media (Opcional)</Label>
+                                <Input name="mediaUrl" defaultValue={selectedEvent.mediaUrl || ""} placeholder="https://..." />
+                            </div>
+
+                            {editError && <p className="text-xs text-red-500">{editError}</p>}
+
+                            <DialogFooter>
+                                <Button type="button" variant="ghost" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                                <Button type="submit" disabled={isEditPending}>
+                                    {isEditPending ? "Guardando..." : "Guardar Cambios"}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    )}
+
+                    {/* Footer — View Mode */}
+                    {!isEditing && (
+                        <DialogFooter className="gap-2 sm:justify-between">
+                            <div className="flex items-center gap-2">
+                                {/* Edit button for milestones and content (not client) */}
+                                {!isClient && selectedEvent?._kind !== 'TASK' && (
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1.5"
+                                        onClick={() => setIsEditing(true)}
+                                    >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                        Editar
+                                    </Button>
+                                )}
+
+                                {/* Link to task detail page */}
+                                {selectedEvent?._kind === 'TASK' && (
+                                    <Link href={`/tasks/${selectedEvent.id}`}>
+                                        <Button variant="outline" size="sm" className="gap-1.5">
+                                            <Pencil className="h-3.5 w-3.5" />
+                                            Editar tarea
+                                        </Button>
+                                    </Link>
+                                )}
+
+                                {/* Delete button for milestones and content */}
+                                {!isClient && (selectedEvent?._kind === 'MILESTONE' || selectedEvent?._kind === 'CONTENT') && (
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() => handleDelete(selectedEvent.id, selectedEvent._kind)}
+                                    >
+                                        <Trash2 className="h-4 w-4 mr-1" />
+                                        Eliminar
+                                    </Button>
+                                )}
+                            </div>
+
+                            <Button variant="secondary" onClick={() => setSelectedEvent(null)}>
+                                Cerrar
+                            </Button>
+                        </DialogFooter>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>

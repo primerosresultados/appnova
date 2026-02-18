@@ -47,7 +47,10 @@ const getCachedProjectMilestones = unstable_cache(
     async (id: string) => {
         return db.milestone.findMany({
             where: { projectId: id },
-            orderBy: { date: 'asc' }
+            orderBy: { date: 'asc' },
+            include: {
+                assignee: { select: { id: true, name: true, avatar: true } }
+            }
         });
     },
     ['project-milestones'],

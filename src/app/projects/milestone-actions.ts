@@ -12,6 +12,7 @@ const milestoneSchema = z.object({
     mediaUrl: z.string().optional(),
     type: z.string().default("MILESTONE"),
     projectId: z.string().min(1, "Project ID is required"),
+    assigneeId: z.string().optional(),
 });
 
 export async function createMilestone(prevState: any, formData: FormData) {
@@ -23,6 +24,8 @@ export async function createMilestone(prevState: any, formData: FormData) {
         filePath = await uploadFile(file);
     }
 
+    const rawAssigneeId = formData.get("assigneeId");
+
     const validatedFields = milestoneSchema.safeParse({
         title: formData.get("title"),
         description: formData.get("description"),
@@ -30,6 +33,7 @@ export async function createMilestone(prevState: any, formData: FormData) {
         mediaUrl: formData.get("mediaUrl"),
         type: formData.get("type"),
         projectId: formData.get("projectId"),
+        assigneeId: rawAssigneeId === "unassigned" ? undefined : rawAssigneeId,
     });
 
     if (!validatedFields.success) {
@@ -40,7 +44,7 @@ export async function createMilestone(prevState: any, formData: FormData) {
         };
     }
 
-    const { title, description, date, mediaUrl, type, projectId } = validatedFields.data;
+    const { title, description, date, mediaUrl, type, projectId, assigneeId } = validatedFields.data;
 
     try {
         await db.milestone.create({
@@ -49,9 +53,10 @@ export async function createMilestone(prevState: any, formData: FormData) {
                 description,
                 date: new Date(date),
                 mediaUrl,
-                filePath, // Save the path
+                filePath,
                 type,
                 projectId,
+                assigneeId: assigneeId || null,
             },
         });
     } catch (error) {
@@ -64,6 +69,37 @@ export async function createMilestone(prevState: any, formData: FormData) {
 
     revalidatePath(`/projects/${projectId}`);
     return { message: "Milestone created successfully", success: true };
+}
+
+export async function updateMilestone(id: string, projectId: string, formData: FormData) {
+    const title = formData.get("title") as string;
+    const description = formData.get("description") as string;
+    const date = formData.get("date") as string;
+    const mediaUrl = formData.get("mediaUrl") as string;
+    const rawAssigneeId = formData.get("assigneeId") as string;
+    const assigneeId = rawAssigneeId === "unassigned" ? null : (rawAssigneeId || null);
+
+    if (!title) {
+        return { message: "El título es requerido.", success: false };
+    }
+
+    try {
+        await db.milestone.update({
+            where: { id },
+            data: {
+                title,
+                description: description || null,
+                date: date ? new Date(date) : undefined,
+                mediaUrl: mediaUrl || null,
+                assigneeId,
+            },
+        });
+        revalidatePath(`/projects/${projectId}`);
+        return { message: "Milestone updated successfully", success: true };
+    } catch (error) {
+        console.error("Database Error:", error);
+        return { message: "Database Error: Failed to Update Milestone.", success: false };
+    }
 }
 
 export async function deleteMilestone(id: string, projectId: string) {
