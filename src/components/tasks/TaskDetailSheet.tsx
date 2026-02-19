@@ -7,13 +7,23 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Calendar, Clock, User, AlertCircle, FileText, CheckCircle2, Circle, Paperclip, Send, Download, Archive, Trash2 } from "lucide-react";
+import { Calendar, Clock, User, AlertCircle, FileText, CheckCircle2, Circle, Paperclip, Send, Download, Archive, Trash2, Edit2, X, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { createTaskLog, deleteTask, archiveTask } from "@/app/tasks/actions";
+import { updateTask } from "@/app/projects/task-actions";
+import { getUsers } from "@/app/actions/user-actions";
 import { Label } from "@/components/ui/label";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -25,6 +35,13 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
+
+const RichTextEditor = dynamic(
+    () => import("@/components/ui/rich-text-editor").then(m => ({ default: m.RichTextEditor })),
+    { ssr: false, loading: () => <div className="min-h-[120px] border rounded-md bg-muted/20 animate-pulse" /> }
+);
 
 interface TaskDetailSheetProps {
     task: any; // Full task object with logs and assignee
@@ -33,11 +50,53 @@ interface TaskDetailSheetProps {
 }
 
 export function TaskDetailSheet({ task, open, onOpenChange }: TaskDetailSheetProps) {
+    const router = useRouter();
     const [logContent, setLogContent] = useState("");
     const [isPending, startTransition] = useTransition();
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isArchiving, setIsArchiving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Edit mode state
+    const [isEditing, setIsEditing] = useState(false);
+    const [users, setUsers] = useState<any[]>([]);
+    const [editDescription, setEditDescription] = useState(task?.description || "");
+
+    // Edit submit handler using useTransition (avoids useActionState stuck pending issue)
+    const [isEditPending, startEditTransition] = useTransition();
+
+    // Load users when editing
+    useEffect(() => {
+        if (isEditing) {
+            getUsers().then(setUsers);
+            setEditDescription(task?.description || "");
+        }
+    }, [isEditing]);
+
+    // Reset edit mode when sheet closes
+    useEffect(() => {
+        if (!open) setIsEditing(false);
+    }, [open]);
+
+    const handleEditSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+
+        startEditTransition(async () => {
+            try {
+                const result = await updateTask(task.id, null, formData);
+                if (result.success) {
+                    setIsEditing(false);
+                    router.refresh();
+                    toast.success("Tarea actualizada.");
+                } else {
+                    toast.error(result.message || "Error al actualizar.");
+                }
+            } catch {
+                toast.error("Error inesperado.");
+            }
+        });
+    };
 
     const handleSendLog = () => {
         if (!logContent.trim()) return;
@@ -52,7 +111,7 @@ export function TaskDetailSheet({ task, open, onOpenChange }: TaskDetailSheetPro
         setIsArchiving(true);
         try {
             const result = await archiveTask(task.id);
-            if (result.success) {
+            if (result?.success) {
                 toast.success("Tarea archivada.");
                 onOpenChange(false);
             } else {
@@ -103,6 +162,15 @@ export function TaskDetailSheet({ task, open, onOpenChange }: TaskDetailSheetPro
                                 <Button
                                     variant="ghost"
                                     size="icon"
+                                    className={`h-8 w-8 ${isEditing ? 'text-primary bg-primary/10' : 'text-muted-foreground hover:text-primary'}`}
+                                    onClick={() => setIsEditing(!isEditing)}
+                                    title={isEditing ? "Cancelar edición" : "Editar tarea"}
+                                >
+                                    {isEditing ? <X className="h-4 w-4" /> : <Edit2 className="h-4 w-4" />}
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
                                     className="h-8 w-8 text-muted-foreground hover:text-primary"
                                     onClick={handleArchive}
                                     disabled={isArchiving}
@@ -123,7 +191,7 @@ export function TaskDetailSheet({ task, open, onOpenChange }: TaskDetailSheetPro
                         </div>
                         <SheetTitle className="text-xl font-bold">{task.title}</SheetTitle>
                         <SheetDescription className="line-clamp-2 mt-1">
-                            {task.description || "Sin descripción"}
+                            {task.description ? "Ver detalles abajo" : "Sin descripción"}
                         </SheetDescription>
                     </div>
 
@@ -137,37 +205,145 @@ export function TaskDetailSheet({ task, open, onOpenChange }: TaskDetailSheetPro
                         </div>
 
                         <TabsContent value="general" className="flex-1 overflow-y-auto p-6 m-0 space-y-6">
-                            <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <Label className="text-xs text-muted-foreground uppercase font-semibold">Asignado a</Label>
-                                        <div className="flex items-center gap-2 p-2 rounded-md bg-secondary/20 border border-border/30">
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarFallback className="text-[10px]">
-                                                    {task.assignee?.name?.substring(0, 2).toUpperCase() || "?"}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <span className="text-sm font-medium">{task.assignee?.name || "Sin asignar"}</span>
-                                        </div>
+                            {isEditing ? (
+                                /* ── EDIT MODE ── */
+                                <form onSubmit={handleEditSubmit} className="space-y-5">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="edit-title" className="text-xs text-muted-foreground uppercase font-semibold">Título</Label>
+                                        <Input id="edit-title" name="title" defaultValue={task.title} required />
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <Label className="text-xs text-muted-foreground uppercase font-semibold">Fecha de Entrega</Label>
-                                        <div className="flex items-center gap-2 p-2 rounded-md bg-secondary/20 border border-border/30">
-                                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                                            <span className="text-sm font-medium">
-                                                {task.dueDate ? format(new Date(task.dueDate), 'PPP', { locale: es }) : "Sin fecha"}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <div className="space-y-1.5">
-                                    <Label className="text-xs text-muted-foreground uppercase font-semibold">Descripción Completa</Label>
-                                    <div className="p-3 rounded-md bg-secondary/10 border border-border/30 min-h-[100px] text-sm leading-relaxed whitespace-pre-wrap">
-                                        {task.description || "No hay descripción detallada."}
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label className="text-xs text-muted-foreground uppercase font-semibold">Estado</Label>
+                                            <Select name="status" defaultValue={task.status}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Estado" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="TODO">Pendiente</SelectItem>
+                                                    <SelectItem value="IN_PROGRESS">En Progreso</SelectItem>
+                                                    <SelectItem value="REVIEW">Revisión</SelectItem>
+                                                    <SelectItem value="DONE">Completado</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label className="text-xs text-muted-foreground uppercase font-semibold">Prioridad</Label>
+                                            <Select name="priority" defaultValue={task.priority}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Prioridad" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="LOW">Baja</SelectItem>
+                                                    <SelectItem value="MEDIUM">Media</SelectItem>
+                                                    <SelectItem value="HIGH">Alta</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label className="text-xs text-muted-foreground uppercase font-semibold">Asignado a</Label>
+                                            <Select name="assigneeId" defaultValue={task.assigneeId || "unassigned"}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Miembro" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="unassigned">Sin asignar</SelectItem>
+                                                    {users.map((user) => (
+                                                        <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div className="grid gap-2">
+                                            <Label className="text-xs text-muted-foreground uppercase font-semibold">Fecha</Label>
+                                            <Input
+                                                name="dueDate"
+                                                type="date"
+                                                defaultValue={task.dueDate ? new Date(task.dueDate).toISOString().split('T')[0] : ""}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label className="text-xs text-muted-foreground uppercase font-semibold">Descripción</Label>
+                                        <RichTextEditor
+                                            value={editDescription}
+                                            onChange={setEditDescription}
+                                            className="min-h-[120px]"
+                                        />
+                                        <input type="hidden" name="description" value={editDescription} />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label className="text-xs text-muted-foreground uppercase font-semibold">Enlaces</Label>
+                                        <Input name="links" defaultValue={task.links || ""} placeholder="https://..." />
+                                        <p className="text-[10px] text-muted-foreground">Separa múltiples enlaces con comas.</p>
+                                    </div>
+
+                                    <div className="flex gap-2 pt-2">
+                                        <Button variant="outline" type="button" onClick={() => setIsEditing(false)} className="flex-1">
+                                            Cancelar
+                                        </Button>
+                                        <Button type="submit" disabled={isEditPending} className="flex-1">
+                                            {isEditPending ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Guardando...
+                                                </>
+                                            ) : (
+                                                "Guardar Cambios"
+                                            )}
+                                        </Button>
+                                    </div>
+                                </form>
+                            ) : (
+                                /* ── READ MODE ── */
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs text-muted-foreground uppercase font-semibold">Asignado a</Label>
+                                            <div className="flex items-center gap-2 p-2 rounded-md bg-secondary/20 border border-border/30">
+                                                <Avatar className="h-6 w-6">
+                                                    <AvatarFallback className="text-[10px]">
+                                                        {task.assignee?.name?.substring(0, 2).toUpperCase() || "?"}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <span className="text-sm font-medium">{task.assignee?.name || "Sin asignar"}</span>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs text-muted-foreground uppercase font-semibold">Fecha de Entrega</Label>
+                                            <div className="flex items-center gap-2 p-2 rounded-md bg-secondary/20 border border-border/30">
+                                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                <span className="text-sm font-medium">
+                                                    {task.dueDate ? format(new Date(task.dueDate), 'PPP', { locale: es }) : "Sin fecha"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <Label className="text-xs text-muted-foreground uppercase font-semibold">Descripción Completa</Label>
+                                        <div
+                                            className="p-3 rounded-md bg-secondary/10 border border-border/30 min-h-[100px] text-sm leading-relaxed prose prose-sm dark:prose-invert max-w-none"
+                                            dangerouslySetInnerHTML={{ __html: task.description || "No hay descripción detallada." }}
+                                        />
+                                    </div>
+
+                                    {task.links && (
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs text-muted-foreground uppercase font-semibold">Enlaces</Label>
+                                            <div className="p-2 rounded-md bg-secondary/10 border border-border/30 text-sm break-all">
+                                                {task.links}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
+                            )}
                         </TabsContent>
 
                         <TabsContent value="bitacora" className="flex-1 flex flex-col m-0 overflow-hidden">

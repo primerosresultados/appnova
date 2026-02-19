@@ -4,6 +4,18 @@ import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+/** Parse a date string that may be ISO (toISOString()) or YYYY-MM-DD */
+function parseDueDate(raw: string): Date {
+    if (raw.includes('T')) {
+        // Full ISO string – extract the date portion to avoid timezone shifts
+        const dateOnly = raw.split('T')[0];
+        const [y, m, d] = dateOnly.split('-').map(Number);
+        return new Date(y, m - 1, d, 12, 0, 0);
+    }
+    const [y, m, d] = raw.split('-').map(Number);
+    return new Date(y, m - 1, d, 12, 0, 0);
+}
+
 const taskSchema = z.object({
     title: z.string().min(1, "Title is required"),
     description: z.string().optional(),
@@ -49,7 +61,7 @@ export async function createTask(prevState: any, formData: FormData) {
                 projectId,
                 status,
                 priority,
-                dueDate: dueDate ? (() => { const [y, m, d] = dueDate.split('-').map(Number); return new Date(y, m - 1, d, 12, 0, 0); })() : undefined,
+                dueDate: dueDate ? parseDueDate(dueDate) : undefined,
                 assigneeId: assigneeId || null,
                 links: links || null,
             },
@@ -101,9 +113,7 @@ export async function updateTask(taskId: string, prevState: any, formData: FormD
         const user = await getUserSession();
         const data: any = { ...validatedFields.data };
         if (data.dueDate) {
-            // Parse as local date at noon to avoid timezone day-shift
-            const [y, m, d] = data.dueDate.split('-').map(Number);
-            data.dueDate = new Date(y, m - 1, d, 12, 0, 0);
+            data.dueDate = parseDueDate(data.dueDate);
         }
         if (data.assigneeId === undefined) data.assigneeId = null;
 

@@ -1,12 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
 import { createTask } from "@/app/projects/task-actions";
 import { getUsers } from "@/app/actions/user-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
     Sheet,
     SheetClose,
@@ -24,29 +22,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Link as LinkIcon, CalendarIcon, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Link as LinkIcon, CalendarIcon, Loader2 } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-
-type ActionState = {
-    message: string;
-    errors?: {
-        title?: string[];
-        status?: string[];
-        priority?: string[];
-    };
-    success?: boolean;
-};
-
-const initialState: ActionState = {
-    message: "",
-    errors: {},
-    success: false
-};
+import { toast } from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 interface NewTaskSheetProps {
     projectId: string;
@@ -66,22 +50,19 @@ const RichTextEditor = dynamic(
 );
 
 export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
-    const [state, formAction, isPending] = useActionState(createTask, initialState);
+    const router = useRouter();
     const [open, setOpen] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
     const [description, setDescription] = useState("");
     const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+    const [formKey, setFormKey] = useState(0);
+    const [isPending, startTransition] = useTransition();
+    const formRef = useRef<HTMLFormElement>(null);
 
-    // Reset description when sheet closes or success
+    // Reset all fields when sheet closes
     useEffect(() => {
         if (!open) { setDescription(""); setDueDate(undefined); }
     }, [open]);
-
-    useEffect(() => {
-        if (state?.success) {
-            setOpen(false);
-        }
-    }, [state]);
 
     useEffect(() => {
         if (open) {
@@ -89,30 +70,52 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
         }
     }, [open]);
 
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+
+        startTransition(async () => {
+            try {
+                const result = await createTask(null, formData);
+                if (result.success) {
+                    toast.success("Tarea creada exitosamente");
+                    setOpen(false);
+                    setFormKey(k => k + 1);
+                    router.refresh();
+                } else {
+                    toast.error(result.message || "Error al crear la tarea");
+                }
+            } catch (error) {
+                console.error("Error creating task:", error);
+                toast.error("Error inesperado al crear la tarea");
+            }
+        });
+    };
+
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
                 <Button>Agregar Tarea</Button>
             </SheetTrigger>
-            <SheetContent className="overflow-y-auto w-[400px] sm:w-[540px] p-6 sm:p-8">
-                <SheetHeader className="mb-2">
-                    <SheetTitle>Agregar Nueva Tarea</SheetTitle>
-                    <SheetDescription>
-                        Crea una tarea detallada para tu equipo.
+            <SheetContent className="overflow-y-auto w-[400px] sm:w-[480px] p-5 gap-0">
+                <SheetHeader className="mb-0 pb-3 border-b border-border/40 p-0">
+                    <SheetTitle className="text-lg">Nueva Tarea</SheetTitle>
+                    <SheetDescription className="text-xs">
+                        Completa los campos para crear una tarea.
                     </SheetDescription>
                 </SheetHeader>
-                <form action={formAction} className="grid gap-8 py-6">
+                <form key={formKey} ref={formRef} onSubmit={handleSubmit} className="grid gap-4 pt-3 pb-2">
                     <input type="hidden" name="projectId" value={projectId} />
 
-                    <div className="grid gap-3">
-                        <Label htmlFor="title">Título</Label>
-                        <Input id="title" name="title" placeholder="Ej: Diseñar Mockups" required />
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="title" className="text-xs font-semibold text-muted-foreground uppercase">Título</Label>
+                        <Input id="title" name="title" placeholder="Ej: Diseñar Mockups" required className="h-9" />
                     </div>
 
-                    <div className="grid gap-3">
-                        <Label htmlFor="assigneeId">Asignar a</Label>
+                    <div className="grid gap-1.5">
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Asignar a</Label>
                         <Select name="assigneeId">
-                            <SelectTrigger>
+                            <SelectTrigger className="h-9">
                                 <SelectValue placeholder="Seleccionar miembro" />
                             </SelectTrigger>
                             <SelectContent>
@@ -124,12 +127,12 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
                         </Select>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-6">
-                        <div className="grid gap-3">
-                            <Label htmlFor="status">Estado</Label>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="grid gap-1.5">
+                            <Label className="text-xs font-semibold text-muted-foreground uppercase">Estado</Label>
                             <Select name="status" defaultValue="TODO">
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar estado" />
+                                <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Estado" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="TODO">Pendiente</SelectItem>
@@ -140,11 +143,11 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
                             </Select>
                         </div>
 
-                        <div className="grid gap-3">
-                            <Label htmlFor="priority">Prioridad</Label>
+                        <div className="grid gap-1.5">
+                            <Label className="text-xs font-semibold text-muted-foreground uppercase">Prioridad</Label>
                             <Select name="priority" defaultValue="MEDIUM">
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Seleccionar prioridad" />
+                                <SelectTrigger className="h-9">
+                                    <SelectValue placeholder="Prioridad" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="LOW">Baja</SelectItem>
@@ -155,18 +158,19 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
                         </div>
                     </div>
 
-                    <div className="grid gap-3">
-                        <Label>Fecha de Vencimiento</Label>
+                    <div className="grid gap-1.5">
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Fecha de Vencimiento</Label>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button
                                     variant="outline"
+                                    type="button"
                                     className={cn(
-                                        "w-full justify-start text-left font-normal",
+                                        "w-full justify-start text-left font-normal h-9",
                                         !dueDate && "text-muted-foreground"
                                     )}
                                 >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                                     {dueDate ? format(dueDate, "PPP", { locale: es }) : "Seleccionar fecha"}
                                 </Button>
                             </PopoverTrigger>
@@ -182,33 +186,33 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
                         <input type="hidden" name="dueDate" value={dueDate ? dueDate.toISOString() : ""} />
                     </div>
 
-                    <div className="grid gap-3">
-                        <Label htmlFor="description">Descripción / Detalles</Label>
+                    <div className="grid gap-1.5">
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase">Descripción</Label>
                         <RichTextEditor
                             value={description}
                             onChange={setDescription}
-                            placeholder="Detalles adicionales, instrucciones..."
-                            className="min-h-[150px]"
+                            placeholder="Detalles, instrucciones..."
+                            className="min-h-[100px]"
                         />
                         <input type="hidden" name="description" value={description} />
                     </div>
 
-                    <div className="grid gap-3">
-                        <Label htmlFor="links" className="flex items-center gap-2">
-                            <LinkIcon className="h-3 w-3" /> Enlaces / Documentos
+                    <div className="grid gap-1.5">
+                        <Label htmlFor="links" className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
+                            <LinkIcon className="h-3 w-3" /> Enlaces
                         </Label>
-                        <Input id="links" name="links" placeholder="https://..." />
+                        <Input id="links" name="links" placeholder="https://..." className="h-9" />
                         <p className="text-[10px] text-muted-foreground">Separa múltiples enlaces con comas.</p>
                     </div>
 
-                    <SheetFooter>
+                    <SheetFooter className="pt-2 border-t border-border/40">
                         <SheetClose asChild>
-                            <Button variant="outline" type="button">Cancelar</Button>
+                            <Button variant="outline" type="button" size="sm">Cancelar</Button>
                         </SheetClose>
-                        <Button type="submit" disabled={isPending}>
+                        <Button type="submit" disabled={isPending} size="sm">
                             {isPending ? (
                                 <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
                                     Creando...
                                 </>
                             ) : (

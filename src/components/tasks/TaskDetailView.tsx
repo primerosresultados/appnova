@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { useState, useTransition, useActionState } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { createTaskLog, uploadTaskAttachment } from "@/app/tasks/actions";
 import { updateTask } from "@/app/projects/task-actions";
 import { getUsers } from "@/app/actions/user-actions";
@@ -25,7 +25,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Edit2 } from "lucide-react";
-import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { DeadlineProgress } from "./DeadlineProgress";
 
@@ -61,17 +60,28 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
         }
     }, [isEditOpen, task.description]);
 
-    // Form Action for Edit - bind taskId to the server action
-    const updateTaskWithId = updateTask.bind(null, task.id);
-    const [editState, editAction] = useActionState(updateTaskWithId, { message: "", success: false });
+    // Form Action for Edit using useTransition
+    const [isEditPending, startEditTransition] = useTransition();
 
     // Close dialog and refresh data on successful edit
-    useEffect(() => {
-        if (editState.success) {
-            setIsEditOpen(false);
-            router.refresh();
-        }
-    }, [editState]);
+    const handleEditSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+
+        startEditTransition(async () => {
+            try {
+                const result = await updateTask(task.id, null, formData);
+                if (result.success) {
+                    setIsEditOpen(false);
+                    router.refresh();
+                } else {
+                    console.error(result.message);
+                }
+            } catch (error) {
+                console.error("Error updating task:", error);
+            }
+        });
+    };
 
     // Upload State
     const [isUploadOpen, setIsUploadOpen] = useState(false);
@@ -261,7 +271,7 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                                                 Modifica los detalles de la tarea.
                                             </DialogDescription>
                                         </DialogHeader>
-                                        <form action={editAction} className="grid gap-6 py-4">
+                                        <form onSubmit={handleEditSubmit} className="grid gap-6 py-4">
                                             <div className="grid gap-2">
                                                 <Label htmlFor="title">Título</Label>
                                                 <Input id="title" name="title" defaultValue={task.title} required />

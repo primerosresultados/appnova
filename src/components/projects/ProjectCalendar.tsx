@@ -25,7 +25,9 @@ import { Flag, FileIcon, Plus, Trash2, Megaphone, ListTodo, ChevronLeft, Chevron
 import { createMilestone, deleteMilestone, updateMilestone } from "@/app/projects/milestone-actions";
 import { createTask } from "@/app/projects/task-actions";
 import { createContent, updateContent, deleteContent } from "@/app/projects/content-actions";
-import { useActionState } from "react";
+import { moveCalendarEvent } from "@/app/projects/calendar-actions";
+import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -89,16 +91,19 @@ const WEEKDAYS_FULL = ["LUN", "MAR", "MIE", "JUE", "VIE", "SAB", "DOM"];
 type EventType = 'MILESTONE' | 'TASK' | 'CONTENT';
 
 export function ProjectCalendar({ projectId, milestones, contents, tasks, users = [], isClient = false }: ProjectCalendarProps) {
+    const router = useRouter();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<any>(null);
     const [isEditing, setIsEditing] = useState(false);
     const [eventType, setEventType] = useState<EventType>('MILESTONE');
+    const [formKey, setFormKey] = useState(0);
+    const [dragOverDate, setDragOverDate] = useState<string | null>(null);
 
-    // Dialog handling for creating milestones
-    const [milestoneState, milestoneFormAction, isMilestonePending] = useActionState(createMilestone, initialState);
-    const [taskState, taskFormAction, isTaskPending] = useActionState(createTask, initialState);
+    // useTransition for all form submissions
+    const [isMilestonePending, startMilestoneTransition] = useTransition();
+    const [isTaskPending, startTaskTransition] = useTransition();
     const [isContentPending, startContentTransition] = useTransition();
     const [contentError, setContentError] = useState<string | null>(null);
 
@@ -106,17 +111,43 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
     const [isEditPending, startEditTransition] = useTransition();
     const [editError, setEditError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (milestoneState.success && isDialogOpen) {
-            setIsDialogOpen(false);
-        }
-    }, [milestoneState.success, isDialogOpen]);
+    const handleMilestoneSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        startMilestoneTransition(async () => {
+            try {
+                const result = await createMilestone(null, formData) as { message: string; success: boolean };
+                if (result.success) {
+                    setIsDialogOpen(false);
+                    setFormKey(k => k + 1);
+                    router.refresh();
+                } else {
+                    toast.error(result.message || "Error al crear hito");
+                }
+            } catch {
+                toast.error("Error inesperado");
+            }
+        });
+    };
 
-    useEffect(() => {
-        if (taskState.success && isDialogOpen) {
-            setIsDialogOpen(false);
-        }
-    }, [taskState.success, isDialogOpen]);
+    const handleTaskSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const formData = new FormData(e.currentTarget);
+        startTaskTransition(async () => {
+            try {
+                const result = await createTask(null, formData);
+                if (result.success) {
+                    setIsDialogOpen(false);
+                    setFormKey(k => k + 1);
+                    router.refresh();
+                } else {
+                    toast.error(result.message || "Error al crear tarea");
+                }
+            } catch {
+                toast.error("Error inesperado");
+            }
+        });
+    };
 
     const handleContentSubmit = async (formData: FormData) => {
         setContentError(null);
@@ -159,7 +190,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                 setSelectedEvent(null);
                 setIsEditing(false);
             } else {
-                setEditError(result?.message || "Error al guardar los cambios.");
+                setEditError((result as any)?.message || "Error al guardar los cambios.");
             }
         });
     };
@@ -254,15 +285,39 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                             const isCurrentMonth = day.getMonth() === currentMonth.getMonth();
                             const isTodayDate = isToday(day);
 
+                            const dayIso = day.toISOString();
+                            const isDragOver = dragOverDate === dayIso;
+
                             return (
                                 <div
-                                    key={day.toISOString()}
+                                    key={dayIso}
                                     className={cn(
                                         "min-h-[70px] sm:min-h-[100px] md:min-h-[120px] bg-card p-1 sm:p-2 flex flex-col gap-0.5 sm:gap-1 transition-colors hover:bg-accent/5 group relative cursor-pointer",
                                         !isCurrentMonth && "bg-muted/10 text-muted-foreground/50",
-                                        isTodayDate && "bg-primary/5"
+                                        isTodayDate && "bg-primary/5",
+                                        isDragOver && "ring-2 ring-primary/50 ring-inset bg-primary/10"
                                     )}
                                     onClick={() => handleDateClick(day)}
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        e.dataTransfer.dropEffect = "move";
+                                        setDragOverDate(dayIso);
+                                    }}
+                                    onDragLeave={() => setDragOverDate(null)}
+                                    onDrop={async (e) => {
+                                        e.preventDefault();
+                                        setDragOverDate(null);
+                                        const eventId = e.dataTransfer.getData("eventId");
+                                        const eventKind = e.dataTransfer.getData("eventKind") as "MILESTONE" | "TASK" | "CONTENT";
+                                        if (!eventId || !eventKind) return;
+                                        const result = await moveCalendarEvent(eventId, eventKind, day.toISOString(), projectId);
+                                        if (result.success) {
+                                            toast.success("Evento movido");
+                                            router.refresh();
+                                        } else {
+                                            toast.error("Error al mover");
+                                        }
+                                    }}
                                 >
                                     <div className="flex justify-between items-start">
                                         <span className={cn(
@@ -303,9 +358,16 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                                             return (
                                                 <div
                                                     key={`${event._kind}-${event.id}`}
+                                                    draggable={!isClient}
+                                                    onDragStart={(e) => {
+                                                        e.dataTransfer.setData("eventId", event.id);
+                                                        e.dataTransfer.setData("eventKind", event._kind);
+                                                        e.dataTransfer.effectAllowed = "move";
+                                                    }}
                                                     className={cn(
                                                         "group/event text-[9px] sm:text-[11px] px-1 sm:px-2 py-0.5 sm:py-1.5 rounded-md border cursor-pointer transition-all duration-200",
                                                         "hover:shadow-md hover:scale-[1.02] hover:-translate-y-px",
+                                                        !isClient && "cursor-grab active:cursor-grabbing",
                                                         config?.accent
                                                     )}
                                                     onClick={(e) => {
@@ -372,7 +434,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
 
                     {/* Milestone Form */}
                     {eventType === 'MILESTONE' && (
-                        <form action={milestoneFormAction} className="space-y-4">
+                        <form key={`m-${formKey}`} onSubmit={handleMilestoneSubmit} className="space-y-4">
                             <input type="hidden" name="projectId" value={projectId} />
                             {selectedDate && <input type="hidden" name="date" value={selectedDate.toISOString()} />}
                             <input type="hidden" name="type" value="MILESTONE" />
@@ -412,9 +474,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                                 <Input name="mediaUrl" placeholder="https://..." />
                             </div>
 
-                            {milestoneState.message && !milestoneState.success && (
-                                <p className="text-xs text-red-500">{milestoneState.message}</p>
-                            )}
+
 
                             <DialogFooter>
                                 <Button type="submit" disabled={isPending}>
@@ -426,7 +486,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
 
                     {/* Task Form */}
                     {eventType === 'TASK' && (
-                        <form action={taskFormAction} className="space-y-4">
+                        <form key={`t-${formKey}`} onSubmit={handleTaskSubmit} className="space-y-4">
                             <input type="hidden" name="projectId" value={projectId} />
                             {selectedDate && <input type="hidden" name="dueDate" value={format(selectedDate, "yyyy-MM-dd")} />}
                             <input type="hidden" name="status" value="TODO" />
@@ -470,9 +530,7 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                                 </Select>
                             </div>
 
-                            {taskState.message && !taskState.success && (
-                                <p className="text-xs text-red-500">{taskState.message}</p>
-                            )}
+
 
                             <DialogFooter>
                                 <Button type="submit" disabled={isPending}>

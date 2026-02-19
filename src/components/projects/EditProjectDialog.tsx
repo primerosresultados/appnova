@@ -120,14 +120,14 @@ export function EditProjectDialog({ project, open, onOpenChange }: EditProjectDi
                             {contentFields.map(({ name, label, icon: Icon, color }) => (
                                 <div key={name} className="flex items-center gap-2 p-2 rounded-lg border border-border/40 bg-card">
                                     <Icon className={`h-4 w-4 ${color} shrink-0`} />
-                                    <Label htmlFor={name} className="text-xs font-medium flex-1 truncate">{label}</Label>
+                                    <Label htmlFor={name} className="text-xs font-medium flex-1 whitespace-nowrap">{label}</Label>
                                     <Input
                                         id={name}
                                         name={name}
                                         type="number"
                                         min="0"
                                         defaultValue={project[name] || 0}
-                                        className="w-16 h-7 text-center text-sm px-1"
+                                        className="w-14 h-7 text-center text-sm px-1"
                                     />
                                 </div>
                             ))}
