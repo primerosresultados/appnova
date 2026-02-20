@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useMemo, useCallback, useTransition } from "react";
 import {
     format,
     startOfMonth,
@@ -8,7 +8,6 @@ import {
     startOfWeek,
     endOfWeek,
     eachDayOfInterval,
-    isSameDay,
     addMonths,
     subMonths,
     isToday
@@ -26,7 +25,7 @@ import { createMilestone, deleteMilestone, updateMilestone } from "@/app/project
 import { createTask } from "@/app/projects/task-actions";
 import { createContent, updateContent, deleteContent } from "@/app/projects/content-actions";
 import { moveCalendarEvent } from "@/app/projects/calendar-actions";
-import { useRouter } from "next/navigation";
+
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -91,7 +90,6 @@ const WEEKDAYS_FULL = ["LUN", "MAR", "MIE", "JUE", "VIE", "SAB", "DOM"];
 type EventType = 'MILESTONE' | 'TASK' | 'CONTENT';
 
 export function ProjectCalendar({ projectId, milestones, contents, tasks, users = [], isClient = false }: ProjectCalendarProps) {
-    const router = useRouter();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -100,6 +98,11 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
     const [eventType, setEventType] = useState<EventType>('MILESTONE');
     const [formKey, setFormKey] = useState(0);
     const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+
+    // LOCAL STATE for optimistic updates — no router.refresh() needed
+    const [localMilestones, setLocalMilestones] = useState<Milestone[]>(milestones);
+    const [localContents, setLocalContents] = useState<Content[]>(contents);
+    const [localTasks, setLocalTasks] = useState<any[]>(tasks);
 
     // useTransition for all form submissions
     const [isMilestonePending, startMilestoneTransition] = useTransition();
@@ -116,11 +119,13 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
         const formData = new FormData(e.currentTarget);
         startMilestoneTransition(async () => {
             try {
-                const result = await createMilestone(null, formData) as { message: string; success: boolean };
+                const result = await createMilestone(null, formData) as any;
                 if (result.success) {
+                    if (result.milestone) {
+                        setLocalMilestones(prev => [...prev, result.milestone]);
+                    }
                     setIsDialogOpen(false);
                     setFormKey(k => k + 1);
-                    router.refresh();
                 } else {
                     toast.error(result.message || "Error al crear hito");
                 }
@@ -137,9 +142,11 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
             try {
                 const result = await createTask(null, formData);
                 if (result.success) {
+                    if (result.task) {
+                        setLocalTasks(prev => [...prev, result.task]);
+                    }
                     setIsDialogOpen(false);
                     setFormKey(k => k + 1);
-                    router.refresh();
                 } else {
                     toast.error(result.message || "Error al crear tarea");
                 }
@@ -166,8 +173,10 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
         if (confirm(`¿Eliminar este ${label} permanentemente?`)) {
             if (kind === 'MILESTONE') {
                 await deleteMilestone(id, projectId);
+                setLocalMilestones(prev => prev.filter(m => m.id !== id));
             } else if (kind === 'CONTENT') {
                 await deleteContent(id, projectId);
+                setLocalContents(prev => prev.filter(c => c.id !== id));
             }
             setSelectedEvent(null);
             setIsEditing(false);
@@ -199,13 +208,13 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
     const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
     const handleToday = () => setCurrentMonth(new Date());
 
-    const handleDateClick = (date: Date) => {
+    const handleDateClick = useCallback((date: Date) => {
         if (isClient) return;
         setSelectedDate(date);
         setEventType('MILESTONE');
         setContentError(null);
         setIsDialogOpen(true);
-    };
+    }, [isClient]);
 
     // Helper to get assignee display name for any event type
     const getAssigneeName = (event: any): string | null => {
@@ -226,13 +235,43 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
     const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
     const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
 
-    // Combine all events
-    const getEventsForDay = (date: Date) => {
-        const ms = milestones.filter(m => isSameDay(new Date(m.date), date)).map(m => ({ ...m, _kind: 'MILESTONE' }));
-        const cs = contents.filter(c => c.publishDate && isSameDay(new Date(c.publishDate), date)).map(c => ({ ...c, _kind: 'CONTENT', date: c.publishDate }));
-        const ts = tasks.filter(t => t.dueDate && isSameDay(new Date(t.dueDate), date)).map(t => ({ ...t, _kind: 'TASK', date: t.dueDate }));
-        return [...ms, ...cs, ...ts];
-    };
+    // Pre-compute events map by date string — O(events) instead of O(events × days)
+    const eventsMap = useMemo(() => {
+        const map = new Map<string, any[]>();
+        const addToMap = (dateStr: string, event: any) => {
+            const existing = map.get(dateStr);
+            if (existing) {
+                existing.push(event);
+            } else {
+                map.set(dateStr, [event]);
+            }
+        };
+        for (const m of localMilestones) {
+            const d = new Date(m.date);
+            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+            addToMap(key, { ...m, _kind: 'MILESTONE' });
+        }
+        for (const c of localContents) {
+            if (c.publishDate) {
+                const d = new Date(c.publishDate);
+                const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                addToMap(key, { ...c, _kind: 'CONTENT', date: c.publishDate });
+            }
+        }
+        for (const t of localTasks) {
+            if (t.dueDate) {
+                const d = new Date(t.dueDate);
+                const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                addToMap(key, { ...t, _kind: 'TASK', date: t.dueDate });
+            }
+        }
+        return map;
+    }, [localMilestones, localContents, localTasks]);
+
+    const getEventsForDay = useCallback((date: Date) => {
+        const key = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+        return eventsMap.get(key) || [];
+    }, [eventsMap]);
 
     const isPending = isMilestonePending || isTaskPending || isContentPending;
 
@@ -313,7 +352,14 @@ export function ProjectCalendar({ projectId, milestones, contents, tasks, users 
                                         const result = await moveCalendarEvent(eventId, eventKind, day.toISOString(), projectId);
                                         if (result.success) {
                                             toast.success("Evento movido");
-                                            router.refresh();
+                                            // Optimistic local update for drag-drop
+                                            if (eventKind === 'MILESTONE') {
+                                                setLocalMilestones(prev => prev.map(m => m.id === eventId ? { ...m, date: day } : m));
+                                            } else if (eventKind === 'TASK') {
+                                                setLocalTasks(prev => prev.map(t => t.id === eventId ? { ...t, dueDate: day } : t));
+                                            } else if (eventKind === 'CONTENT') {
+                                                setLocalContents(prev => prev.map(c => c.id === eventId ? { ...c, publishDate: day } : c));
+                                            }
                                         } else {
                                             toast.error("Error al mover");
                                         }

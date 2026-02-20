@@ -73,7 +73,6 @@ export function TaskDetailView({ task }: TaskDetailViewProps) {
                 const result = await updateTask(task.id, null, formData);
                 if (result.success) {
                     setIsEditOpen(false);
-                    router.refresh();
                 } else {
                     console.error(result.message);
                 }

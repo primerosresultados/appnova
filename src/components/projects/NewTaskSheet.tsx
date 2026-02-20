@@ -1,7 +1,6 @@
 "use client";
 
 import { createTask } from "@/app/projects/task-actions";
-import { getUsers } from "@/app/actions/user-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,15 +29,16 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { toast } from "react-hot-toast";
-import { useRouter } from "next/navigation";
-
-interface NewTaskSheetProps {
-    projectId: string;
-}
 
 interface User {
     id: string;
     name: string;
+}
+
+interface NewTaskSheetProps {
+    projectId: string;
+    users: User[];
+    onTaskCreated?: (task: any) => void;
 }
 
 import dynamic from "next/dynamic";
@@ -49,10 +49,8 @@ const RichTextEditor = dynamic(
     { ssr: false, loading: () => <div className="min-h-[150px] border rounded-md bg-muted/20 animate-pulse" /> }
 );
 
-export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
-    const router = useRouter();
+export function NewTaskSheet({ projectId, users, onTaskCreated }: NewTaskSheetProps) {
     const [open, setOpen] = useState(false);
-    const [users, setUsers] = useState<User[]>([]);
     const [description, setDescription] = useState("");
     const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
     const [formKey, setFormKey] = useState(0);
@@ -64,12 +62,6 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
         if (!open) { setDescription(""); setDueDate(undefined); }
     }, [open]);
 
-    useEffect(() => {
-        if (open) {
-            getUsers().then(setUsers);
-        }
-    }, [open]);
-
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
@@ -79,9 +71,12 @@ export function NewTaskSheet({ projectId }: NewTaskSheetProps) {
                 const result = await createTask(null, formData);
                 if (result.success) {
                     toast.success("Tarea creada exitosamente");
+                    // Optimistic update — insert the task into the parent list
+                    if (result.task && onTaskCreated) {
+                        onTaskCreated(result.task);
+                    }
                     setOpen(false);
                     setFormKey(k => k + 1);
-                    router.refresh();
                 } else {
                     toast.error(result.message || "Error al crear la tarea");
                 }

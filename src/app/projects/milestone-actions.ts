@@ -47,7 +47,7 @@ export async function createMilestone(prevState: any, formData: FormData) {
     const { title, description, date, mediaUrl, type, projectId, assigneeId } = validatedFields.data;
 
     try {
-        await db.milestone.create({
+        const milestone = await db.milestone.create({
             data: {
                 title,
                 description,
@@ -58,7 +58,13 @@ export async function createMilestone(prevState: any, formData: FormData) {
                 projectId,
                 assigneeId: assigneeId || null,
             },
+            include: {
+                assignee: { select: { id: true, name: true, avatar: true } }
+            }
         });
+
+        revalidatePath(`/projects/${projectId}`);
+        return { message: "Milestone created successfully", success: true, milestone };
     } catch (error) {
         console.error("Database Error:", error);
         return {
@@ -66,9 +72,6 @@ export async function createMilestone(prevState: any, formData: FormData) {
             success: false,
         };
     }
-
-    revalidatePath(`/projects/${projectId}`);
-    return { message: "Milestone created successfully", success: true };
 }
 
 export async function updateMilestone(id: string, projectId: string, formData: FormData) {

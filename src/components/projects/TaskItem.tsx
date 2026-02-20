@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import React, { useState, useTransition } from "react";
 import Link from "next/link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { TaskStatusSelect } from "@/components/tasks/TaskStatusSelect";
 import { deleteTask } from "@/app/tasks/actions";
 import { toast } from "react-hot-toast";
-import { useRouter } from "next/navigation";
+
 import {
     AlertDialog,
     AlertDialogAction,
@@ -52,8 +52,7 @@ function TaskDescriptionBox({ description }: { description: string | null }) {
     );
 }
 
-export function TaskItem({ task, priorityMap }: { task: any, priorityMap: any }) {
-    const router = useRouter();
+export const TaskItem = React.memo(function TaskItem({ task, priorityMap, onDeleted }: { task: any, priorityMap: any, onDeleted?: (taskId: string) => void }) {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [isDeleting, startDelete] = useTransition();
 
@@ -63,7 +62,7 @@ export function TaskItem({ task, priorityMap }: { task: any, priorityMap: any })
                 const result = await deleteTask(task.id);
                 if (result?.success) {
                     toast.success("Tarea eliminada.");
-                    router.refresh();
+                    onDeleted?.(task.id);
                 } else {
                     toast.error("Error al eliminar.");
                 }
@@ -154,4 +153,4 @@ export function TaskItem({ task, priorityMap }: { task: any, priorityMap: any })
             </AlertDialog>
         </>
     );
-}
+});

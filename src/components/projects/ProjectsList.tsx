@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { ProjectsListClient } from "@/components/projects/ProjectsListClient";
+import { unstable_cache } from "next/cache";
 
 const projectSelect = {
     id: true,
@@ -41,11 +42,11 @@ const projectSelect = {
  * Auto-sync project statuses based on task deadlines:
  * - If ANY task is overdue (dueDate < now && status != DONE) → project = ALERT
  * - If ALL tasks are DONE (and project was ALERT) → project = ACTIVE
+ * Runs in parallel with data fetch — never blocks the UI.
  */
 async function syncProjectStatuses() {
     try {
         const now = new Date();
-        // Get all non-archived, non-cancelled projects that have tasks
         const projects = await db.project.findMany({
             where: { status: { notIn: ["ARCHIVED", "CANCELLED"] } },
             select: {
@@ -96,11 +97,9 @@ async function syncProjectStatuses() {
     }
 }
 
-async function getProjects() {
-    try {
-        // Auto-sync statuses before fetching
-        await syncProjectStatuses();
-
+// Cached project fetcher — revalidate every 30s
+const getCachedProjects = unstable_cache(
+    async () => {
         const [active, archived] = await Promise.all([
             db.project.findMany({
                 where: { status: { not: "ARCHIVED" } },
@@ -116,6 +115,19 @@ async function getProjects() {
             }),
         ]);
         return { active, archived };
+    },
+    ['projects-list'],
+    { revalidate: 30 }
+);
+
+async function getProjects() {
+    try {
+        // Run sync in parallel with data fetch — sync never blocks the response
+        const [result] = await Promise.all([
+            getCachedProjects(),
+            syncProjectStatuses().catch(() => {/* non-blocking */ }),
+        ]);
+        return result;
     } catch (error) {
         console.error("Error fetching projects:", error);
         return { active: [], archived: [] };
@@ -127,4 +139,3 @@ export async function ProjectsList() {
 
     return <ProjectsListClient projects={active} archivedProjects={archived} />;
 }
-

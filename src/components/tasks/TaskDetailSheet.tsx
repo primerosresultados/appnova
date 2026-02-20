@@ -87,7 +87,6 @@ export function TaskDetailSheet({ task, open, onOpenChange }: TaskDetailSheetPro
                 const result = await updateTask(task.id, null, formData);
                 if (result.success) {
                     setIsEditing(false);
-                    router.refresh();
                     toast.success("Tarea actualizada.");
                 } else {
                     toast.error(result.message || "Error al actualizar.");

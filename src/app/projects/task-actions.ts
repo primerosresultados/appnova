@@ -65,6 +65,9 @@ export async function createTask(prevState: any, formData: FormData) {
                 assigneeId: assigneeId || null,
                 links: links || null,
             },
+            include: {
+                assignee: { select: { id: true, name: true, avatar: true } }
+            }
         });
 
         // Create Action Log
@@ -77,6 +80,8 @@ export async function createTask(prevState: any, formData: FormData) {
                 taskId: newTask.id,
             }
         });
+        revalidatePath(`/projects/${projectId}`);
+        return { message: "Task created successfully", success: true, task: newTask };
 
     } catch (error) {
         console.error("Database Error:", error);
@@ -85,9 +90,6 @@ export async function createTask(prevState: any, formData: FormData) {
             success: false,
         };
     }
-
-    revalidatePath(`/projects/${projectId}`);
-    return { message: "Task created successfully", success: true };
 }
 
 export async function updateTask(taskId: string, prevState: any, formData: FormData) {

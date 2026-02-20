@@ -67,10 +67,10 @@ export function ProjectDetailsView({
     const StatusIcon = status.icon;
     const isClient = currentUser?.role === 'CLIENTE';
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState("tasks");
+    const [activeTab, setActiveTab] = useState("dashboard");
     const [isEditOpen, setIsEditOpen] = useState(false);
     // Track which tabs have been visited so we mount them lazily but keep them alive
-    const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set(["tasks"]));
+    const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set(["dashboard"]));
 
     const handleTabChange = useCallback((value: string) => {
         setActiveTab(value);
@@ -199,12 +199,12 @@ export function ProjectDetailsView({
                     </div>
 
 
-                    <TabsContent value="dashboard" className="space-y-4" forceMount hidden={activeTab !== "dashboard"}>
-                        {dashboardSlot}
+                    <TabsContent value="dashboard" className="space-y-4" forceMount={visitedTabs.has("dashboard") || undefined} hidden={activeTab !== "dashboard"}>
+                        {visitedTabs.has("dashboard") && dashboardSlot}
                     </TabsContent>
 
-                    <TabsContent value="tasks" className="space-y-4" forceMount hidden={activeTab !== "tasks"}>
-                        {tasksSlot}
+                    <TabsContent value="tasks" className="space-y-4" forceMount={visitedTabs.has("tasks") || undefined} hidden={activeTab !== "tasks"}>
+                        {visitedTabs.has("tasks") && tasksSlot}
                     </TabsContent>
 
                     <TabsContent value="planning" className="w-full h-full" forceMount={visitedTabs.has("planning") || undefined} hidden={activeTab !== "planning"}>
